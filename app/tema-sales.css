@@ -1,0 +1,233 @@
+@import "./tema-sales-fonte.css";
+
+/* ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Aparência Sales & Associados — DisparaZap no DeskcommCRM.
+
+   Este é o ÚNICO arquivo de estilo nosso (mais a fonte). O app o importa em app/layout.tsx, depois de globals.css, por isso
+   tudo aqui vence em empate de especificidade. Regra do fork: não editar componentes do original; só estilizar por aqui, para
+   as atualizações do DeskcommCRM (scripts/sales/sincronizar-upstream.sh) entrarem sem conflito.
+   Paleta e medidas vêm do DisparaZap (client/tailwind.config.js): zinc azul-acinzentado, acento roxo, cantos grandes, sombras suaves.
+   ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+/* ============================== 1. Cores, cantos, sombras (claro) ============================== */
+:root {
+  --color-bg: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #eef0f6;
+  --color-overlay: rgba(16, 22, 38, 0.45);
+
+  --color-text: #182033;
+  --color-text-muted: #505d75;
+  --color-text-subtle: #647089;
+
+  --color-border: #e1e5ef;
+  --color-border-strong: #c7cedd;
+
+  --color-accent-50: #f3f0ff;
+  --color-accent-100: #e9e2ff;
+  --color-accent-200: #d6c8ff;
+  --color-accent-300: #bba2ff;
+  --color-accent-400: #a07aff;
+  --color-accent-500: #8556ee;
+  --color-accent-600: #7340d9;
+  --color-accent-700: #6030b9;
+  --color-accent-800: #502a97;
+  --color-accent-900: #432779;
+  --color-accent-950: #2b1655;
+  --color-accent: #7340d9;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #f3f0ff;
+  --color-accent-hover: #6030b9;
+
+  --color-neutral-50: #f6f7fb;
+  --color-neutral-100: #eef0f6;
+  --color-neutral-200: #e1e5ef;
+  --color-neutral-300: #c7cedd;
+  --color-neutral-400: #8993aa;
+  --color-neutral-500: #647089;
+  --color-neutral-600: #505d75;
+  --color-neutral-700: #39455d;
+  --color-neutral-800: #252e43;
+  --color-neutral-900: #182033;
+  --color-neutral-950: #101626;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  --shadow-xs: 0 1px 2px 0 rgba(30, 35, 74, 0.05);
+  --shadow-sm: 0 2px 10px -4px rgba(30, 35, 74, 0.12);
+  --shadow-md: 0 6px 28px -16px rgba(30, 35, 74, 0.2);
+  --shadow-lg: 0 14px 40px -18px rgba(30, 35, 74, 0.26);
+  --shadow-xl: 0 20px 60px -20px rgba(39, 30, 80, 0.3);
+
+  /* Os apelidos (--card, --border…) são copiados no :root do original e não acompanham os tokens acima: refazemos. */
+  --background: var(--color-bg);
+  --foreground: var(--color-text);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-text);
+  --primary: var(--color-accent);
+  --primary-foreground: var(--color-accent-fg);
+  --secondary: var(--color-surface-elevated);
+  --secondary-foreground: var(--color-text);
+  --muted: var(--color-surface-elevated);
+  --muted-foreground: var(--color-text-muted);
+  --accent-foreground: var(--color-accent-fg);
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --ring: var(--color-accent-500);
+  --radius: var(--radius-md);
+}
+
+/* ============================== 2. Cores (escuro) ============================== */
+[data-theme="dark"] {
+  --color-bg: #101626;
+  --color-surface: #182033;
+  --color-surface-elevated: #202a3f;
+  --color-overlay: rgba(6, 9, 18, 0.6);
+
+  --color-text: #eef0f6;
+  --color-text-muted: #c7cedd;
+  --color-text-subtle: #8993aa;
+
+  --color-border: #252e43;
+  --color-border-strong: #39455d;
+
+  --color-accent: #7340d9;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: rgba(133, 86, 238, 0.18);
+  --color-accent-hover: #8556ee;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 10px -4px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 6px 28px -14px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 14px 40px -16px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 20px 60px -18px rgba(0, 0, 0, 0.65);
+
+  --background: var(--color-bg);
+  --foreground: var(--color-text);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-text);
+  --primary: var(--color-accent);
+  --primary-foreground: var(--color-accent-fg);
+  --secondary: var(--color-surface-elevated);
+  --secondary-foreground: var(--color-text);
+  --muted: var(--color-surface-elevated);
+  --muted-foreground: var(--color-text-muted);
+  --accent-foreground: var(--color-accent-fg);
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --ring: var(--color-accent-500);
+}
+
+/* ============================== 3. Tipografia e fundo ============================== */
+body.font-sans,
+body {
+  font-family: "Inter Sales", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font-family: inherit; }
+
+body {
+  background-image: radial-gradient(1100px 520px at 100% -8%, rgba(133, 86, 238, 0.09), transparent 60%),
+    radial-gradient(900px 480px at -10% 105%, rgba(115, 64, 217, 0.05), transparent 60%);
+  background-attachment: fixed;
+}
+[data-theme="dark"] body {
+  background-image: radial-gradient(1100px 520px at 100% -8%, rgba(133, 86, 238, 0.14), transparent 60%),
+    radial-gradient(900px 480px at -10% 105%, rgba(115, 64, 217, 0.1), transparent 60%);
+}
+
+::selection { background: #d6c8ff; color: #2b1655; }
+[data-theme="dark"] ::selection { background: #502a97; color: #f3f0ff; }
+
+h1, h2, h3 { letter-spacing: -0.015em; }
+
+/* ============================== 4. Menu lateral: painel azul-marinho flutuante (igual ao do DisparaZap) ============================== */
+aside.sticky.shrink-0.flex-col {
+  /* escuro nos dois temas, como no DisparaZap */
+  --color-bg: #101626;
+  --color-surface: #182033;
+  --color-surface-elevated: #202a3f;
+  --color-text: #f6f7fb;
+  --color-text-muted: #c7cedd;
+  --color-text-subtle: #8993aa;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --background: #101626;
+  --foreground: #f6f7fb;
+  --card: transparent;
+  --card-foreground: #f6f7fb;
+  --muted: rgba(255, 255, 255, 0.06);
+  --muted-foreground: #c7cedd;
+  --border: rgba(255, 255, 255, 0.08);
+
+  margin: 12px 0 12px 12px;
+  top: calc(var(--faixas-de-cima, 0px) + 12px);
+  height: calc(100dvh - var(--faixas-de-cima, 0px) - 24px);
+  border: 0;
+  border-radius: 28px;
+  color: #f6f7fb;
+  background-image: linear-gradient(165deg, #1d1b45 0%, #181a3d 38%, #131a33 100%);
+  box-shadow: 0 24px 60px -24px rgba(39, 30, 80, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+aside.sticky.shrink-0.flex-col > div,
+aside.sticky.shrink-0.flex-col .border-b,
+aside.sticky.shrink-0.flex-col .border-t { border-color: rgba(255, 255, 255, 0.08); }
+
+/* itens do menu */
+aside.sticky.shrink-0.flex-col nav a {
+  border-radius: 14px;
+  padding-block: 9px;
+  color: #c7cedd;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+aside.sticky.shrink-0.flex-col nav a:hover { background: rgba(255, 255, 255, 0.07); color: #ffffff; }
+aside.sticky.shrink-0.flex-col nav a[aria-current="page"] {
+  background: rgba(255, 255, 255, 0.11);
+  color: #ffffff;
+  box-shadow: inset 3px 0 0 #a07aff;
+}
+aside.sticky.shrink-0.flex-col nav a svg { color: #bba2ff; }
+aside.sticky.shrink-0.flex-col nav a[aria-current="page"] svg { color: #d6c8ff; }
+/* títulos de grupo (Atendimento, CRM, Agente de IA…): caixa-alta pequena e roxa */
+aside.sticky.shrink-0.flex-col nav h2 button {
+  color: #bba2ff;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+aside.sticky.shrink-0.flex-col button:hover { background: rgba(255, 255, 255, 0.07); }
+aside.sticky.shrink-0.flex-col img { border-radius: 10px; }
+
+/* ============================== 5. Barra superior ============================== */
+header.sticky.z-20.items-center.justify-between {
+  height: 64px;
+  border-bottom: 0;
+  background: transparent;
+  backdrop-filter: blur(10px);
+}
+
+/* ============================== 6. Cartões, campos e botões ============================== */
+[class*="rounded-lg"][class*="border"][class*="bg-card"],
+[class*="rounded-xl"][class*="border"][class*="bg-card"] {
+  box-shadow: var(--shadow-sm);
+}
+input, select, textarea { border-radius: var(--radius-md); }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-accent-400);
+  box-shadow: 0 0 0 3px rgba(133, 86, 238, 0.22);
+}
+button[class*="bg-primary"], a[class*="bg-primary"] { font-weight: 600; box-shadow: 0 6px 16px -8px rgba(115, 64, 217, 0.65); }
+button[class*="bg-primary"]:hover, a[class*="bg-primary"]:hover { box-shadow: 0 8px 20px -8px rgba(115, 64, 217, 0.8); }
+
+/* barras de rolagem discretas */
+* { scrollbar-width: thin; scrollbar-color: rgba(100, 112, 137, 0.35) transparent; }
