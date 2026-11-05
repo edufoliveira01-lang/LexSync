@@ -1,0 +1,60 @@
+name: Imagem do Deskcomm (Sales & Associados)
+
+# Constrói a imagem do APP do DeskcommCRM com a nossa aparência (app/tema-sales.css) e publica no GitHub Container Registry.
+# É a mesma imagem genérica do original (NEXT_PUBLIC_* viram placeholder no build e entram em runtime), só com o nosso tema.
+# O worker e o scheduler continuam sendo as imagens do original. Instalação na VPS: docs/sales/IMAGEM.md.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", "sales-bridge/**", "scripts/**", "*.md", ".github/workflows-upstream/**"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: imagem-sales
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versão do original em que nos baseamos
+        id: ver
+        run: |
+          set -euo pipefail
+          BASE="$(grep -m1 -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "versao=${BASE}-sales.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Constrói e publica
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/deskcomm-sales:${{ steps.ver.outputs.versao }}
+            ghcr.io/${{ github.repository_owner }}/deskcomm-sales:${{ steps.ver.outputs.base }}-sales
+          labels: |
+            org.opencontainers.image.title=Deskcomm (Sales & Associados)
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          build-args: |
+            APP_VERSION=${{ steps.ver.outputs.versao }}
+          cache-from: type=gha,scope=deskcomm-sales
+          cache-to: type=gha,mode=max,scope=deskcomm-sales
