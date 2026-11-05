@@ -1,0 +1,14 @@
+# Variante da ponte para servidores SEM Caddy (Deskcomm em :3000, publicado por Cloudflare Tunnel).
+# A ponte escuta só em 127.0.0.1:3900; o túnel (cloudflared) a publica como https://ponte-atendimento.<dominio>.
+#
+#   cd ~/lexsync
+#   cp sales-bridge/.env.example sales-bridge/.env   # e preencha
+#   docker compose -f docker-compose.sales.tunel.yml up -d --build
+services:
+  sales-bridge:
+    build: ./sales-bridge
+    restart: unless-stopped
+    env_file: ./sales-bridge/.env
+    mem_limit: 256m
+    ports:
+      - "127.0.0.1:3900:3900"
