@@ -19,3 +19,6 @@ bash scripts/sales/sincronizar-upstream.sh --verificar   # só mostra o que mudo
 bash scripts/sales/sincronizar-upstream.sh               # aplica (sem commitar); em conflito deixa marcadores
 ```
 Regra de ouro: **não edite arquivos do Deskcomm quando der para evitar**. Tudo o que é do Sales entra em arquivos novos (`sales-bridge/`, `scripts/sales/`…), que o original nunca toca. Se for indispensável mexer num arquivo do original, mantenha a alteração mínima e saiba que ela pode gerar um conflito na próxima atualização.
+
+## Integração com o sistema Sales & Associados
+O painel de assinaturas e o sistema dos escritórios (repositório `-DisparadorSales2`, ver `docs/ATENDIMENTO.md` lá) criam, suspendem e reativam as empresas deste Deskcomm e levam a pessoa logada até aqui pela ponte (`sales-bridge/`). Nenhum arquivo do Deskcomm foi alterado para isso.
