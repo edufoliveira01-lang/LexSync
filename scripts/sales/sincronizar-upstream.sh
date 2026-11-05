@@ -24,7 +24,7 @@ for fundo in 100 500 2000; do
   git -C "$TMP/o" cat-file -e "$BASE^{commit}" 2>/dev/null && break
 done
 git -C "$TMP/o" cat-file -e "$BASE^{commit}" 2>/dev/null || { echo "ERRO: o commit-base $BASE não está nos últimos 2000 commits do original. Sincronize manualmente." >&2; exit 1; }
-NOVO="$(git -C "$TMP/o" rev-parse FETCH_HEAD)"
+NOVO="$(git -C "$TMP/o" rev-parse "FETCH_HEAD^{commit}")"
 if [ "$BASE" = "$NOVO" ]; then echo "Já está em dia com o original ($NOVO)."; exit 0; fi
 
 # Mesmos caminhos que a importação deixou de fora (ver UPSTREAM.md).
