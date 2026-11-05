@@ -1,0 +1,23 @@
+{
+  "name": "lexsync-sales-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ponte entre o painel/sistema Sales & Associados e o DeskcommCRM (provisionamento de empresas e entrada direta). Serviço separado: não altera o código do DeskcommCRM.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

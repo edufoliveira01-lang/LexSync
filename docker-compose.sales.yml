@@ -1,0 +1,17 @@
+# Ponte Sales & Associados ↔ DeskcommCRM. Sobe JUNTO do compose do Deskcomm, sem alterá-lo:
+#   docker compose -f docker-compose.yml -f docker-compose.sales.yml up -d sales-bridge
+# Variáveis (no mesmo .env do Deskcomm): SALES_BRIDGE_SECRET, SALES_ACTOR_ID, DESKCOMM_PUBLIC_URL,
+# e as do Supabase que o Deskcomm já usa (SUPABASE_URL = endereço INTERNO do Supabase; SUPABASE_SERVICE_ROLE_KEY).
+services:
+  sales-bridge:
+    build: ./sales-bridge
+    restart: unless-stopped
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:-${NEXT_PUBLIC_SUPABASE_URL}}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SALES_BRIDGE_SECRET: ${SALES_BRIDGE_SECRET}
+      SALES_ACTOR_ID: ${SALES_ACTOR_ID}
+      DESKCOMM_PUBLIC_URL: ${DESKCOMM_PUBLIC_URL}
+      PORT: "3900"
+    ports:
+      - "127.0.0.1:3900:3900"   # exponha por um subdomínio no Cloudflare Tunnel/Nginx (ex.: ponte.atendimento.seudominio)
