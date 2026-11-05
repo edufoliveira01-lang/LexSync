@@ -23,7 +23,7 @@ Ele fala com o banco do Deskcomm (Supabase) com a chave de serviço e chama as m
 `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SALES_BRIDGE_SECRET` (≥ 32 caracteres), `SALES_ACTOR_ID`, `DESKCOMM_PUBLIC_URL` (ex.: `https://atendimento.saleseassociados.com.br`), `PORT` (3900).
 
 ## Subir
-`docker compose -f docker-compose.yml -f docker-compose.sales.yml up -d sales-bridge`, e publique a porta 3900 num subdomínio (Cloudflare Tunnel/Nginx).
+Veja o cabeçalho de `docker-compose.sales.yml` (na raiz do LexSync): a ponte sobe como projeto à parte, entra na rede `caddy-sites` do Deskcomm e é publicada com HTTPS por um arquivo em `caddy-sites/` (modelo em `ponte.caddy.exemplo`). O passo a passo completo está em `docs/ATENDIMENTO-INSTALACAO.md` do repositório do sistema Sales.
 
 ## Testes
 `cd sales-bridge && npm install && npm test`

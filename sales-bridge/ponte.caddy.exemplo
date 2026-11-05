@@ -1,0 +1,5 @@
+# Publica a ponte com HTTPS automático. Copie para o caddy-sites/ do Deskcomm com o nome ponte.caddy e troque o endereço.
+ponte-atendimento.seudominio.com.br {
+	encode gzip
+	reverse_proxy sales-bridge:3900
+}

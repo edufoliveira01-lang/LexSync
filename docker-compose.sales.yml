@@ -1,17 +1,17 @@
-# Ponte Sales & Associados ↔ DeskcommCRM. Sobe JUNTO do compose do Deskcomm, sem alterá-lo:
-#   docker compose -f docker-compose.yml -f docker-compose.sales.yml up -d sales-bridge
-# Variáveis (no mesmo .env do Deskcomm): SALES_BRIDGE_SECRET, SALES_ACTOR_ID, DESKCOMM_PUBLIC_URL,
-# e as do Supabase que o Deskcomm já usa (SUPABASE_URL = endereço INTERNO do Supabase; SUPABASE_SERVICE_ROLE_KEY).
+# Ponte Sales & Associados ↔ DeskcommCRM. Sobe SOZINHA (projeto à parte) e entra na rede `caddy-sites` do Deskcomm,
+# o ponto de extensão oficial dele: o Caddy do Deskcomm publica a ponte com HTTPS, sem editar nenhum arquivo do Deskcomm.
+#
+#   cd ~/lexsync
+#   cp sales-bridge/.env.example sales-bridge/.env   # e preencha
+#   CADDY_SITES_NETWORK=$(docker network ls --format '{{.Name}}' | grep caddy-sites) docker compose -f docker-compose.sales.yml up -d --build
 services:
   sales-bridge:
     build: ./sales-bridge
     restart: unless-stopped
-    environment:
-      SUPABASE_URL: ${SUPABASE_URL:-${NEXT_PUBLIC_SUPABASE_URL}}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      SALES_BRIDGE_SECRET: ${SALES_BRIDGE_SECRET}
-      SALES_ACTOR_ID: ${SALES_ACTOR_ID}
-      DESKCOMM_PUBLIC_URL: ${DESKCOMM_PUBLIC_URL}
-      PORT: "3900"
-    ports:
-      - "127.0.0.1:3900:3900"   # exponha por um subdomínio no Cloudflare Tunnel/Nginx (ex.: ponte.atendimento.seudominio)
+    env_file: ./sales-bridge/.env
+    mem_limit: 256m
+    networks: [caddy-sites]
+networks:
+  caddy-sites:
+    external: true
+    name: ${CADDY_SITES_NETWORK:?rode o comando como está no cabeçalho deste arquivo}
