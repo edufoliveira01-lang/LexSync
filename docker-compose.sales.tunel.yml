@@ -1,14 +1,19 @@
-# Variante da ponte para servidores SEM Caddy (Deskcomm em :3000, publicado por Cloudflare Tunnel).
-# A ponte escuta só em 127.0.0.1:3900; o túnel (cloudflared) a publica como https://ponte-atendimento.<dominio>.
+# Ponte para o Deskcomm instalado com Cloudflare Tunnel (REVERSE_PROXY=cloudflared, sem Caddy).
+# Sobe como projeto à parte e entra na rede interna do Deskcomm (`<pasta>_internal`), onde o `cloudflared`
+# dele já roda. No painel da Cloudflare, o hostname da ponte aponta para http://sales-bridge:3900.
 #
 #   cd ~/lexsync
 #   cp sales-bridge/.env.example sales-bridge/.env   # e preencha
-#   docker compose -f docker-compose.sales.tunel.yml up -d --build
+#   DESKCOMM_NET=$(docker network ls --format '{{.Name}}' | grep -E '^deskcomm.*_internal$' | head -1) \
+#     docker compose -f docker-compose.sales.tunel.yml up -d --build
 services:
   sales-bridge:
     build: ./sales-bridge
     restart: unless-stopped
     env_file: ./sales-bridge/.env
     mem_limit: 256m
-    ports:
-      - "127.0.0.1:3900:3900"
+    networks: [deskcomm]
+networks:
+  deskcomm:
+    external: true
+    name: ${DESKCOMM_NET:?rode o comando como está no cabeçalho deste arquivo}
