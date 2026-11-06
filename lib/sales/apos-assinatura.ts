@@ -8,6 +8,7 @@
 import { z } from "zod";
 
 export const SEPARADOR_DA_ESCOLHA = "⁣cfg:";
+export const SEPARADOR_DOS_DADOS = "⁣dados:";
 
 export const aposAssinaturaSchema = z.object({
   pipeline_id: z.string().uuid().optional(),
@@ -33,13 +34,32 @@ export function escolhaEfetiva(padrao: AposAssinatura, doContrato: AposAssinatur
   return limparEscolha({ ...padrao, ...(doContrato ?? {}) });
 }
 
-export const embutirEscolha = (visivel: string, escolha: AposAssinatura): string =>
-  Object.keys(escolha).length === 0 ? visivel : `${visivel}${SEPARADOR_DA_ESCOLHA}${Buffer.from(JSON.stringify(escolha)).toString("base64")}`;
+const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64");
+const deb64 = (t: string): unknown => { try { return JSON.parse(Buffer.from(t, "base64").toString("utf8")); } catch { return null; } };
+
+/** Esconde, no fim da linha da conversa, a escolha do "depois da assinatura" e os dados do cliente (para preencher o negócio na hora de criá-lo). */
+export const embutirEscolha = (visivel: string, escolha: AposAssinatura, dados?: Record<string, string>): string =>
+  `${visivel}${Object.keys(escolha).length ? `${SEPARADOR_DA_ESCOLHA}${b64(escolha)}` : ""}${dados && Object.keys(dados).length ? `${SEPARADOR_DOS_DADOS}${b64(dados)}` : ""}`;
+
+function trecho(corpo: string, separador: string): string | null {
+  const i = corpo.indexOf(separador);
+  if (i < 0) return null;
+  const resto = corpo.slice(i + separador.length);
+  const fim = resto.indexOf(SEPARADOR_DA_ESCOLHA.charAt(0));
+  return fim < 0 ? resto : resto.slice(0, fim);
+}
 
 export function lerEscolhaEmbutida(corpo: string): AposAssinatura | null {
-  const i = corpo.indexOf(SEPARADOR_DA_ESCOLHA);
-  if (i < 0) return null;
-  try { return limparEscolha(JSON.parse(Buffer.from(corpo.slice(i + SEPARADOR_DA_ESCOLHA.length), "base64").toString("utf8"))); } catch { return null; }
+  const t = trecho(corpo, SEPARADOR_DA_ESCOLHA);
+  return t === null ? null : limparEscolha(deb64(t));
+}
+
+export function lerDadosEmbutidos(corpo: string): Record<string, string> {
+  const t = trecho(corpo, SEPARADOR_DOS_DADOS);
+  const o = t === null ? null : deb64(t);
+  return o && typeof o === "object" && !Array.isArray(o)
+    ? (Object.fromEntries(Object.entries(o as Record<string, unknown>).filter(([, v]) => typeof v === "string")) as Record<string, string>)
+    : {};
 }
 
 export function padraoDaEmpresa(settings: unknown): AposAssinatura {

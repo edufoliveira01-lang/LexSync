@@ -59,3 +59,29 @@ describe("formulário do contrato — sugestões a partir do contato", () => {
     expect(sugerirDados({ contato: {}, campos: [{ rotulo: "CPF", valor: "1" }, { rotulo: "CPF", valor: "2" }] }).cpf).toBe("1");
   });
 });
+
+import { preencherCamposDoNegocio, valorParaOCampo } from "@/lib/sales/campos-do-contrato";
+import { lerDadosEmbutidos } from "@/lib/sales/apos-assinatura";
+
+describe("devolver ao Deskcomm o que foi digitado no contrato", () => {
+  const dados = { cpf: "529.982.247-25", rg: "12.345.678-9", cidade: "Santos", uf: "SP", sexo: "F", profissao: "costureira", logradouro: "Rua A", numero: "10", bairro: "Centro", cep: "11010000" };
+  it("casa o campo do negócio pelo NOME, sem acento nem caixa", () => {
+    expect(valorParaOCampo("CPF", dados)).toBe("529.982.247-25");
+    expect(valorParaOCampo("Profissão", dados)).toBe("costureira");
+    expect(valorParaOCampo("Estado", dados)).toBe("SP");
+    expect(valorParaOCampo("Sexo", dados)).toBe("Feminino");
+    expect(valorParaOCampo("Observações", dados)).toBeNull();
+    expect(valorParaOCampo("Complemento", dados)).toBeNull(); // sem dado, sem campo
+  });
+  it("só preenche o que existe no funil e ainda está vazio", () => {
+    const defs = [{ key: "cpf", label: "CPF" }, { key: "cidade", label: "Cidade" }, { key: "obs", label: "Observações" }, { key: "rg", label: "RG" }];
+    expect(preencherCamposDoNegocio(defs, dados, { cidade: "Outra", rg: "" })).toEqual({ cpf: "529.982.247-25", rg: "12.345.678-9" });
+  });
+  it("os dados do cliente viajam escondidos na linha da conversa e voltam na assinatura", () => {
+    const corpo = `${MARCA_DE_EVENTO}Contrato enviado para assinatura — Ana · nº 5${embutirEscolha("", { tag: "X" }, { cpf: "1", rg: "2" })}`;
+    expect(lerDadosEmbutidos(corpo)).toEqual({ cpf: "1", rg: "2" });
+    expect(lerEscolhaEmbutida(corpo)).toEqual({ tag: "X" });
+    expect(textoDoEvento(corpo)).toBe("Contrato enviado para assinatura — Ana · nº 5");
+    expect(lerDadosEmbutidos(`${MARCA_DE_EVENTO}sem dados`)).toEqual({});
+  });
+});

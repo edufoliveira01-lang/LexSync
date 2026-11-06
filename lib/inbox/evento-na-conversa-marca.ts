@@ -11,6 +11,6 @@ export function ehEventoDaConversa(corpo: string | null | undefined): boolean {
 /** O texto visível: o que vem depois de "\u2063cfg:" (dados escondidos do evento) não aparece na tela. */
 export function textoDoEvento(corpo: string): string {
   const texto = corpo.slice(MARCA_DE_EVENTO.length);
-  const i = texto.indexOf("\u2063cfg:");
-  return i < 0 ? texto : texto.slice(0, i);
+  const cortes = ["⁣cfg:", "⁣dados:"].map((m) => texto.indexOf(m)).filter((n) => n >= 0);
+  return cortes.length === 0 ? texto : texto.slice(0, Math.min(...cortes));
 }

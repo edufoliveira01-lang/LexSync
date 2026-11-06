@@ -4,9 +4,9 @@ export interface Sugestoes {
   cep?: string; logradouro?: string; numero?: string; complemento?: string; bairro?: string; cidade?: string; uf?: string; sexo?: "M" | "F";
 }
 
-const sem = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+export const sem = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
-const REGRAS: [keyof Sugestoes, RegExp][] = [
+export const REGRAS: [keyof Sugestoes, RegExp][] = [
   ["cpf", /^(cpf|cpf cnpj|documento)$/], ["rg", /^(rg|identidade|registro geral)$/], ["nacionalidade", /^nacionalidade$/],
   ["estado_civil", /^estado civil$/], ["profissao", /^(profissao|ocupacao)$/], ["cep", /^cep$/],
   ["logradouro", /^(logradouro|endereco|rua|avenida|endereco completo)$/], ["numero", /^(numero|n|num|n o)$/],
