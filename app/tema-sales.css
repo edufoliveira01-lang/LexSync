@@ -230,34 +230,26 @@ main:has([data-realtime-status]) { padding: 0; overflow: hidden; }
 }
 @media (min-width: 1280px) {
   [data-realtime-status].grid { grid-template-columns: 344px minmax(0, 1fr) 320px; }
+  /* sem conversa aberta não há ficha do contato (ver InboxLayout) */
+  [data-realtime-status][data-sem-conversa].grid { grid-template-columns: 344px minmax(0, 1fr); }
 }
 
-/* ---- cabeçalho da lista: compacto ---- */
+/* ---- cabeçalho da lista ---- */
 [data-realtime-status] > div:first-child { background: var(--color-surface); }
-[data-realtime-status] > div:first-child > div.px-3.pt-3:first-child { padding: 12px 14px 0; }
-[data-realtime-status] > div:first-child > div.px-3.pt-3:first-child button {
-  height: 36px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--color-accent-soft);
-  color: var(--color-accent-700);
-  font-weight: 600;
-  box-shadow: none;
-}
-[data-theme="dark"] [data-realtime-status] > div:first-child > div.px-3.pt-3:first-child button { color: var(--color-accent-300); }
-/* busca em linha própria; os filtros viram pílulas pequenas numa linha só */
-[data-realtime-status] .space-y-2 { padding: 10px 14px 6px; }
-[data-realtime-status] .space-y-2 > div.flex.items-center.gap-2 { flex-wrap: wrap; gap: 6px; }
-[data-realtime-status] .space-y-2 > div.flex.items-center.gap-2 > div.relative { flex: 1 0 100%; }
-[data-realtime-status] .space-y-2 > div.flex.items-center.gap-2 > button { height: 28px; padding-inline: 12px; }
-[data-realtime-status] .space-y-2 > div.flex.gap-2 { gap: 6px; }
-[data-realtime-status] .space-y-2 > div.flex.gap-2 > button { height: 28px; }
+.titulo-da-lista h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.015em; }
+.titulo-da-lista button { transition: transform 0.12s; }
+.titulo-da-lista button:hover { transform: scale(1.05); }
+[data-realtime-status] .space-y-2 { padding: 8px 14px 8px; }
 [data-realtime-status] .space-y-2 input { height: 38px; border-radius: 12px; }
+[data-testid="filtros-avancados"] > div.flex.flex-wrap { gap: 6px; }
+[data-testid="filtros-avancados"] button { height: 28px; padding-inline: 12px; }
+[data-testid="filtros-avancados"] > div.flex { gap: 6px; }
 /* abas: uma linha só, rolagem sem barra; sublinhado roxo na ativa */
+[role="tablist"] ~ span.w-4, span.w-4.shrink-0[aria-hidden] { display: none; }
 [role="tablist"] {
   flex-wrap: nowrap !important;
   justify-content: flex-start !important;
-  gap: 12px !important;
+  gap: 10px !important;
   overflow-x: auto;
 }
 [role="tablist"] [role="tab"] { font-weight: 600; font-size: 12px; letter-spacing: 0; }
@@ -337,3 +329,83 @@ button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10p
 [data-testid="composer"] textarea { border: 0; background: transparent; box-shadow: none; outline: none; padding-inline: 4px; }
 [data-testid="composer"] textarea:focus { box-shadow: none; outline: none; }
 button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px rgba(115, 64, 217, 0.75); }
+
+/* ============================== 9. Cabeçalho da conversa enxuto + menu "Mais ações" ============================== */
+.cabecalho-conversa {
+  flex-wrap: nowrap;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+.cabecalho-conversa > div.min-w-0 { flex: 1 1 0; min-width: 0; }
+.cabecalho-conversa h2 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.cabecalho-conversa [class*="h-4"][class*="text-[10px]"] {
+  height: 18px;
+  padding-inline: 8px;
+  border-radius: 999px;
+  font-weight: 500;
+  background: var(--color-surface-elevated);
+  border-color: transparent;
+  color: var(--color-text-muted);
+}
+.linha-de-apoio { font-size: 12.5px; color: var(--color-text-muted); }
+.linha-de-apoio p { font-size: 12.5px; }
+.acoes-da-conversa { flex: none; margin-left: auto; gap: 8px; }
+.acoes-da-conversa > button { height: 34px; border-radius: 12px; font-size: 13px; font-weight: 600; padding-inline: 14px; }
+.cabecalho-conversa [data-testid="canal-da-conversa"] { display: none; }
+.acoes-da-conversa > button.border { border-color: var(--color-border-strong); }
+.acoes-da-conversa > button[aria-label] { width: 34px; padding: 0; }
+.acoes-da-conversa > button.bg-accent { box-shadow: 0 8px 18px -10px rgba(115, 64, 217, 0.7); }
+
+.mais-acoes {
+  border-radius: 16px;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xl);
+}
+.mais-acoes > div > * { width: 100%; }
+.mais-acoes button,
+.mais-acoes a {
+  width: 100%;
+  height: 38px;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-inline: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-text);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.mais-acoes button:hover,
+.mais-acoes a:hover { background: var(--color-surface-elevated); color: var(--color-text); }
+.mais-acoes svg { color: var(--color-text-muted); }
+
+/* ============================== 10. Ficha do contato (painel direito) ============================== */
+aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l {
+  gap: 18px;
+  padding: 18px 18px 24px;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l h3 {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-lg"][class*="border"] {
+  border: 0;
+  border-radius: 16px;
+  background: var(--color-surface-elevated);
+  box-shadow: none;
+}
+aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-lg"][class*="border"] .font-medium { font-size: 15px; font-weight: 700; }
+aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l button { border-radius: 10px; }
+aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l select { height: 38px; border-radius: 12px; background: var(--color-surface); }
+aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-md"][class*="border"][class*="text-[11px]"] { border-radius: 999px; background: var(--color-surface-elevated); border-color: transparent; }

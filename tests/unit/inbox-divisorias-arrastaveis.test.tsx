@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -266,11 +266,12 @@ function janelaEm(largura: number): void {
   Object.defineProperty(window, "innerWidth", { value: largura, configurable: true, writable: true });
 }
 
-function montar(props: { painelRecolhidoInicial?: boolean } = {}) {
+function montar(props: { painelRecolhidoInicial?: boolean; initialSelectedId?: string } = {}) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <InboxLayout {...props} />
+      {/* Fork Sales: a ficha do contato só existe com uma conversa aberta, então o layout das três colunas é testado com uma selecionada. */}
+      <InboxLayout initialSelectedId="cv-1" {...props} />
     </QueryClientProvider>,
   );
 }
@@ -321,6 +322,15 @@ describe("no layout — duas divisorias arrastáveis (#2579)", () => {
     window.HTMLElement.prototype.releasePointerCapture = vi.fn();
     window.HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
     window.history.replaceState(null, "", "/app/inbox");
+  });
+
+  it("fork Sales — sem conversa aberta a ficha do contato não existe: duas colunas e uma divisória só", async () => {
+    montar({ initialSelectedId: undefined });
+    await alca(0);
+    // A coluna da ficha existe no markup mas fica oculta (`xl:hidden`); sem conversa não há divisória da ficha.
+    await waitFor(() => expect(Array.from(grade().children).some((el) => el.className.includes("xl:hidden"))).toBe(true));
+    expect(screen.getAllByRole("separator")).toHaveLength(1);
+    expect(grade().hasAttribute("data-sem-conversa")).toBe(true);
   });
 
   it("no celular não nasce divisória nenhuma", async () => {

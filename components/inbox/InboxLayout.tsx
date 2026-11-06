@@ -778,7 +778,10 @@ export function InboxLayout({
   const estiloDaGrade: CSSProperties | undefined =
     faixa && larguras
       ? {
-          gridTemplateColumns: painelRecolhido && faixa.temFicha
+          // Fork Sales: sem conversa aberta a ficha do contato não existe (nem o trilho): só lista + conversa.
+          gridTemplateColumns: !selectedId
+            ? `${larguras.lista}px minmax(0,1fr)`
+            : painelRecolhido && faixa.temFicha
             ? // Recolhido: a ficha sai da conta e o trilho do painel entra no
               // lugar dela. A largura AJUSTADA da ficha não se perde — ela volta
               // inteira quando o painel reabre.
@@ -928,6 +931,7 @@ export function InboxLayout({
        * quem atende seria ruído; esconder o sinal do todo é o que custou o dia.
        */
       data-realtime-status={listQ.realtimeStatus}
+      data-sem-conversa={selectedId ? undefined : ""}
       data-refetch-divergencias={listQ.seguranca?.divergencias ?? 0}
     >
       {/*
@@ -950,7 +954,10 @@ export function InboxLayout({
           colunas.lista,
         )}
       >
-        <BotaoIniciarConversa />
+        <div className="titulo-da-lista flex items-center justify-between gap-2 px-4 pb-1 pt-4">
+          <h2 className="text-base font-semibold tracking-tight">{t("Conversas")}</h2>
+          <BotaoIniciarConversa compacto />
+        </div>
         <InboxFilters value={filterValue} onChange={setFilterValue} />
         {podeAgirEmLote && (
           <BarraDeAcoesEmLote
@@ -1053,6 +1060,7 @@ export function InboxLayout({
               key={selectedConversation.id}
               conversation={selectedConversation}
               onAbrirConversa={handleSelect}
+              onAbrirFicha={alternarPainelDoContato}
               onBuscar={() =>
                 buscaAberta
                   ? fecharBusca()
@@ -1179,7 +1187,7 @@ export function InboxLayout({
         )}
       </div>
 
-      <div className="hidden h-full min-h-0 min-w-0 xl:block">
+      <div className={cn("hidden h-full min-h-0 min-w-0 xl:block", !selectedId && "xl:hidden")}>
         <CRMSidePanel
           conversation={selectedConversation}
           recolhido={painelRecolhido}
@@ -1222,7 +1230,7 @@ export function InboxLayout({
               className="w-px bg-border transition-colors group-hover:bg-primary group-focus-visible:bg-primary"
             />
           </span>
-          {faixa?.temFicha && !painelRecolhido && (
+          {faixa?.temFicha && !painelRecolhido && selectedId && (
             <span
               role="separator"
               aria-orientation="vertical"

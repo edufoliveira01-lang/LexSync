@@ -266,9 +266,9 @@ function montar(cenario: Cenario) {
 function barraDeAcoes(ancora: string): HTMLElement {
   const botao = screen.getByText(ancora).closest("button");
   expect(botao, `a âncora "${ancora}" não renderizou um botão`).toBeTruthy();
-  const barra = (botao as HTMLElement).parentElement;
-  expect(barra, "a barra de ações não renderizou").toBeTruthy();
-  return barra as HTMLElement;
+  // Fork Sales: as ações menos frequentes moram no menu "Mais ações" (renderizado em portal, fora da barra).
+  // A "barra" para a catraca de paridade passa a ser o conjunto barra + menu: o corpo do documento.
+  return document.body;
 }
 
 /** "Esta ação está alcançável nesta barra?" — por texto (botão) ou por nome acessível (ícone). */

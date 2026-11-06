@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { JanelaSelo } from "@/components/inbox/JanelaSelo";
 import { ChannelLogo } from "@/components/inbox/ChannelLogo";
-import { Phone, ArrowRight, MagnifyingGlass } from "@/lib/ui/icons";
+import { Phone, ArrowRight, MagnifyingGlass, DotsThree } from "@/lib/ui/icons";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useClaimConversation } from "@/hooks/inbox/useClaimConversation";
 import { useReleaseConversation } from "@/hooks/inbox/useReleaseConversation";
@@ -60,6 +61,8 @@ interface Props {
   botaoBuscaRef?: RefObject<HTMLButtonElement | null>;
   /** Seleciona outra conversa no Inbox — a aba Número do Transferir abre a do outro número. */
   onAbrirConversa?: (id: string) => void;
+  /** Abre (ou recolhe) a ficha do contato — o nome no cabeçalho é o atalho (fork Sales). */
+  onAbrirFicha?: () => void;
 }
 
 /**
@@ -94,6 +97,7 @@ export function ConversationHeader({
   onBuscar,
   buscaAberta,
   botaoBuscaRef,
+  onAbrirFicha,
 }: Props) {
   const t = useT();
   const { user, activeOrg } = useAuth();
@@ -272,7 +276,7 @@ export function ConversationHeader({
     // fileira que rola na horizontal — a mesma régua de não esconder ação, sem
     // pagar em altura. `py-2` pelo mesmo motivo: cada pixel de altura ali é
     // tirado da conversa.
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 md:gap-3 md:px-4 md:py-3">
+    <div className="cabecalho-conversa flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 md:gap-3 md:px-4 md:py-3">
       {/* FAIXA DA CARTEIRA (#2591, regra 2): "este cliente pertence à carteira de
           A". `w-full` a põe numa linha própria acima da identidade, sem disputar
           espaço com a barra de ações — a faixa só existe quando o dono é OUTRA
@@ -283,7 +287,21 @@ export function ConversationHeader({
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-1.5">
           <ChannelLogo channel={conversation.channel_sessions} size={20} />
-          <h2 className="min-w-0 truncate text-sm font-semibold" title={displayName}>{displayName}</h2>
+          <h2 className="min-w-0 truncate text-sm font-semibold" title={displayName}>
+            {onAbrirFicha ? (
+              <button
+                type="button"
+                onClick={onAbrirFicha}
+                className="max-w-full truncate text-left hover:underline"
+                title={t("Abrir a ficha do contato")}
+                data-testid="abrir-ficha-do-contato"
+              >
+                {displayName}
+              </button>
+            ) : (
+              displayName
+            )}
+          </h2>
           <Badge variant="outline" className="h-4 shrink-0 px-1.5 text-[10px]">
             {t(STATUS_LABEL[status] ?? status)}
           </Badge>
@@ -326,7 +344,8 @@ export function ConversationHeader({
             funil e do dossiê: um terceiro jeito de dizer "quem manda", por cor ou
             por texto, faria a mesma pergunta ter três respostas diferentes na
             mesma tela. Cor não sobrevive ao daltonismo nem ao teste do metro. */}
-        <div className="mt-1 flex items-center gap-2" data-testid="comando-da-conversa">
+        <div className="linha-de-apoio mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <div className="flex items-center gap-2" data-testid="comando-da-conversa">
           {comando.quem === "humano" ? (
             <OwnerBadge ownerKind="user" ownerName={comando.nome ?? t("Atendente")} />
           ) : comando.quem === "automatico" ? (
@@ -344,6 +363,18 @@ export function ConversationHeader({
             <Phone size={11} weight="regular" aria-hidden /> {phone}
           </p>
         )}
+        {/* O aviso pertence à operação automática. Abaixo da barra ele não
+            alarga a ficha do contato nem muda a posição dos botões.
+            Sem esta marca, a conversa em que o robô está calado tem exatamente
+            a mesma cara de uma conversa normal. O testid é contrato:
+            `escalacao-ciclo.spec.ts` o clica. */}
+        {motivo !== null && (
+          <Badge variant="outline" className="h-4 w-fit max-w-full truncate px-1.5 text-[10px]"
+            title={t(ROTULO_DO_MOTIVO[motivo])} data-testid="badge-atendimento-humano">
+            {t(ROTULO_DO_MOTIVO[motivo])}
+          </Badge>
+        )}
+        </div>
       </div>
 
       {/* `shrink-0` saiu daqui: era ele que impunha o piso de largura. Agora a
@@ -358,8 +389,7 @@ export function ConversationHeader({
           máscara apaga a borda direita para dizer que a fileira rola, e o `pr-8`
           deixa o último botão fora da máscara quando rolado até o fim. Tudo
           `max-md:` — no computador encolher a janela não é teclado. */}
-      <div className="flex min-w-0 flex-col items-end gap-1 max-md:w-full max-md:items-stretch max-md:group-data-[teclado-aberto]/conversa:hidden">
-      <div className="flex min-w-0 flex-wrap items-center gap-1.5 max-md:flex-nowrap max-md:overflow-x-auto max-md:pb-1 max-md:pr-8 max-md:[&>*]:shrink-0 max-md:[mask-image:linear-gradient(to_right,black_calc(100%_-_2rem),transparent)]">
+      <div className="acoes-da-conversa flex min-w-0 items-center gap-1.5 max-md:w-full max-md:group-data-[teclado-aberto]/conversa:hidden">
         {/* Primeira da barra e sem rótulo escrito: é ferramenta de LEITURA, não
             ação de atendimento, e não muda de lugar com o estado da conversa.
             Só o ícone porque a barra já quebrou a caixa útil em 1280px uma vez
@@ -378,45 +408,6 @@ export function ConversationHeader({
             <MagnifyingGlass size={16} aria-hidden />
           </Button>
         )}
-        {/* A chamada usa o telefone da ficha, mesmo quando o contato chegou por
-            outro canal. Grupos não representam uma pessoa para ligar. */}
-        {!conversation.is_group && c?.id && (
-          <DialButton contactId={c.id} hasPhone={!!c.phone_number} />
-        )}
-        {!conversation.is_group && c?.id && activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.agent && (
-          <ReservarServicoNaConversa key={`${activeOrg.orgId}:${conversation.id}`} contactId={c.id} conversationId={conversation.id} contactName={displayName}/>
-        )}
-        {/* Videochamada (#2440): sem JITSI_SERVER_URL este botão não renderiza,
-            então ele não ocupa lugar nem na instalação que não oferece a feature.
-            A sala é aleatória por chamada (#2441) — não depende de telefone,
-            só do link ir pelo chat.
-
-            `provider`/`lastInboundAt`, `bloqueio` e `encerrada` vêm para o
-            botão seguir a MESMA régua do composer: janela de 24h (a rota não
-            barra quem envia da tela — vira 131047 silencioso, #1614), a trava
-            de contato e a de conversa encerrada. Os textos saem da mesma função
-            do composer (lib/inbox/motivo-do-envio-bloqueado.ts); encerrada só
-            desabilita, sem texto, como o composer faz. `supportReadonly` fica
-            de fora: ele mora no `user`, que este componente não recebe. */}
-        <VideoCallButton
-          conversationId={conversation.id}
-          provider={conversation.channel_sessions?.provider ?? null}
-          lastInboundAt={conversation.last_inbound_at}
-          bloqueio={motivoDoContato(c, t)}
-          encerrada={status === "closed"}
-        />
-        {/* ATENDIMENTO CONJUNTO (#2542): quem participa desta conversa, e a
-            porta para convidar mais um. Fica na barra de ações, junto das
-            outras ações do cabeçalho, e ANTES de "Assumir" porque ela responde
-            à pergunta que a barra faz primeiro: "quem mais está aqui comigo?".
-            O componente só desenha o botão para quem a rota aceitaria (dono ou
-            gestor+) e não desenha NADA quando não há participante nem permissão
-            de convidar — nenhum espaço vazio no cabeçalho de quem só foi ler. */}
-        <ParticipantesDaConversa
-          conversationId={conversation.id}
-          podeConvidar={podeConvidar}
-          atendenteId={user.id}
-        />
         {isOpen && (
           <Button
             size="sm"
@@ -466,6 +457,87 @@ export function ConversationHeader({
             {t("Liberar")}
           </Button>
         )}
+        {!encerrada && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={close.isPending}
+            // GUIA CURTA (#3003): "Fechar" sozinho não distingue encerrar de
+            // arquivar — que é o clique errado relatado na issue. A guia diz o que
+            // muda e o que continua disponível depois (reabrir).
+            title={t("Encerra o atendimento. Depois você pode reabrir a conversa.")}
+            onClick={() => {
+              // Padrão marcado a cada abertura: a escolha é DESTA conversa.
+              setDevolverAoFechar(true);
+              setConfirmFecharOpen(true);
+            }}
+          >
+            {t("Fechar")}
+          </Button>
+        )}
+        {encerrada && <Button size="sm" variant="outline" disabled={reopen.isPending}
+          // GUIA CURTA (#3003): o par de "Fechar" precisa da mesma clareza — o
+          // rótulo não diz que a conversa volta a ser atendida.
+          title={t("Reabre o atendimento desta conversa, que estava encerrada.")}
+          onClick={() => reopen.mutate({ conversation_id: conversation.id, expected_revision: conversation.service_revision })}>
+          {t("Reabrir")}
+        </Button>}
+
+        {/* Tudo o que é menos frequente mora aqui (fork Sales): o cabeçalho deixa de ser uma fileira de dez botões.
+            `forceMount` mantém os componentes montados (diálogos e estados continuam vivos); o CSS só os esconde enquanto fechado. */}
+        <PopoverPrimitive.Root>
+          <PopoverPrimitive.Trigger asChild>
+            <Button size="sm" variant="ghost" className="w-9 px-0" aria-label={t("Mais ações")} title={t("Mais ações")}>
+              <DotsThree size={20} weight="bold" aria-hidden />
+            </Button>
+          </PopoverPrimitive.Trigger>
+          <PopoverPrimitive.Portal forceMount>
+          <PopoverPrimitive.Content
+            forceMount
+            align="end"
+            sideOffset={6}
+            className="mais-acoes ds-painel z-50 w-64 rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-lg outline-hidden data-[state=closed]:hidden"
+          >
+            <div className="flex flex-col gap-0.5">
+        {/* A chamada usa o telefone da ficha, mesmo quando o contato chegou por
+            outro canal. Grupos não representam uma pessoa para ligar. */}
+        {!conversation.is_group && c?.id && (
+          <DialButton contactId={c.id} hasPhone={!!c.phone_number} />
+        )}
+        {!conversation.is_group && c?.id && activeOrg && ROLE_RANK[activeOrg.role] >= ROLE_RANK.agent && (
+          <ReservarServicoNaConversa key={`${activeOrg.orgId}:${conversation.id}`} contactId={c.id} conversationId={conversation.id} contactName={displayName}/>
+        )}
+        {/* Videochamada (#2440): sem JITSI_SERVER_URL este botão não renderiza,
+            então ele não ocupa lugar nem na instalação que não oferece a feature.
+            A sala é aleatória por chamada (#2441) — não depende de telefone,
+            só do link ir pelo chat.
+
+            `provider`/`lastInboundAt`, `bloqueio` e `encerrada` vêm para o
+            botão seguir a MESMA régua do composer: janela de 24h (a rota não
+            barra quem envia da tela — vira 131047 silencioso, #1614), a trava
+            de contato e a de conversa encerrada. Os textos saem da mesma função
+            do composer (lib/inbox/motivo-do-envio-bloqueado.ts); encerrada só
+            desabilita, sem texto, como o composer faz. `supportReadonly` fica
+            de fora: ele mora no `user`, que este componente não recebe. */}
+        <VideoCallButton
+          conversationId={conversation.id}
+          provider={conversation.channel_sessions?.provider ?? null}
+          lastInboundAt={conversation.last_inbound_at}
+          bloqueio={motivoDoContato(c, t)}
+          encerrada={status === "closed"}
+        />
+        {/* ATENDIMENTO CONJUNTO (#2542): quem participa desta conversa, e a
+            porta para convidar mais um. Fica na barra de ações, junto das
+            outras ações do cabeçalho, e ANTES de "Assumir" porque ela responde
+            à pergunta que a barra faz primeiro: "quem mais está aqui comigo?".
+            O componente só desenha o botão para quem a rota aceitaria (dono ou
+            gestor+) e não desenha NADA quando não há participante nem permissão
+            de convidar — nenhum espaço vazio no cabeçalho de quem só foi ler. */}
+        <ParticipantesDaConversa
+          conversationId={conversation.id}
+          podeConvidar={podeConvidar}
+          atendenteId={user.id}
+        />
         {/* O INTERRUPTOR. Um botão, dois rótulos, um slot.
             Fica ANTES de transferir/fechar porque é a ação que a pessoa procura
             quando terminou o que tinha para fazer aqui.
@@ -536,31 +608,6 @@ export function ConversationHeader({
             snoozeUntil={conversation.snooze_until ?? null}
           />
         )}
-        {!encerrada && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={close.isPending}
-            // GUIA CURTA (#3003): "Fechar" sozinho não distingue encerrar de
-            // arquivar — que é o clique errado relatado na issue. A guia diz o que
-            // muda e o que continua disponível depois (reabrir).
-            title={t("Encerra o atendimento. Depois você pode reabrir a conversa.")}
-            onClick={() => {
-              // Padrão marcado a cada abertura: a escolha é DESTA conversa.
-              setDevolverAoFechar(true);
-              setConfirmFecharOpen(true);
-            }}
-          >
-            {t("Fechar")}
-          </Button>
-        )}
-        {encerrada && <Button size="sm" variant="outline" disabled={reopen.isPending}
-          // GUIA CURTA (#3003): o par de "Fechar" precisa da mesma clareza — o
-          // rótulo não diz que a conversa volta a ser atendida.
-          title={t("Reabre o atendimento desta conversa, que estava encerrada.")}
-          onClick={() => reopen.mutate({ conversation_id: conversation.id, expected_revision: conversation.service_revision })}>
-          {t("Reabrir")}
-        </Button>}
         {/* ARQUIVAR (#923): tira da frente sem destruir.
             A conversa já arquivada não mostra o botão — arquivar duas vezes não
             é um gesto que exista, e o botão só reapareceria como um clique que
@@ -637,18 +684,10 @@ export function ConversationHeader({
             </Link>
           </Button>
         )}
-      </div>
-        {/* O aviso pertence à operação automática. Abaixo da barra ele não
-            alarga a ficha do contato nem muda a posição dos botões.
-            Sem esta marca, a conversa em que o robô está calado tem exatamente
-            a mesma cara de uma conversa normal. O testid é contrato:
-            `escalacao-ciclo.spec.ts` o clica. */}
-        {motivo !== null && (
-          <Badge variant="outline" className="h-4 w-fit max-w-full truncate px-1.5 text-[10px]"
-            title={t(ROTULO_DO_MOTIVO[motivo])} data-testid="badge-atendimento-humano">
-            {t(ROTULO_DO_MOTIVO[motivo])}
-          </Badge>
-        )}
+            </div>
+          </PopoverPrimitive.Content>
+          </PopoverPrimitive.Portal>
+        </PopoverPrimitive.Root>
       </div>
       <ReassignDialog
         conversationId={conversation.id}

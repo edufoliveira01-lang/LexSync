@@ -67,7 +67,7 @@ import { apiClient } from "@/lib/api/client";
 import { normalizePhoneBR, phoneForDisplay, samePhone } from "@/lib/channels/phone-variants";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
 import { assumirConversaAoAbrir } from "@/lib/inbox/assumir-conversa-ao-abrir";
-import { ChatCircle, UserCircle, Users } from "@/lib/ui/icons";
+import { ChatCircle, PencilSimple, UserCircle, Users } from "@/lib/ui/icons";
 import { useAuth, usePermission } from "@/hooks/auth/AuthProvider";
 import { useContactList } from "@/hooks/contacts/useContactList";
 import { useT } from "@/hooks/i18n/useT";
@@ -375,12 +375,32 @@ export function IniciarConversaDialog({
  * `agent`, que é o que a rota exige para abrir conversa em nome da organização.
  * Quem não pode atender não vê um botão que o servidor vai recusar.
  */
-export function BotaoIniciarConversa() {
+export function BotaoIniciarConversa({ compacto = false }: { compacto?: boolean } = {}) {
   const t = useT();
   const podeIniciar = usePermission("inbox.claim");
   const [aberto, setAberto] = useState(false);
 
   if (!podeIniciar) return null;
+
+  if (compacto) {
+    // Fork Sales: no cabeçalho da lista o botão vira um ícone ao lado do título "Conversas".
+    return (
+      <>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-full bg-accent-soft text-accent hover:bg-accent-soft/70"
+          onClick={() => setAberto(true)}
+          aria-label={t("Iniciar conversa")}
+          title={t("Iniciar conversa")}
+        >
+          <PencilSimple size={18} weight="regular" aria-hidden />
+        </Button>
+        <IniciarConversaDialog open={aberto} onOpenChange={setAberto} />
+      </>
+    );
+  }
 
   return (
     <>

@@ -1,7 +1,7 @@
 "use client";
 import { useT } from "@/hooks/i18n/useT";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CaretLeft, CaretRight, MagnifyingGlass } from "@/lib/ui/icons";
+import { CaretLeft, CaretRight, Funnel, MagnifyingGlass } from "@/lib/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -398,6 +398,15 @@ export function InboxFilters({ value, onChange }: Props) {
     return () => clearTimeout(t);
   }, [searchInput]);
 
+  // Fork Sales: filtros auxiliares recolhidos por padrão; abrem sozinhos quando já há algum ativo.
+  const filtrosAtivos =
+    (value.onlyUnread ? 1 : 0) +
+    (value.onlyGroups ? 1 : 0) +
+    (value.channel_session_id != null ? 1 : 0) +
+    (value.assigned_to ? 1 : 0) +
+    (Array.isArray(value.tag) ? (value.tag.length > 0 ? 1 : 0) : value.tag ? 1 : 0);
+  const [filtrosAbertos, setFiltrosAbertos] = useState(filtrosAtivos > 0);
+
   return (
     <div className="border-b border-border bg-background">
       <div className="space-y-2 px-3 pt-3 pb-2">
@@ -423,6 +432,33 @@ export function InboxFilters({ value, onChange }: Props) {
               aria-label={t("Buscar conversas")}
             />
           </div>
+          <button
+            type="button"
+            aria-label={t("Filtros")}
+            title={t("Filtros")}
+            aria-pressed={filtrosAbertos}
+            aria-expanded={filtrosAbertos}
+            onClick={() => setFiltrosAbertos((v) => !v)}
+            className={cn(
+              "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors",
+              "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              filtrosAbertos || filtrosAtivos > 0
+                ? "border-accent bg-accent-soft text-accent"
+                : "border-border bg-transparent text-text-muted hover:bg-surface-elevated",
+            )}
+          >
+            <Funnel size={16} aria-hidden />
+            {filtrosAtivos > 0 && (
+              <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-accent-foreground">
+                {filtrosAtivos}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Fork Sales: os filtros auxiliares ficam recolhidos atrás do botão de funil (a coluna ficava lotada). Continuam montados — só escondidos. */}
+        <div data-testid="filtros-avancados" className={cn("space-y-2", !filtrosAbertos && "hidden")}>
+          <div className="flex flex-wrap gap-2">
           {/* Botão pressionável em vez de Switch: o filtro vive na mesma linha
               da busca, e o Switch com rótulo pedia uma linha inteira só para
               si numa coluna de 280px. */}
@@ -457,8 +493,7 @@ export function InboxFilters({ value, onChange }: Props) {
           >
             {t("Grupos")}
           </button>
-        </div>
-
+          </div>
         {(showChannelSwitch || mostrarSeletorDeTag || mostrarSeletorDeAtendente) && (
           <div className="flex gap-2">
             {showChannelSwitch && (
@@ -636,6 +671,7 @@ export function InboxFilters({ value, onChange }: Props) {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* As setas aparecem só quando há abas fora da área visível; a faixa e o
