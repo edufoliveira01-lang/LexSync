@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { FunilComEtapas } from "@/components/inbox/EscolhaAposAssinatura";
 import { apiClient } from "@/lib/api/client";
+import type { OpcoesDoEscritorio } from "@/lib/sales/contratos";
 import type { AposAssinatura } from "@/lib/sales/apos-assinatura";
 import type { Sugestoes } from "@/lib/sales/sugerir-dados";
 
@@ -12,7 +13,7 @@ export function useOpcoesDoContrato(ativo = true) {
     queryKey: ["contrato-opcoes"],
     enabled: ativo,
     staleTime: 60_000,
-    queryFn: async () => (await apiClient.get<{ data: { padrao: AposAssinatura; pipelines: FunilComEtapas[]; mensagem: string; mensagem_padrao: string } }>("/api/v1/sales/contrato-opcoes")).data,
+    queryFn: async () => (await apiClient.get<{ data: { padrao: AposAssinatura; pipelines: FunilComEtapas[]; mensagem: string; mensagem_padrao: string; escritorio: OpcoesDoEscritorio | null } }>("/api/v1/sales/contrato-opcoes")).data,
   });
 }
 

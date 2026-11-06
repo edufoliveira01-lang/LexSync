@@ -15,6 +15,17 @@ export interface DadosDoContrato {
   nome: string; cpf: string; rg?: string; nacionalidade?: string; sexo?: string; estado_civil?: string; profissao?: string;
   logradouro: string; numero?: string; complemento?: string; bairro?: string; cidade?: string; uf?: string; cep?: string;
   email?: string; telefone?: string; conversa_ref?: string; criado_por?: string;
+  variante?: "comum" | "representado" | "rogo";
+  representante?: PessoaDoContrato; a_rogo?: PessoaDoContrato;
+  campos?: Record<string, string>; modelo_honorarios?: string;
+}
+/** Quem assina no lugar do cliente: o representante (menor, incapaz) ou quem assina a rogo. */
+export interface PessoaDoContrato { nome?: string; nacionalidade?: string; estado_civil?: string; profissao?: string; rg?: string; cpf?: string; endereco?: string; qualidade?: string }
+/** O que o escritório configurou no Sales: tipos de documento, valores próprios e modelos de cláusula de honorários. */
+export interface OpcoesDoEscritorio {
+  variantes: { id: "comum" | "representado" | "rogo"; nome: string }[];
+  campos: { id: string; rotulo: string; tipo: string; padrao: string }[];
+  modelos_honorarios: { id: string; nome: string }[];
 }
 export interface EnvelopePedido { tipo: string; nome: string; sign_url: string }
 export interface ContratoPedido { id: number; pessoa_id: number; status: string; sign_url: string; documentos: EnvelopePedido[]; email_enviado: boolean }
@@ -56,3 +67,4 @@ async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, c
 
 export const pedirContrato = (slug: string, dados: DadosDoContrato, http: typeof fetch = fetch) => chamar<ContratoPedido>(slug, "POST", "", dados, http);
 export const estadoDoContrato = (slug: string, id: number, http: typeof fetch = fetch) => chamar<EstadoDoContrato>(slug, "GET", `/${id}`, undefined, http);
+export const opcoesDoEscritorio = (slug: string, http: typeof fetch = fetch) => chamar<OpcoesDoEscritorio>(slug, "GET", "/opcoes", undefined, http);

@@ -10,6 +10,7 @@ import { type NextRequest } from "next/server";
 import { fail, ok } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { limparEscolha, MENSAGEM_PADRAO_APOS_ASSINATURA, padraoDaEmpresa } from "@/lib/sales/apos-assinatura";
+import { opcoesDoEscritorio } from "@/lib/sales/contratos";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -27,8 +28,15 @@ export async function GET(): Promise<Response> {
   const pipelines = ((funis ?? []) as { id: string; name: string; is_archived: boolean | null }[])
     .filter((f) => !f.is_archived)
     .map((f) => ({ id: f.id, name: f.name, stages: ((etapas ?? []) as { id: string; pipeline_id: string; name: string }[]).filter((e) => e.pipeline_id === f.id).map((e) => ({ id: e.id, name: e.name })) }));
+  // O que o escritório configurou no Sales (tipos de documento, valores e modelos de honorários). Sem o painel, o formulário segue só com o básico.
+  let escritorio = null as Awaited<ReturnType<typeof opcoesDoEscritorio>> | null;
+  try {
+    const { data: o } = await admin.from("organizations").select("slug").eq("id", authz.org.orgId).maybeSingle();
+    const slug = (o as { slug: string | null } | null)?.slug;
+    if (slug) escritorio = await opcoesDoEscritorio(slug);
+  } catch { /* painel fora do ar ou ainda sem a versão nova */ }
   const bruta = ((org?.settings ?? {}) as { sales?: { mensagem_apos_assinatura?: unknown } }).sales?.mensagem_apos_assinatura;
-  return ok({ padrao: padraoDaEmpresa(org?.settings), pipelines, mensagem: typeof bruta === "string" ? bruta : MENSAGEM_PADRAO_APOS_ASSINATURA, mensagem_padrao: MENSAGEM_PADRAO_APOS_ASSINATURA }, { requestId });
+  return ok({ padrao: padraoDaEmpresa(org?.settings), pipelines, mensagem: typeof bruta === "string" ? bruta : MENSAGEM_PADRAO_APOS_ASSINATURA, mensagem_padrao: MENSAGEM_PADRAO_APOS_ASSINATURA, escritorio }, { requestId });
 }
 
 export async function PUT(req: NextRequest): Promise<Response> {

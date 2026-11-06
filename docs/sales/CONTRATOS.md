@@ -19,3 +19,8 @@ Arquivos do fork: `lib/sales/contratos.ts`, `app/api/v1/conversations/[id]/contr
 - **Formulário preenchido:** nome, telefone, e-mail e os campos do negócio (CPF, RG, endereço…) reconhecidos pelo nome (`lib/sales/sugerir-dados.ts`).
 - **PDF assinado:** o sistema do escritório o guarda na pasta do cliente (categoria "Contrato assinado").
 - Arquivos: `lib/sales/apos-assinatura.ts`, `app/api/v1/sales/contrato-opcoes/route.ts`, `app/api/v1/conversations/[id]/contrato/dados/route.ts`, `components/inbox/EscolhaAposAssinatura.tsx`, `app/app/settings/tenant/_contrato.tsx`.
+
+## Tipo de documento e honorários (Sales 2.84.0+)
+
+O formulário tem o **tipo de documento**: comum (assina o cliente), *neste ato representado* (assina o representante) e *a rogo* (assina quem assina a pedido do cliente; as testemunhas e a digital saem do cadastro do escritório). Em representado/a rogo o contato da conversa **não** é renomeado com os dados do cliente.
+Os **valores** (entrada, mensalidade…) e os **modelos de cláusula de honorários** vêm da configuração do escritório no Sales (`GET /contratos/opcoes`, repassado pelo painel — exige `dz-painel` na versão 2.84.0 ou mais nova).

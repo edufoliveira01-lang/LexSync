@@ -22,6 +22,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 interface RouteCtx { params: Promise<{ id: string }> }
 
+const pessoaSchema = z.object({
+  nome: z.string().trim().max(120).optional(), nacionalidade: z.string().trim().max(40).optional(), estado_civil: z.string().trim().max(40).optional(),
+  profissao: z.string().trim().max(100).optional(), rg: z.string().trim().max(30).optional(), cpf: z.string().trim().max(25).optional(),
+  endereco: z.string().trim().max(250).optional(), qualidade: z.string().trim().max(60).optional(),
+});
+
 const corpo = z.object({
   nome: z.string().trim().min(3).max(200),
   cpf: z.string().trim().min(11).max(20),
@@ -40,6 +46,11 @@ const corpo = z.object({
   email: z.string().trim().max(254).optional(),
   telefone: z.string().trim().max(30).optional(),
   apos_assinatura: aposAssinaturaSchema.optional(),
+  variante: z.enum(["comum", "representado", "rogo"]).optional(),
+  representante: pessoaSchema.optional(),
+  a_rogo: pessoaSchema.optional(),
+  campos: z.record(z.string().max(40), z.string().max(200)).optional(),
+  modelo_honorarios: z.string().max(20).optional(),
 });
 
 async function padraoDaOrg(orgId: string): Promise<AposAssinatura> {
@@ -148,7 +159,10 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       (["cpf", "rg", "nacionalidade", "estado_civil", "profissao", "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "sexo"] as const)
         .flatMap((k) => (dadosDoCliente[k] ? [[k, String(dadosDoCliente[k])]] : [])),
     );
-    try { await sincronizarContato(authz.org.orgId, id, { ...dadosDoCliente, ...paraOsCampos } as Record<string, string | undefined>, r.pessoa_id); } catch { /* não derruba o contrato */ }
+    // Em contrato de representado/a rogo, quem conversa pode ser o representante: não troca o nome nem o endereço do contato pelos do cliente.
+    if (!dadosDoCliente.variante || dadosDoCliente.variante === "comum") {
+      try { await sincronizarContato(authz.org.orgId, id, { ...dadosDoCliente, ...paraOsCampos } as unknown as Record<string, string | undefined>, r.pessoa_id); } catch { /* não derruba o contrato */ }
+    }
     await registrarEventoNaConversa({
       organizationId: authz.org.orgId, conversationId: id, userId: authz.user.id,
       acao: "contrato_enviado", detalhe: `${parsed.data.nome} · nº ${r.id}`, oculto: embutirEscolha("", efetiva, paraOsCampos),
