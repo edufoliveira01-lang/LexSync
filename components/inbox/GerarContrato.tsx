@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { showApiError } from "@/components/feedback/ApiErrorToast";
@@ -15,9 +15,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EscolhaAposAssinatura } from "@/components/inbox/EscolhaAposAssinatura";
+import { useOpcoesDoContrato, useSugestoesDoContrato } from "@/hooks/inbox/useOpcoesDoContrato";
 import { useSendMessage } from "@/hooks/inbox/useSendMessage";
 import { useT } from "@/hooks/i18n/useT";
 import { apiClient } from "@/lib/api/client";
+import type { AposAssinatura } from "@/lib/sales/apos-assinatura";
 
 /**
  * Fork Sales — botão "Gerar contrato" do cabeçalho da conversa.
@@ -59,6 +62,20 @@ function FormularioDoContrato({ conversationId, nomeInicial, telefoneInicial, em
     email: emailInicial ?? "", telefone: telefoneInicial ?? "",
   });
   const [porWhatsApp, setPorWhatsApp] = useState(true);
+  const [apos, setApos] = useState<AposAssinatura>({});
+  const opcoes = useOpcoesDoContrato();
+  const sugestoes = useSugestoesDoContrato(conversationId);
+  // O padrão da empresa entra uma vez; o atendente pode trocar só para este contrato.
+  const padraoAplicado = useRef(false);
+  useEffect(() => { if (opcoes.data && !padraoAplicado.current) { padraoAplicado.current = true; setApos(opcoes.data.padrao); } }, [opcoes.data]);
+  // O que o Deskcomm já sabe do contato preenche só o que ainda está vazio — nunca por cima do que foi digitado.
+  const sugestaoAplicada = useRef(false);
+  useEffect(() => {
+    if (!sugestoes.data || sugestaoAplicada.current) return;
+    sugestaoAplicada.current = true;
+    const s = sugestoes.data;
+    setF((x) => ({ ...x, ...Object.fromEntries(Object.entries(s).filter(([k, v]) => v && !(x as Record<string, string>)[k] && k in x)) }));
+  }, [sugestoes.data]);
   const [gerando, setGerando] = useState(false);
   const muda = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((x) => ({ ...x, [k]: e.target.value }));
 
@@ -68,7 +85,7 @@ function FormularioDoContrato({ conversationId, nomeInicial, telefoneInicial, em
     if (!f.logradouro.trim()) return void toast.error(t("Informe o endereço do cliente."));
     setGerando(true);
     try {
-      const corpo = Object.fromEntries(Object.entries(f).filter(([, v]) => v !== ""));
+      const corpo = { ...Object.fromEntries(Object.entries(f).filter(([, v]) => v !== "")), ...(Object.keys(apos).length ? { apos_assinatura: apos } : {}) };
       const r = await apiClient.post<{ data: { contrato_id: number; sign_url: string; email_enviado: boolean } }>(`/api/v1/conversations/${conversationId}/contrato`, corpo);
       const { sign_url, email_enviado } = r.data;
       if (porWhatsApp) {
@@ -128,6 +145,10 @@ function FormularioDoContrato({ conversationId, nomeInicial, telefoneInicial, em
           </div>
           <div className="space-y-1.5 sm:col-span-3"><Label htmlFor="gc-tel">{t("Telefone")}</Label><Input id="gc-tel" value={f.telefone} onChange={muda("telefone")} /></div>
           <div className="space-y-1.5 sm:col-span-3"><Label htmlFor="gc-email">E-mail</Label><Input id="gc-email" type="email" value={f.email} onChange={muda("email")} /></div>
+        </div>
+        <div className="space-y-2 rounded-lg border border-border p-3">
+          <p className="text-sm font-medium">{t("Depois que o cliente assinar")}</p>
+          <EscolhaAposAssinatura valor={apos} onChange={setApos} funis={opcoes.data?.pipelines ?? []} idPrefixo="gc-apos" />
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={porWhatsApp} onChange={(e) => setPorWhatsApp(e.target.checked)} />

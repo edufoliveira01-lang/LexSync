@@ -32,6 +32,8 @@ export async function registrarEventoNaConversa(p: {
   acao: AcaoDoEvento;
   destinoNome?: string | null;
   detalhe?: string | null;
+  /** Dados escondidos no fim da linha (ver `lib/sales/apos-assinatura.ts`). */
+  oculto?: string;
 }): Promise<void> {
   try {
     const chave = env.SUPABASE_SERVICE_ROLE_KEY.trim();
@@ -54,7 +56,7 @@ export async function registrarEventoNaConversa(p: {
     await admin.from("conversation_notes").insert({
       organization_id: p.organizationId,
       conversation_id: p.conversationId,
-      body: `${MARCA_DE_EVENTO}${frase[p.acao]}${extra}`,
+      body: `${MARCA_DE_EVENTO}${frase[p.acao]}${extra}${p.oculto ?? ""}`,
       created_by_user_id: p.userId,
       created_by_name: nome,
     });

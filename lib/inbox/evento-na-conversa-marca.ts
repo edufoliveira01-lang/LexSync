@@ -8,6 +8,9 @@ export function ehEventoDaConversa(corpo: string | null | undefined): boolean {
   return typeof corpo === "string" && corpo.startsWith(MARCA_DE_EVENTO);
 }
 
+/** O texto visível: o que vem depois de "\u2063cfg:" (dados escondidos do evento) não aparece na tela. */
 export function textoDoEvento(corpo: string): string {
-  return corpo.slice(MARCA_DE_EVENTO.length);
+  const texto = corpo.slice(MARCA_DE_EVENTO.length);
+  const i = texto.indexOf("\u2063cfg:");
+  return i < 0 ? texto : texto.slice(0, i);
 }

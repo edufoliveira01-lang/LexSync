@@ -17,7 +17,7 @@ export interface DadosDoContrato {
   email?: string; telefone?: string; conversa_ref?: string; criado_por?: string;
 }
 export interface ContratoPedido { id: number; pessoa_id: number; status: string; sign_url: string; email_enviado: boolean }
-export interface EstadoDoContrato { id: number; status: "enviado" | "assinado"; sign_url: string; assinado_em: string | null }
+export interface EstadoDoContrato { id: number; status: "enviado" | "assinado"; sign_url: string; assinado_em: string | null; arquivo_salvo?: boolean }
 
 const sha256 = (v: string) => createHash("sha256").update(v).digest("hex");
 
