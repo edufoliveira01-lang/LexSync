@@ -428,3 +428,6 @@ aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-md"][
 .menu-de-filtros button[aria-pressed] { height: 30px; padding-inline: 12px; font-size: 12.5px; }
 .titulo-da-lista button { box-shadow: none; }
 [role="tablist"] [role="tab"] { padding-bottom: 8px; }
+
+/* ============================== 12. Caixa travada até assumir ============================== */
+.aviso-assumir { background: color-mix(in srgb, var(--color-accent) 7%, white); }

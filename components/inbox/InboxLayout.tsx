@@ -1154,6 +1154,7 @@ export function InboxLayout({
               // fora, a expressão é `false` em todo estado. Assumir a conversa
               // muda `assigned_to_user_id` e o compositor libera sozinho, porque
               // a decisão é recalculada a cada render sobre a conversa atual.
+              onAssumir={handleClaim}
               aguardandoAssumir={composerBloqueadoAteAssumir({
                 ligada: activeOrg?.interface_settings?.bloquearAteAssumir === true,
                 donoDaConversa: selectedConversation.assigned_to_user_id,

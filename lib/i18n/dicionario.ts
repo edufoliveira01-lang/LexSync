@@ -41,6 +41,7 @@ type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>
 
 export const DICIONARIO: Traducoes = {
   // Fork Sales: textos novos do cabeçalho da conversa e da lista do Inbox.
+  "Conversa ainda sem responsável": { es: "Conversación aún sin responsable" },
   "Abrir a ficha do contato": { es: "Abrir la ficha del contacto" },
   "Filtros": { es: "Filtros" },
   "IA": { es: "IA" },

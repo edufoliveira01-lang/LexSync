@@ -10,7 +10,7 @@ import {
   type DragEvent,
   type KeyboardEvent,
 } from "react";
-import { PaperPlaneTilt } from "@/lib/ui/icons";
+import { Lock, PaperPlaneTilt } from "@/lib/ui/icons";
 import { Button } from "@/components/ui/button";
 import { AttachMenu } from "@/components/inbox/composer/AttachMenu";
 import { AttachmentPreviewDialog } from "@/components/inbox/composer/AttachmentPreviewDialog";
@@ -124,6 +124,8 @@ interface Props {
    * assumir organiza um atendimento que ainda não é de ninguém.
    */
   aguardandoAssumir?: boolean;
+  /** Fork Sales: o botão "Assumir" dentro do aviso de bloqueio (o mesmo gesto do cabeçalho). */
+  onAssumir?: () => void;
   /**
    * A mensagem que esta resposta CITA, quando o atendente escolheu responder
    * "em cima" de uma. `null` = envio solto, o caso comum.
@@ -179,6 +181,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
     blockedReason,
     janelaFechada,
     aguardandoAssumir = false,
+    onAssumir,
     contactName,
     contactDisplayName,
     currentContactId,
@@ -1093,11 +1096,25 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
         {aguardandoAssumir && (
           <div
             data-testid="aviso-assumir"
-            className="mb-1.5 flex items-start gap-2 rounded-md border-l-2 border-primary bg-muted/60 px-2 py-1.5 text-xs"
+            className="aviso-assumir mb-2 flex flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5"
           >
-            <p className="min-w-0 flex-1 text-muted-foreground">
-              {t("Assuma esta conversa para responder.")}
+            <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Lock size={18} weight="bold" />
+            </span>
+            <p className="min-w-0 flex-1 text-sm">
+              <span className="block font-semibold text-foreground">{t("Conversa ainda sem responsável")}</span>
+              <span className="text-muted-foreground">{t("Assuma esta conversa para responder.")}</span>
             </p>
+            {onAssumir && (
+              <button
+                type="button"
+                onClick={onAssumir}
+                data-testid="assumir-no-compositor"
+                className="h-9 shrink-0 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+              >
+                {t("Assumir e responder")}
+              </button>
+            )}
           </div>
         )}
         <div className="mb-1.5 flex gap-1">
