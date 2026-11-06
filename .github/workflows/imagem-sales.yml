@@ -6,7 +6,7 @@ name: Imagem do Deskcomm (Sales & Associados)
 on:
   push:
     branches: [main]
-    paths-ignore: ["docs/**", "sales-bridge/**", "scripts/**", "*.md", ".github/workflows-upstream/**"]
+    paths-ignore: ["docs/**", "sales-bridge/**", "scripts/**", "*.md", ".github/workflows-upstream/**", ".github/workflows/avisa-atualizacao-do-original.yml"]
   workflow_dispatch: {}
 
 permissions:

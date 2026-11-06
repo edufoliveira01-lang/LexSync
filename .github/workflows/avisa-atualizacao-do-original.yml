@@ -1,0 +1,51 @@
+name: Avisa quando o DeskcommCRM original lança versão nova
+
+# Toda segunda-feira (e sob demanda) compara a versão em que o LexSync se baseia com a mais nova do repositório original
+# (tags v*). Se houver versão nova, abre UMA issue aqui — o GitHub avisa por e-mail. Não altera código nenhum.
+on:
+  schedule:
+    - cron: "17 11 * * 1"   # segundas, 11:17 UTC (08:17 em Brasília)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: CHANGELOG.md
+          sparse-checkout-cone-mode: false
+
+      - name: Compara as versões
+        id: cmp
+        run: |
+          set -euo pipefail
+          ATUAL="$(grep -m1 -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
+          NOVA="$(git ls-remote --tags --refs https://github.com/melgarafael/DeskcommCRM.git 'v*' | sed 's#.*refs/tags/v##' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)"
+          echo "atual=$ATUAL" >> "$GITHUB_OUTPUT"; echo "nova=$NOVA" >> "$GITHUB_OUTPUT"
+          if [ -n "$NOVA" ] && [ "$NOVA" != "$ATUAL" ] && [ "$(printf '%s\n%s\n' "$ATUAL" "$NOVA" | sort -V | tail -1)" = "$NOVA" ]; then echo "tem_nova=sim" >> "$GITHUB_OUTPUT"; else echo "tem_nova=nao" >> "$GITHUB_OUTPUT"; fi
+          echo "Base: $ATUAL · original: $NOVA"
+
+      - name: Abre a issue (uma só por versão)
+        if: steps.cmp.outputs.tem_nova == 'sim'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATUAL: ${{ steps.cmp.outputs.atual }}
+          NOVA: ${{ steps.cmp.outputs.nova }}
+        run: |
+          set -euo pipefail
+          TITULO="DeskcommCRM v${NOVA} disponível (estamos na ${ATUAL})"
+          if gh issue list --repo "$GITHUB_REPOSITORY" --state all --search "\"$TITULO\" in:title" --json number --jq 'length' | grep -qv '^0$'; then
+            echo "Já existe issue para a v${NOVA}."; exit 0
+          fi
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITULO" --body "O repositório original lançou a **v${NOVA}**. O LexSync está baseado na **${ATUAL}**.
+
+          - Novidades: https://github.com/melgarafael/DeskcommCRM/releases/tag/v${NOVA}
+          - Para trazer a versão: peça ao Claude para sincronizar com o original (\`UPSTREAM_REF=v${NOVA} bash scripts/sales/sincronizar-upstream.sh\`), conferir os arquivos alterados (\`docs/sales/ARQUIVOS-ALTERADOS.md\`) e rodar os testes. A imagem nova sai sozinha depois do push.
+          - Não use o botão \"Atualizar agora\" do Deskcomm: ele voltaria à imagem do original.
+
+          @edufoliveira01-lang"
