@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
+import { AtualizarAgenteDoEscritorio } from "@/components/ai/AtualizarAgenteDoEscritorio";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Robot, Plus } from "@/lib/ui/icons";
@@ -70,11 +71,15 @@ export function AgentsList({ initialData, canWrite }: Props) {
           onShowArchivedChange={setShowArchived}
         />
         {canWrite && (
-          <Link href="/app/ai/agents/new">
-            <Button>
-              <Plus size={14} aria-hidden className="mr-2" /> {t("Criar novo")}
-            </Button>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Fork Sales: o texto do agente sai do cadastro do escritório no Sales. */}
+            <AtualizarAgenteDoEscritorio />
+            <Link href="/app/ai/agents/new">
+              <Button>
+                <Plus size={14} aria-hidden className="mr-2" /> {t("Criar novo")}
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
 

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { mensagemDoContrato } from "@/components/inbox/GerarContrato";
 import { temContratoPendente } from "@/hooks/inbox/useAcompanharContratos";
 import { MARCA_DE_EVENTO } from "@/lib/inbox/evento-na-conversa-marca";
-import { assinar, configDosContratos, ErroContratoSales, estadoDoContrato, pedirContrato } from "@/lib/sales/contratos";
+import { assinar, configDosContratos, ErroContratoSales, estadoDoContrato, pedirContrato, promptDoAgenteDoEscritorio } from "@/lib/sales/contratos";
 
 const SEGREDO = "c".repeat(40);
 const dados = { nome: "Ana Maria", cpf: "52998224725", logradouro: "Rua A" };
@@ -63,5 +63,16 @@ describe("contrato do atendimento (Fork Sales)", () => {
     expect(temContratoPendente([env(1), ass(1)])).toBe(false);
     expect(temContratoPendente([env(1), ass(1), env(2)])).toBe(true);
     expect(temContratoPendente([{ body: "Contrato enviado (nota comum)" }])).toBe(false);
+  });
+
+  it("busca o prompt do agente do escritório no painel, pela rota do agente, assinado", async () => {
+    vi.stubEnv("SALES_PAINEL_URL", "https://p.exemplo");
+    vi.stubEnv("CONTRATOS_SEGREDO", SEGREDO);
+    const chamadas: { url: string; init: RequestInit }[] = [];
+    const http = (async (url: string, init: RequestInit) => { chamadas.push({ url, init }); return new Response(JSON.stringify({ prompt: "### 1. Quem você é", nome_agente: "Sofia", pendencias: ["Informe o horário."] }), { status: 200 }); }) as unknown as typeof fetch;
+    const r = await promptDoAgenteDoEscritorio("alfa", http);
+    expect(r).toMatchObject({ nome_agente: "Sofia", pendencias: ["Informe o horário."] });
+    expect(chamadas[0]!.url).toBe("https://p.exemplo/contratos/v1/offices/alfa/agente/prompt");
+    expect(chamadas[0]!.init.method).toBe("GET");
   });
 });

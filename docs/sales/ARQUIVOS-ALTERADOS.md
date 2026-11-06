@@ -48,3 +48,9 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 - `lib/pipelines/modelo-advocacia.ts` (novo) + `modelo-advocacia.test.ts`: as 7 etapas (Novo contato → … → Contrato assinado / Sem interesse) já com `agent_stage_hint`, para o agente mover o card sozinho.
 - `app/api/v1/pipelines/route.ts`: `POST` aceita `modelo: "advocacia"` (mudança mínima: o corpo e a compensação são os de sempre).
 - `hooks/pipelines/usePipelines.ts` (`useCriarFunil` aceita `{ name, modelo }`) e `app/app/kanban/_client.tsx` (botão "Funil para advocacia" ao lado de "Novo funil").
+
+## Agente do escritório (prompt gerado pelo Sales)
+- `lib/sales/contratos.ts`: `chamar` aceita o recurso (`contratos` | `agente`) e ganha `promptDoAgenteDoEscritorio` (GET `/agente/prompt` pelo painel, assinado como o contrato).
+- `app/api/v1/sales/agente-do-escritorio/route.ts` (novo): GET (agentes + pendências do cadastro) e POST `{ agent_id }` → grava uma NOVA VERSÃO RASCUNHO do agente (copia o resto com `versionPayloadFrom`, troca só o `system_prompt`). Nunca publica.
+- `components/ai/AtualizarAgenteDoEscritorio.tsx` (novo) + `app/app/ai/agents/_components/AgentsList.tsx` (botão ao lado de "Criar novo").
+- Cadastro: no Sales, Configurações › Atendimento com IA (`gestao_atendimento_ia`). Modelo: `docs/sales/agente-juridico.md`.
