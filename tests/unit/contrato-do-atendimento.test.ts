@@ -50,6 +50,9 @@ describe("contrato do atendimento (Fork Sales)", () => {
     expect(m).toContain("1) Procuração:\nhttps://z/1"); expect(m).toContain("3) Contrato e declarações:\nhttps://z/3"); expect(m).toContain("os 3 documentos");
     expect(m).toContain("e-mail");
     expect(mensagemDoContrato("Maria", [docs[0]], false)).not.toContain("e-mail");
+    // um link só (modelo com complementares): uma assinatura vale para todos
+    const unico = mensagemDoContrato("Maria Souza", [{ nome: "Documentos do cliente", sign_url: "https://z/unico" }], true);
+    expect(unico).toContain("https://z/unico"); expect(unico).toContain("única assinatura"); expect(unico).not.toContain("1)");
   });
 
   it("acompanha enquanto houver contrato enviado sem o assinado do mesmo número", () => {
