@@ -389,13 +389,13 @@ export function BotaoIniciarConversa({ compacto = false }: { compacto?: boolean 
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className="h-9 w-9 rounded-full bg-accent-soft text-accent hover:bg-accent-soft/70"
+          className="h-9 gap-1.5 rounded-full bg-accent-soft px-3.5 text-[13px] font-semibold text-accent hover:bg-accent-soft/70"
           onClick={() => setAberto(true)}
           aria-label={t("Iniciar conversa")}
           title={t("Iniciar conversa")}
         >
-          <PencilSimple size={18} weight="regular" aria-hidden />
+          <PencilSimple size={16} weight="bold" aria-hidden />
+          {t("Nova")}
         </Button>
         <IniciarConversaDialog open={aberto} onOpenChange={setAberto} />
       </>

@@ -43,6 +43,14 @@ export const DICIONARIO: Traducoes = {
   // Fork Sales: textos novos do cabeçalho da conversa e da lista do Inbox.
   "Abrir a ficha do contato": { es: "Abrir la ficha del contacto" },
   "Filtros": { es: "Filtros" },
+  "IA": { es: "IA" },
+  "Filtrar conversas": { es: "Filtrar conversaciones" },
+  "Conversas que você assumiu e está atendendo.": { es: "Conversaciones que asumiste y estás atendiendo." },
+  "Prontas para um atendente assumir (a IA passou para a equipe ou ninguém atende ainda).": { es: "Listas para que un agente las asuma (la IA las pasó al equipo o nadie las atiende aún)." },
+  "A IA está ativa e conversando com o cliente.": { es: "La IA está activa y conversando con el cliente." },
+  "Todas as conversas, de qualquer atendente.": { es: "Todas las conversaciones, de cualquier agente." },
+  "Atendimentos encerrados.": { es: "Atenciones cerradas." },
+  "Conversas guardadas fora da fila de trabalho.": { es: "Conversaciones guardadas fuera de la cola de trabajo." },
   // Servidores MCP por agente e OAuth por contato (migration 9095).
   "O link de autorização é automático: enquanto o cliente não autorizar, o agente recebe sozinho a ferramenta que gera o link. Não é preciso marcá-la aqui.": { es: "El enlace de autorización es automático: mientras el cliente no autorice, el agente recibe por sí solo la herramienta que genera el enlace. No hace falta marcarla aquí." },
   "0 = o acesso é revogado assim que a conversa é encerrada.": { es: "0 = el acceso se revoca en cuanto se cierra la conversación." },
@@ -2027,7 +2035,6 @@ export const DICIONARIO: Traducoes = {
   // pasta do histórico. Sem entrada própria, a aba "Arquivadas" apareceria
   // traduzida como "Cerradas" para um operador hispanofalante.
   Arquivadas: { es: "Archivadas" },
-  IA: { es: "IA" },
   "Sem mensagens": { es: "Sin mensajes" },
   "Nenhuma conversa": { es: "Sin conversaciones" },
 

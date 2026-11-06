@@ -24,7 +24,7 @@
  */
 import { readFileSync } from "node:fs";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { InboxFilters, visibleInboxTabs, type InboxFiltersValue } from "@/components/inbox/InboxFilters";
@@ -68,16 +68,29 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("as seis abas, na ordem pedida pela #2498", () => {
-  it("Automático, Fila, Minhas, Todas, Fechadas, Arquivadas — nessa ordem", () => {
+  // Fork Sales: a faixa mostra só Minhas · Fila · IA · Todas. Fechadas e Arquivadas moram no menu de filtros e só entram na faixa
+  // enquanto selecionadas. Os `value`s e as chaves de contagem continuam os do original.
+  it("Minhas, Fila, IA, Todas — nessa ordem (fork Sales)", () => {
     render(<InboxFilters value={VALUE} onChange={() => {}} />);
-    expect(abasRenderizadas()).toEqual([
-      "Automático",
-      "Fila",
-      "Minhas",
-      "Todas",
-      "Fechadas",
-      "Arquivadas",
-    ]);
+    expect(abasRenderizadas()).toEqual(["Minhas", "Fila", "IA", "Todas"]);
+  });
+
+  it("Fechadas e Arquivadas continuam alcançáveis: estão no menu de filtros, em Situação", () => {
+    const aoMudar = vi.fn();
+    render(<InboxFilters value={VALUE} onChange={aoMudar} />);
+    const situacao = screen.getByTestId("filtro-de-situacao");
+    const fechadas = within(situacao).getByRole("button", { name: "Fechadas" });
+    fechadas.click();
+    expect(aoMudar).toHaveBeenCalledWith(expect.objectContaining({ tab: "closed" }));
+    within(situacao).getByRole("button", { name: "Arquivadas" }).click();
+    expect(aoMudar).toHaveBeenCalledWith(expect.objectContaining({ tab: "archived" }));
+  });
+
+  it("cada aba tem uma explicação (title) do que mostra", () => {
+    render(<InboxFilters value={VALUE} onChange={() => {}} />);
+    expect(screen.getByRole("tab", { name: /^Minhas/ })).toHaveAttribute("title", "Conversas que você assumiu e está atendendo.");
+    expect(screen.getByRole("tab", { name: /^IA/ })).toHaveAttribute("title", "A IA está ativa e conversando com o cliente.");
+    expect(screen.getByRole("tab", { name: /^Fila/ }).getAttribute("title")).toMatch(/Prontas para um atendente assumir/);
   });
 
   it("os VALUES e os rótulos são os MESMOS de antes, só reordenados", () => {
@@ -102,12 +115,10 @@ describe("as seis abas, na ordem pedida pela #2498", () => {
 
   it("cada aba continua com o SEU contador (nada trocou de chave)", () => {
     render(<InboxFilters value={VALUE} onChange={() => {}} />);
-    expect(screen.getByRole("tab", { name: /^Automático/ })).toHaveTextContent("7");
+    expect(screen.getByRole("tab", { name: /^IA/ })).toHaveTextContent("7");
     expect(screen.getByRole("tab", { name: /^Fila/ })).toHaveTextContent("3");
     expect(screen.getByRole("tab", { name: /^Minhas/ })).toHaveTextContent("2");
     expect(screen.getByRole("tab", { name: /^Todas/ })).toHaveTextContent("5");
-    expect(screen.getByRole("tab", { name: /^Fechadas/ })).toHaveTextContent("4");
-    expect(screen.getByRole("tab", { name: /^Arquivadas/ })).toHaveTextContent("1");
   });
 });
 

@@ -99,49 +99,29 @@ describe("faixa da Inbox — quebra em vez de esconder aba (#2745)", () => {
     ).toContain("gap-x-1");
   });
 
-  it("as SEIS abas estão na faixa, com os rótulos inteiros", () => {
+  it("as QUATRO abas de trabalho estão na faixa, com os rótulos inteiros", () => {
     render(<InboxFilters value={VALUE} onChange={() => {}} />);
-    // Guarda de vacuidade do caso acima e defesa do outro lado do defeito:
-    // a saída fácil para \"não cabe\" é encurtar rótulo ou tirar aba, e aí a
-    // catraca de classe continua verde com a tela errada.
     const abas = screen.getAllByRole("tab");
-    expect(abas).toHaveLength(6);
-    for (const rotulo of ["Automático", "Fila", "Minhas", "Todas", "Fechadas", "Arquivadas"]) {
-      expect(
-        screen.getByRole("tab", { name: new RegExp(rotulo) }),
-        `a aba "${rotulo}" não está na faixa`,
-      ).toBeInTheDocument();
+    expect(abas).toHaveLength(4);
+    for (const rotulo of ["Minhas", "Fila", "IA", "Todas"]) {
+      expect(screen.getByRole("tab", { name: new RegExp(rotulo) })).toBeInTheDocument();
     }
   });
 
-  it("quebrar a linha não muda o FILTRO: clicar em Arquivadas manda tab=archived", () => {
+  it("Fechadas/Arquivadas saíram da faixa e vivem no menu de filtros", () => {
     const onChange = vi.fn();
     render(<InboxFilters value={VALUE} onChange={onChange} />);
-    // A quebra é de layout; o valor continua o MESMO contrato de antes.
-    // O Radix `TabsTrigger` aciona no `mousedown`, não no `click`.
-    fireEvent.mouseDown(screen.getByRole("tab", { name: /Arquivadas/ }));
-    expect(onChange).toHaveBeenCalledWith({ ...VALUE, tab: "archived" });
+    expect(screen.queryByRole("tab", { name: /Arquivadas/ })).toBeNull();
   });
 
-  it("a ordem e os valores das abas não mudaram (#2498)", () => {
+  it("a ordem e os valores das abas de trabalho", () => {
     render(<InboxFilters value={VALUE} onChange={() => {}} />);
-    // `visibleInboxTabs` é a fonte da ORDEM do trabalho; a largura não se paga
-    // reordenando nem renomeando.
-    expect(visibleInboxTabs("manager", "all")).toEqual([
-      "ai",
-      "unassigned",
-      "mine",
-      "all",
-      "closed",
-      "archived",
-    ]);
+    expect(visibleInboxTabs("manager", "all")).toHaveLength(6);
     expect(screen.getAllByRole("tab").map((a) => a.textContent?.replace(/\s+/g, ""))).toEqual([
-      "Automático12",
-      "Fila47",
       "Minhas8",
+      "Fila47",
+      "IA12",
       "Todas130",
-      "Fechadas25",
-      "Arquivadas9",
     ]);
   });
 });

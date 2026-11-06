@@ -249,8 +249,8 @@ main:has([data-realtime-status]) { padding: 0; overflow: hidden; }
 [role="tablist"] {
   flex-wrap: nowrap !important;
   justify-content: flex-start !important;
-  gap: 10px !important;
-  overflow-x: auto;
+  gap: 22px !important;
+  overflow: visible;
 }
 [role="tablist"] [role="tab"] { font-weight: 600; font-size: 12px; letter-spacing: 0; }
 [role="tablist"] [role="tab"][data-state="active"] {
@@ -333,12 +333,14 @@ button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px r
 /* ============================== 9. Cabeçalho da conversa enxuto + menu "Mais ações" ============================== */
 .cabecalho-conversa {
   flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: flex-start;
   gap: 16px;
   padding: 14px 20px;
   background: var(--color-surface);
   border-color: var(--color-border);
 }
-.cabecalho-conversa > div.min-w-0 { flex: 1 1 0; min-width: 0; }
+.cabecalho-conversa > div.min-w-0:not(.acoes-da-conversa) { flex: 0 1 auto; min-width: 0; max-width: calc(100% - 300px); }
 .cabecalho-conversa h2 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
 .cabecalho-conversa [class*="h-4"][class*="text-[10px]"] {
   height: 18px;
@@ -351,7 +353,7 @@ button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px r
 }
 .linha-de-apoio { font-size: 12.5px; color: var(--color-text-muted); }
 .linha-de-apoio p { font-size: 12.5px; }
-.acoes-da-conversa { flex: none; margin-left: auto; gap: 8px; }
+.acoes-da-conversa { flex: none; margin-left: 4px; gap: 8px; }
 .acoes-da-conversa > button { height: 34px; border-radius: 12px; font-size: 13px; font-weight: 600; padding-inline: 14px; }
 .cabecalho-conversa [data-testid="canal-da-conversa"] { display: none; }
 .acoes-da-conversa > button.border { border-color: var(--color-border-strong); }
@@ -409,3 +411,16 @@ aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-lg"][
 aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l button { border-radius: 10px; }
 aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l select { height: 38px; border-radius: 12px; background: var(--color-surface); }
 aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-md"][class*="border"][class*="text-[11px]"] { border-radius: 999px; background: var(--color-surface-elevated); border-color: transparent; }
+
+/* ============================== 11. Menu de filtros (popover) e botão "Nova" ============================== */
+.menu-de-filtros {
+  border-radius: 18px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xl);
+}
+.menu-de-filtros [data-testid="filtros-avancados"] > div.flex { gap: 6px; }
+.menu-de-filtros button[aria-pressed] { height: 30px; padding-inline: 12px; font-size: 12.5px; }
+.titulo-da-lista button { box-shadow: none; }
+[role="tablist"] [role="tab"] { padding-bottom: 8px; }

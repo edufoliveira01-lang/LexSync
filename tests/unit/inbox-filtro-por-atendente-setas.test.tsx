@@ -48,17 +48,17 @@ afterEach(() => {
 const COM_ATENDENTE: InboxFiltersValue = { tab: "unassigned", search: "", onlyUnread: false, assigned_to: ATENDENTE };
 
 describe("filtro por atendente — as setas de aba", () => {
-  it("'Próxima aba' para Minhas limpa o atendente escolhido", () => {
+  it("entrar em Minhas limpa o atendente escolhido", () => {
     const onChange = vi.fn();
     render(<InboxFilters value={COM_ATENDENTE} onChange={onChange} />);
-    fireEvent.click(screen.getByRole("button", { name: "Próxima aba" }));
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /Minhas/ }));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ tab: "mine", assigned_to: undefined }));
   });
 
   it("CONTROLE: seta para uma aba que não é Minhas mantém a escolha", () => {
     const onChange = vi.fn();
-    render(<InboxFilters value={{ ...COM_ATENDENTE, tab: "all" }} onChange={onChange} />);
+    render(<InboxFilters value={COM_ATENDENTE} onChange={onChange} />);
     fireEvent.click(screen.getByRole("button", { name: "Próxima aba" }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ tab: "closed", assigned_to: ATENDENTE }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ tab: "ai", assigned_to: ATENDENTE }));
   });
 });

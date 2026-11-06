@@ -3,6 +3,7 @@ import { useT } from "@/hooks/i18n/useT";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CaretLeft, CaretRight, Funnel, MagnifyingGlass } from "@/lib/ui/icons";
 import { Input } from "@/components/ui/input";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
@@ -66,6 +67,20 @@ const INBOX_TABS: { value: InboxTab; label: string }[] = [
   // encerrado, arquivada é o que saiu da fila de trabalho sem ser destruído.
   { value: "archived", label: "Arquivadas" },
 ];
+
+/** Fork Sales: as visões de trabalho, na ordem em que o atendente as usa, com o texto e a explicação de cada uma. */
+const ABAS_DE_TRABALHO: InboxTab[] = ["mine", "unassigned", "ai", "all"];
+const ROTULO_DA_ABA: Record<InboxTab, string> = {
+  mine: "Minhas", unassigned: "Fila", ai: "IA", all: "Todas", closed: "Fechadas", archived: "Arquivadas",
+};
+const GUIA_DA_ABA: Record<InboxTab, string> = {
+  mine: "Conversas que você assumiu e está atendendo.",
+  unassigned: "Prontas para um atendente assumir (a IA passou para a equipe ou ninguém atende ainda).",
+  ai: "A IA está ativa e conversando com o cliente.",
+  all: "Todas as conversas, de qualquer atendente.",
+  closed: "Atendimentos encerrados.",
+  archived: "Conversas guardadas fora da fila de trabalho.",
+};
 
 /**
  * Visões visíveis por papel + escopo (G4-02, acceptance 1). 'Todas' fica oculta
@@ -235,9 +250,15 @@ export function InboxFilters({ value, onChange }: Props) {
   const podeFiltrarPorAtendente = roleAtLeast(activeOrg?.role, "manager");
   const mostrarSeletorDeAtendente = podeFiltrarPorAtendente && value.tab !== "mine";
 
-  const tabs = activeOrg
+  // Fork Sales: a faixa mostra só as quatro visões de trabalho (Minhas · Fila · IA · Todas); Fechadas e Arquivadas moram no menu de filtros
+  // e só aparecem na faixa enquanto estiverem selecionadas.
+  const tabsPermitidas = activeOrg
     ? visibleInboxTabs(activeOrg.role, activeOrg.visibility_mode)
     : INBOX_TABS.map((t) => t.value);
+  const tabs: InboxTab[] = [
+    ...ABAS_DE_TRABALHO.filter((aba) => tabsPermitidas.includes(aba)),
+    ...(value.tab === "closed" || value.tab === "archived" ? [value.tab] : []),
+  ];
   const moveTab = (direction: -1 | 1) => {
     const next = tabs[tabs.indexOf(value.tab) + direction];
     if (next) onChange(comAba(value, next));
@@ -409,6 +430,7 @@ export function InboxFilters({ value, onChange }: Props) {
 
   return (
     <div className="border-b border-border bg-background">
+      <PopoverPrimitive.Root open={filtrosAbertos} onOpenChange={setFiltrosAbertos}>
       <div className="space-y-2 px-3 pt-3 pb-2">
         <div className="flex items-center gap-2">
           <div className="relative min-w-0 flex-1">
@@ -432,13 +454,13 @@ export function InboxFilters({ value, onChange }: Props) {
               aria-label={t("Buscar conversas")}
             />
           </div>
+          <PopoverPrimitive.Trigger asChild>
           <button
             type="button"
             aria-label={t("Filtros")}
             title={t("Filtros")}
             aria-pressed={filtrosAbertos}
             aria-expanded={filtrosAbertos}
-            onClick={() => setFiltrosAbertos((v) => !v)}
             className={cn(
               "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors",
               "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -454,10 +476,40 @@ export function InboxFilters({ value, onChange }: Props) {
               </span>
             )}
           </button>
+          </PopoverPrimitive.Trigger>
         </div>
 
-        {/* Fork Sales: os filtros auxiliares ficam recolhidos atrás do botão de funil (a coluna ficava lotada). Continuam montados — só escondidos. */}
-        <div data-testid="filtros-avancados" className={cn("space-y-2", !filtrosAbertos && "hidden")}>
+        {/* Fork Sales: os filtros auxiliares moram num menu suspenso atrás do botão de funil (a coluna ficava lotada). O conteúdo continua montado
+            (`forceMount`) — o CSS só o esconde enquanto o menu está fechado. */}
+        <PopoverPrimitive.Portal forceMount>
+        <PopoverPrimitive.Content
+          forceMount
+          align="end"
+          sideOffset={6}
+          className="menu-de-filtros ds-painel z-50 w-[22rem] max-w-[92vw] rounded-2xl border bg-popover p-3 text-popover-foreground shadow-lg outline-hidden data-[state=closed]:hidden"
+        >
+        <div data-testid="filtros-avancados" className="space-y-2">
+          <p className="px-1 text-[10.5px] font-bold uppercase tracking-[0.1em] text-text-subtle">{t("Situação")}</p>
+          <div className="flex flex-wrap gap-2" data-testid="filtro-de-situacao">
+            {(["closed", "archived"] as const).map((aba) => (
+              <button
+                key={aba}
+                type="button"
+                aria-pressed={value.tab === aba}
+                title={t(GUIA_DA_ABA[aba])}
+                onClick={() => onChange(comAba(value, value.tab === aba ? "mine" : aba))}
+                className={cn(
+                  "h-8 shrink-0 rounded-full border px-3 text-xs font-medium transition-colors",
+                  value.tab === aba
+                    ? "border-accent bg-accent text-accent-foreground"
+                    : "border-border bg-transparent text-text-muted hover:bg-surface-elevated",
+                )}
+              >
+                {t(ROTULO_DA_ABA[aba])}
+              </button>
+            ))}
+          </div>
+          <p className="px-1 pt-1 text-[10.5px] font-bold uppercase tracking-[0.1em] text-text-subtle">{t("Filtrar conversas")}</p>
           <div className="flex flex-wrap gap-2">
           {/* Botão pressionável em vez de Switch: o filtro vive na mesma linha
               da busca, e o Switch com rótulo pedia uma linha inteira só para
@@ -672,7 +724,10 @@ export function InboxFilters({ value, onChange }: Props) {
           </div>
         )}
         </div>
+        </PopoverPrimitive.Content>
+        </PopoverPrimitive.Portal>
       </div>
+      </PopoverPrimitive.Root>
 
       {/* As setas aparecem só quando há abas fora da área visível; a faixa e o
           sublinhado continuam com a altura compacta do Inbox.
@@ -729,9 +784,10 @@ export function InboxFilters({ value, onChange }: Props) {
                 <TabsTrigger
                   key={tab}
                   value={tab}
+                  title={t(GUIA_DA_ABA[tab])}
                   className="shrink-0 gap-1 rounded-none border-b-2 border-transparent px-0 pb-2 pt-1 text-xs font-medium text-text-muted data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-text data-[state=active]:shadow-none"
                 >
-                  {t(meta.label)}
+                  {t(ROTULO_DA_ABA[tab] ?? meta.label)}
                   {depoisDeMontar && typeof count === "number" && count > 0 && (
                     <span className="text-[11px] tabular-nums text-text-subtle">{count}</span>
                   )}
