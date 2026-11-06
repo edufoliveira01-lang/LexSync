@@ -442,10 +442,10 @@ aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-md"][
 .barra-de-lote > [data-testid="lote-limpar"] { order: 1; margin-left: 0; height: 28px; width: 28px; padding: 0; border-radius: 999px; }
 .barra-de-lote button:not([data-testid="lote-limpar"]) { height: 32px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: var(--color-surface); }
 .selecionar-todas { font-size: 12px; }
-/* cabeçalho da conversa: identidade em cima, botões à esquerda embaixo; a linha inteira é clicável */
-.cabecalho-conversa { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 10px; cursor: pointer; }
-.cabecalho-conversa > div.min-w-0:not(.acoes-da-conversa) { max-width: 100%; }
-.cabecalho-conversa > .acoes-da-conversa { margin-left: 0; cursor: default; }
+/* cabeçalho da conversa: identidade (nome, estado, copiar, responsável, telefone) à ESQUERDA; botões (lupa, Gerar contrato, Fechar, ⋯) à DIREITA, na mesma linha; a linha inteira é clicável */
+.cabecalho-conversa { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; }
+.cabecalho-conversa > div.min-w-0:not(.acoes-da-conversa) { flex: 1 1 auto; min-width: 0; }
+.cabecalho-conversa > .acoes-da-conversa { flex: none; margin-left: auto; cursor: default; }
 /* painel do contato: recolhido = some por completo (abre pelo clique no cabeçalho) */
 @media (min-width: 1280px) {
   [data-realtime-status][data-painel-recolhido].grid:not([data-sem-conversa]) { grid-template-columns: 344px minmax(0, 1fr); }
