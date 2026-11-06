@@ -43,3 +43,8 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 
 - `components/inbox/CRMSidePanel.tsx`: título "Detalhes do contato" na faixa do alto e avatar grande no cartão do contato (o resto do visual é CSS em `app/tema-sales.css`, seção 14).
 - Cabeçalho da conversa: a identidade encolhe (reticências) em vez de empurrar os botões para uma segunda linha.
+
+## Funil para advocacia (um clique)
+- `lib/pipelines/modelo-advocacia.ts` (novo) + `modelo-advocacia.test.ts`: as 7 etapas (Novo contato → … → Contrato assinado / Sem interesse) já com `agent_stage_hint`, para o agente mover o card sozinho.
+- `app/api/v1/pipelines/route.ts`: `POST` aceita `modelo: "advocacia"` (mudança mínima: o corpo e a compensação são os de sempre).
+- `hooks/pipelines/usePipelines.ts` (`useCriarFunil` aceita `{ name, modelo }`) e `app/app/kanban/_client.tsx` (botão "Funil para advocacia" ao lado de "Novo funil").

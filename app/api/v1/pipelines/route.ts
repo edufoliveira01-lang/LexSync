@@ -20,6 +20,7 @@ import {
   validarNomeDeFunil,
   type FunilEditavel,
 } from "@/lib/pipelines/pipeline-editing";
+import { ETAPAS_ADVOCACIA } from "@/lib/pipelines/modelo-advocacia";
 import { createClient } from "@/lib/supabase/server";
 import { conflitoDoBanco, corpo, lerFunis } from "./_funis";
 import { listPipelinesHandler } from "./_handler";
@@ -52,11 +53,19 @@ const bodySchema = z
   .object({
     name: z.string().min(1).max(80),
     description: z.string().max(280).nullable().optional(),
+    /** Fork Sales: "advocacia" cria o funil do escritório de advocacia, já ligado ao agente. */
+    modelo: z.enum(["advocacia"]).optional(),
   })
   .strict();
 
 /** As etapas com que o funil nasce, já com a régua de posição do board. */
-function etapasIniciais(orgId: string, pipelineId: string) {
+function etapasIniciais(orgId: string, pipelineId: string, modelo?: "advocacia") {
+  if (modelo === "advocacia") {
+    return ETAPAS_ADVOCACIA.map((etapa, i) => ({
+      organization_id: orgId, pipeline_id: pipelineId, name: etapa.name, slug: etapa.slug, position: (i + 1) * 1000,
+      is_won: etapa.is_won, is_lost: etapa.is_lost, agent_stage_hint: etapa.agent_stage_hint,
+    }));
+  }
   return ETAPAS_INICIAIS.map((etapa, i) => ({
     organization_id: orgId,
     pipeline_id: pipelineId,
@@ -140,7 +149,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   const { error: etapasErr } = await supabase
     .from("crm_stages")
-    .insert(etapasIniciais(orgId, pipelineId));
+    .insert(etapasIniciais(orgId, pipelineId, parsed.data.modelo));
 
   // ⚠️ COMPENSAÇÃO, PORQUE SÃO DUAS ESCRITAS SEM TRANSAÇÃO. Um funil sem etapa é
   // quadro morto: o board abre sem coluna nenhuma, não recebe negócio, e quem

@@ -1,4 +1,5 @@
 "use client";
+import { toast } from "sonner";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -180,6 +181,21 @@ export function FunisClient({
       },
       onError: (e) => setErro({ id: null, texto: textoDoErro(e, t) }),
     });
+  }
+
+  /** Fork Sales: cria o funil do escritório de advocacia (Novo contato → … → Contrato assinado), já ligado ao agente. */
+  function criarFunilDeAdvocacia() {
+    setErro(null);
+    criar.mutate(
+      { name: "Atendimento jurídico", modelo: "advocacia" },
+      {
+        onSuccess: (r) => {
+          aplicarResposta(r);
+          toast.success(t("Funil criado. Confira as etapas em Configurações › Etapas do funil."));
+        },
+        onError: (e) => setErro({ id: null, texto: textoDoErro(e, t) }),
+      },
+    );
   }
 
   function aplicar(id: string, patch: Parameters<typeof editar.mutate>[0]["patch"]) {
@@ -484,6 +500,18 @@ export function FunisClient({
               Uma rota nova exigiria um item de menu para uma coisa que se faz
               uma vez por mês — ruído permanente para um gesto ocasional. */}
           {podeImportar ? <ImportarLeads funis={funis} /> : null}
+          {podeGerenciar && novo === null ? (
+            <Button
+              variant="outline"
+              onClick={() => criarFunilDeAdvocacia()}
+              disabled={ocupado}
+              data-testid="novo-funil-advocacia"
+              className="w-full sm:w-auto"
+              title={t("Cria o funil pronto para escritório de advocacia, já ligado ao agente de IA.")}
+            >
+              <Plus size={16} className="mr-2" aria-hidden /> {t("Funil para advocacia")}
+            </Button>
+          ) : null}
           {podeGerenciar && novo === null ? (
             <Button onClick={() => setNovo("")} disabled={ocupado} data-testid="novo-funil" className="w-full sm:w-auto">
               <Plus size={16} className="mr-2" aria-hidden /> {t("Novo funil")}

@@ -84,6 +84,21 @@ describe("POST /api/v1/pipelines", () => {
     expect(etapas.every((e) => e.organization_id === ORG_ID)).toBe(true);
   });
 
+  it("modelo «advocacia»: nasce com as sete etapas do escritório, já ligadas aos passos do agente", async () => {
+    authOk();
+    const db = makeDb({ pipelines: umFunil() });
+    const { POST } = await import("./route");
+    const res = await POST(reqPost({ name: "Atendimento jurídico", modelo: "advocacia" }));
+
+    expect(res.status).toBe(201);
+    const etapas = db.escritas.find((e) => e.table === "crm_stages")?.patch as Record<string, unknown>[];
+    expect(etapas.map((e) => e.name)).toEqual(["Novo contato", "Em triagem", "Aguardando documentos", "Proposta enviada", "Contrato enviado", "Contrato assinado", "Sem interesse"]);
+    expect(etapas.find((e) => e.name === "Em triagem")?.agent_stage_hint).toBe("qualifying");
+    expect(etapas.find((e) => e.name === "Contrato assinado")).toMatchObject({ is_won: true, agent_stage_hint: "won" });
+    expect(etapas.find((e) => e.name === "Sem interesse")).toMatchObject({ is_lost: true, agent_stage_hint: "lost" });
+    expect(etapas.every((e) => e.organization_id === ORG_ID)).toBe(true);
+  });
+
   it("as etapas entram DEPOIS do funil — antes não haveria pipeline_id para elas", async () => {
     authOk();
     const db = makeDb({ pipelines: umFunil() });

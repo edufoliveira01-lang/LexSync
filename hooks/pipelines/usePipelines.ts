@@ -71,7 +71,9 @@ function useReler() {
 export function useCriarFunil() {
   const reler = useReler();
   return useMutation({
-    mutationFn: (name: string) => apiClient.post<Resposta>(ROTA, { name }),
+    // Fork Sales: com `modelo`, o funil já nasce com as etapas do escritório de advocacia, ligadas ao agente.
+    mutationFn: (entrada: string | { name: string; modelo: "advocacia" }) =>
+      apiClient.post<Resposta>(ROTA, typeof entrada === "string" ? { name: entrada } : entrada),
     onSettled: reler,
   });
 }
