@@ -97,6 +97,9 @@ describe("POST /api/v1/pipelines", () => {
     expect(etapas.find((e) => e.name === "Contrato assinado")).toMatchObject({ is_won: true, agent_stage_hint: "won" });
     expect(etapas.find((e) => e.name === "Sem interesse")).toMatchObject({ is_lost: true, agent_stage_hint: "lost" });
     expect(etapas.every((e) => e.organization_id === ORG_ID)).toBe(true);
+    // e o funil já nasce com os campos que o contrato pede
+    const funil = db.escritas.find((e) => e.table === "crm_pipelines")?.patch as { settings?: { fields?: { key: string }[] } };
+    expect(funil.settings?.fields?.map((f) => f.key)).toEqual(expect.arrayContaining(["cpf", "rg", "logradouro", "uf"]));
   });
 
   it("as etapas entram DEPOIS do funil — antes não haveria pipeline_id para elas", async () => {

@@ -1,3 +1,5 @@
+import { toolIdRemoto } from "@/lib/mcp/servidor-externo/ids";
+
 /**
  * Fork Sales — o que o botão "Usar o texto do escritório" configura no agente, além do texto das instruções.
  *
@@ -36,13 +38,14 @@ export interface PedacoDoAgente {
 }
 
 /** `nomeAtual` e `funis` só decidem o que NÃO sobrescrever: nome já digitado fica; sem o funil jurídico, o escopo não é alterado. */
-export function pedacoDoAgenteJuridico(args: { nomeDoAgente: string; nomeAtual: string; funis: { id: string; slug: string }[]; pipelinesAtuais: string[] }): PedacoDoAgente {
+export function pedacoDoAgenteJuridico(args: { nomeDoAgente: string; nomeAtual: string; funis: { id: string; slug: string }[]; pipelinesAtuais: string[]; ferramentasRemotas?: readonly string[] }): PedacoDoAgente {
   const funil = args.funis.find((f) => f.slug === SLUG_DO_FUNIL_JURIDICO);
   const nome = args.nomeAtual.trim() ? undefined : args.nomeDoAgente.trim() || "Atendimento jurídico";
   return {
     ...(nome ? { name: nome } : {}),
     description: "Assistente virtual de atendimento jurídico: recepciona, faz a triagem, organiza os documentos e leva a pessoa ao contrato.",
-    tool_ids: [...FERRAMENTAS_DO_AGENTE_JURIDICO],
+    // As consultas do Sales entram como ferramentas remotas de LEITURA (a marca é nossa: o servidor só tem ferramentas que não escrevem nada).
+    tool_ids: [...FERRAMENTAS_DO_AGENTE_JURIDICO, ...(args.ferramentasRemotas ?? []).map((n) => toolIdRemoto(n, "leitura"))],
     handoff_keywords: [...PALAVRAS_DE_PASSAGEM_JURIDICO],
     handoff_tool_enabled: true,
     handoff_legal_enabled: false,

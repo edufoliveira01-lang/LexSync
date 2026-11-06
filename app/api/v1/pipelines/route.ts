@@ -20,7 +20,7 @@ import {
   validarNomeDeFunil,
   type FunilEditavel,
 } from "@/lib/pipelines/pipeline-editing";
-import { ETAPAS_ADVOCACIA } from "@/lib/pipelines/modelo-advocacia";
+import { CAMPOS_DE_CONTRATO_ADVOCACIA, ETAPAS_ADVOCACIA } from "@/lib/pipelines/modelo-advocacia";
 import { createClient } from "@/lib/supabase/server";
 import { conflitoDoBanco, corpo, lerFunis } from "./_funis";
 import { listPipelinesHandler } from "./_handler";
@@ -132,6 +132,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     // criado sem funil escolhido não teria para onde ir. `uniq_..._org_default`
     // é parcial, então só os ativos disputam esse lugar.
     is_default: funis.filter((f) => !f.is_archived).length === 0,
+    // Fork Sales: o funil de advocacia já nasce com os campos que o contrato pede (o agente os preenche; o formulário os usa).
+    ...(parsed.data.modelo === "advocacia" ? { settings: { fields: CAMPOS_DE_CONTRATO_ADVOCACIA.map((c) => ({ ...c })) } } : {}),
   };
 
   const { data: criado, error } = await supabase

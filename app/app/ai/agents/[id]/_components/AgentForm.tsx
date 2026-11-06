@@ -33,6 +33,7 @@ import {
 import { TokenCounter } from "@/lib/ui/TokenCounter";
 import { Info } from "@/lib/ui/icons";
 import { useT } from "@/hooks/i18n/useT";
+import { apiClient } from "@/lib/api/client";
 import Link from "next/link";
 
 import { TETO_TOOLS_POR_AGENTE } from "@/lib/mcp/tools/selecao-por-pacote";
@@ -749,6 +750,14 @@ export function AgentForm(props: Props) {
           return;
         }
         toast.success(t("Agente criado."));
+        // Fork Sales: com consultas do Sales escolhidas, o interruptor "usar durante o atendimento" (do AGENTE, não da versão) já nasce ligado.
+        if (form.tool_ids.some((id) => id.startsWith("mcp_externo:"))) {
+          try {
+            await apiClient.patch(`/api/v1/ai/agents/${res.data!.agent_id}`, { config: { mcp_externo_no_atendimento: true } });
+          } catch {
+            toast.warning(t("Ligue \"Usar o servidor de ferramentas externo durante o atendimento\" na tela do agente."));
+          }
+        }
         router.push(`/app/ai/agents/${res.data!.agent_id}`);
       }
     } finally {
@@ -1327,10 +1336,11 @@ export function AgentForm(props: Props) {
                 <UsarTextoDoEscritorio
                   atual={form.system_prompt}
                   disabled={disabled}
-                  onPreencher={(texto, nomeDoAgente) =>
+                  agentId={isEdit ? props.agent.id : undefined}
+                  onPreencher={(texto, nomeDoAgente, ferramentasRemotas) =>
                     patch({
                       system_prompt: texto,
-                      ...pedacoDoAgenteJuridico({ nomeDoAgente, nomeAtual: form.name, funis, pipelinesAtuais: form.pipeline_ids }),
+                      ...pedacoDoAgenteJuridico({ nomeDoAgente, nomeAtual: form.name, funis, pipelinesAtuais: form.pipeline_ids, ferramentasRemotas }),
                     })
                   }
                 />

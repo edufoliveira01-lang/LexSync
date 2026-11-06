@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { ETAPAS_ADVOCACIA } from "./modelo-advocacia";
+import { customFieldSchema } from "@/lib/schemas/settings";
+import { REGRAS, sem } from "@/lib/sales/sugerir-dados";
+import { CAMPOS_DE_CONTRATO_ADVOCACIA, ETAPAS_ADVOCACIA } from "./modelo-advocacia";
 
 describe("funil de escritório de advocacia", () => {
   it("tem uma etapa de fechamento e uma de perda, e as coerentes com o passo do agente", () => {
@@ -17,5 +19,12 @@ describe("funil de escritório de advocacia", () => {
   });
   it("a ordem é a do atendimento", () => {
     expect(ETAPAS_ADVOCACIA.map((e) => e.name)).toEqual(["Novo contato", "Em triagem", "Aguardando documentos", "Proposta enviada", "Contrato enviado", "Contrato assinado", "Sem interesse"]);
+  });
+  it("os campos do contrato são válidos para o funil e cada um é reconhecido pelo formulário de contrato (pelo rótulo)", () => {
+    for (const c of CAMPOS_DE_CONTRATO_ADVOCACIA) {
+      expect(customFieldSchema.safeParse(c).success).toBe(true);
+      expect(REGRAS.some(([, rx]) => rx.test(sem(c.label)))).toBe(true);
+    }
+    expect(new Set(CAMPOS_DE_CONTRATO_ADVOCACIA.map((c) => c.key)).size).toBe(CAMPOS_DE_CONTRATO_ADVOCACIA.length);
   });
 });

@@ -12,7 +12,7 @@ import { apiClient } from "@/lib/api/client";
  * Fork Sales — preenche "As instruções dele" com o texto do agente do ESCRITÓRIO, montado pelo Sales
  * (cadastro do escritório + Configurações › Atendimento com IA). Só preenche o campo: quem salva e publica é a pessoa.
  */
-export function UsarTextoDoEscritorio({ atual, disabled, onPreencher }: { atual: string; disabled?: boolean; onPreencher: (texto: string, nomeDoAgente: string) => void }) {
+export function UsarTextoDoEscritorio({ atual, disabled, agentId, onPreencher }: { atual: string; disabled?: boolean; agentId?: string; onPreencher: (texto: string, nomeDoAgente: string, ferramentasRemotas: string[]) => void }) {
   const t = useT();
   const [buscando, setBuscando] = React.useState(false);
 
@@ -20,12 +20,23 @@ export function UsarTextoDoEscritorio({ atual, disabled, onPreencher }: { atual:
     if (atual.trim().length > 0 && !window.confirm(t("O texto atual das instruções será substituído pelo texto do escritório, e o agente será configurado como agente jurídico (ferramentas, passagem para humano, mensagens curtas e funil). Continuar?"))) return;
     setBuscando(true);
     try {
+      // Liga o agente às consultas do Sales (processos, andamento, perícias…). Se não der, o texto e o resto do agente vêm do mesmo jeito.
+      let ferramentasRemotas: string[] = [];
+      try {
+        const l = await apiClient.post<{ data: { ferramentas: string[] } }>("/api/v1/sales/agente-do-escritorio/ligar-consultas", {});
+        ferramentasRemotas = l.data.ferramentas;
+        // Agente que já existe: o interruptor "usar durante o atendimento" é do agente (não da versão) e vale já.
+        if (agentId) await apiClient.patch(`/api/v1/ai/agents/${agentId}`, { config: { mcp_externo_no_atendimento: true } });
+      } catch (e) {
+        toast.warning(t("As consultas ao cadastro do cliente não foram ligadas (veja a configuração do Sales). O resto do agente foi preenchido."));
+        showApiError(e);
+      }
       const r = await apiClient.get<{ data: { prompt: string; nome_agente: string; pendencias: string[]; erro_sales: string | null } }>("/api/v1/sales/agente-do-escritorio");
       if (r.data.erro_sales || !r.data.prompt) {
         toast.error(r.data.erro_sales ?? t("O Sales não devolveu o texto do agente. Confira Configurações › Atendimento com IA."));
         return;
       }
-      onPreencher(r.data.prompt, r.data.nome_agente);
+      onPreencher(r.data.prompt, r.data.nome_agente, ferramentasRemotas);
       if (r.data.pendencias.length > 0) toast.warning(`${t("Agente preenchido. Falta no Sales:")} ${r.data.pendencias.join(" ")}`);
       else toast.success(t("Agente jurídico preenchido (texto, ferramentas e opções). Escolha o modelo e a conexão, revise e salve."));
     } catch (e) {

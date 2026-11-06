@@ -28,3 +28,16 @@ export const ETAPAS_ADVOCACIA: ReadonlyArray<EtapaDoModelo> = [
   { name: "Contrato assinado", slug: "contrato_assinado", is_won: true, is_lost: false, agent_stage_hint: "won" },
   { name: "Sem interesse", slug: "sem_interesse", is_won: false, is_lost: true, agent_stage_hint: "lost" },
 ];
+
+/**
+ * Os dados de qualificação que o contrato pede, como CAMPOS DO NEGÓCIO. O agente os preenche na conversa (`crm_update_lead`) e o formulário
+ * "Gerar contrato" já abre com eles: os rótulos são os que `lib/sales/sugerir-dados.ts` reconhece. Quem confere e envia o contrato é a pessoa.
+ */
+export const CAMPOS_DE_CONTRATO_ADVOCACIA: ReadonlyArray<{ key: string; label: string; type: "text" }> = [
+  { key: "cpf", label: "CPF", type: "text" }, { key: "rg", label: "RG", type: "text" },
+  { key: "nacionalidade", label: "Nacionalidade", type: "text" }, { key: "estado_civil", label: "Estado civil", type: "text" },
+  { key: "profissao", label: "Profissão", type: "text" }, { key: "cep", label: "CEP", type: "text" },
+  { key: "logradouro", label: "Logradouro", type: "text" }, { key: "numero", label: "Número", type: "text" },
+  { key: "complemento", label: "Complemento", type: "text" }, { key: "bairro", label: "Bairro", type: "text" },
+  { key: "cidade", label: "Cidade", type: "text" }, { key: "uf", label: "UF", type: "text" },
+];
