@@ -105,6 +105,8 @@ export const ESCOPO_DAS_ESCRITAS: Readonly<Record<string, Readonly<Record<string
 
   // ---- sem registro de cliente ----
   crm_save_org_memory: {},
+  // Fork Sales: o alvo é SEMPRE o contato do turno (`ctx.contatoDoTurno`); a ferramenta não recebe id nenhum.
+  crm_enviar_contrato: {},
 };
 
 export type VereditoDaEscrita =

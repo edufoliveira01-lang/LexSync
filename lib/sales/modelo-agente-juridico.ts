@@ -13,6 +13,8 @@ export const FERRAMENTAS_DO_AGENTE_JURIDICO: readonly string[] = [
   "crm_get_contact", "crm_search_contacts", "crm_propose_contact_field",
   // passagem para a equipe e notas
   "crm_request_human_handoff", "crm_add_case_note",
+  // contrato: o agente gera e envia o link de assinatura quando o cliente confirma os dados
+  "crm_enviar_contrato",
   // agenda (consultas, confirmações)
   "crm_list_event_types", "crm_find_free_slots", "crm_book_appointment", "crm_list_appointments",
   "crm_confirm_appointment", "crm_reschedule_appointment", "crm_cancel_appointment",
