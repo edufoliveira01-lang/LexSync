@@ -14,6 +14,7 @@ import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
 import { audit } from "@/lib/audit";
+import { registrarEventoNaConversa } from "@/lib/inbox/evento-na-conversa";
 import { registrarTrocaDeComando } from "@/lib/inbox/atividade-de-comando";
 import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
@@ -83,6 +84,12 @@ export async function POST(_req: NextRequest, ctx: RouteCtx): Promise<Response> 
     // Canônico em português: quem traduz é a LEITURA (`t(item.reason)`). Ver o
     // bloco "vocabulario de dominio persistido" em `lib/i18n/dicionario.ts`.
     motivo: "Liberou a conversa de volta para a fila",
+  });
+  await registrarEventoNaConversa({
+    organizationId: conv.organization_id,
+    conversationId: conv.id,
+    userId: user.id,
+    acao: "liberou",
   });
 
   return ok(conv, { requestId });

@@ -202,6 +202,7 @@ function clienteFalso(estado: Estado, rotulo: "sessao" | "admin") {
 /** Mutável por teste, lido de dentro do mock (hoisted: nasce antes dos imports). */
 const auth = vi.hoisted(() => ({ negar: false }));
 
+vi.mock("@/lib/inbox/evento-na-conversa", () => ({ registrarEventoNaConversa: vi.fn(async () => {}) }));
 vi.mock("@/lib/auth/require-role", () => ({
   requireRole: vi.fn(() =>
     auth.negar

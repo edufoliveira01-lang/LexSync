@@ -14,6 +14,7 @@ import { type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { audit, isServiceRoleConfigured } from "@/lib/audit";
+import { registrarEventoNaConversa } from "@/lib/inbox/evento-na-conversa";
 import { registrarTrocaDeComando } from "@/lib/inbox/atividade-de-comando";
 import { sincronizarNegocioAbertoDoContato } from "@/lib/inbox/negocio-aberto-do-contato";
 import { ApiError } from "@/lib/api/types";
@@ -176,6 +177,14 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const continuacao = trocouDeNumero
     ? `Continua pelo número de ${conv.assigned_to_user_name?.trim() || "outro atendente"}`
     : null;
+  await registrarEventoNaConversa({
+    organizationId: conv.organization_id,
+    conversationId: conv.id,
+    userId: user.id,
+    acao: "transferiu",
+    destinoNome: conv.assigned_to_user_name,
+    detalhe: input.reason,
+  });
   await registrarTrocaDeComando({
     supabase,
     organizationId: conv.organization_id,

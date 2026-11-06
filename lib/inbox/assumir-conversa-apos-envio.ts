@@ -36,6 +36,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Actor } from "@/lib/api/handlers/types";
 import { audit } from "@/lib/audit";
+import { registrarEventoNaConversa } from "@/lib/inbox/evento-na-conversa";
 import { registrarTrocaDeComando } from "@/lib/inbox/atividade-de-comando";
 import { conversaFicaComQuemAtendeu } from "@/lib/schemas/routing";
 
@@ -100,6 +101,12 @@ export async function assumirConversaAposEnvio(
       tipo: "conversation_claimed",
       actor: p.actor,
       motivo: "Assumiu o atendimento desta conversa",
+    });
+    await registrarEventoNaConversa({
+      organizationId: p.organizationId,
+      conversationId: p.conversationId,
+      userId: p.actor.id ?? null,
+      acao: "assumiu",
     });
     // O mesmo evento que o botão Assumir emite.
     const { error: emitErr } = await p.supabase.rpc("emit_event", {

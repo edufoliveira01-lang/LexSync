@@ -14,3 +14,9 @@ Regra: o visual vive em `app/tema-sales.css`. Estes são os únicos arquivos do 
 | `components/inbox/ConversationHeader.acoes.test.tsx`, `tests/unit/inbox-header-nao-trava.test.tsx`, `tests/unit/inbox-divisorias-arrastaveis.test.tsx` | testes ajustados ao novo contrato (o original recusava o menu "Mais ações" e exigia a ficha sempre presente) |
 
 Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão do original e reaplique as mudanças marcadas "Fork Sales".
+
+## Registro de assumir/transferir/liberar/fechar na conversa (sales.6)
+
+- `lib/inbox/evento-na-conversa.ts` (novo): grava uma nota interna com marca invisível.
+- `components/inbox/EventoDaConversa.tsx` (novo) e 1 ramo em `components/inbox/ChatThread.tsx`: desenha a linha centralizada.
+- Chamadas em `lib/inbox/assumir-conversa*.ts`, rotas `release`, `transfer`, `close` e `_handler.ts` (reabrir/arquivar).

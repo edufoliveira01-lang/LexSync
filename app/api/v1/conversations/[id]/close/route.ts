@@ -45,6 +45,7 @@ import { requireSupportWrite } from "@/lib/impersonate/support";
 import { randomUUID } from "node:crypto";
 import { type NextRequest } from "next/server";
 
+import { registrarEventoNaConversa } from "@/lib/inbox/evento-na-conversa";
 import { audit } from "@/lib/audit";
 import { ok, fail } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
@@ -173,6 +174,12 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     resourceType: "conversation",
     resourceId: convFechada.id,
     requestId,
+  });
+  await registrarEventoNaConversa({
+    organizationId: convFechada.organization_id,
+    conversationId: convFechada.id,
+    userId: user.id,
+    acao: "fechou",
   });
 
   return ok(devolucao === null ? convFechada : { ...convFechada, devolucao }, { requestId });

@@ -11,6 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MessageBubble } from "./MessageBubble";
 import { separarReacoes } from "@/lib/inbox/reacoes-no-fio";
 import { NoteCard } from "./NoteCard";
+import { EventoDaConversa } from "./EventoDaConversa";
+import { ehEventoDaConversa } from "@/lib/inbox/evento-na-conversa";
 import { PassagemCard } from "./PassagemCard";
 import { useThreadAutoScroll } from "@/hooks/inbox/useThreadAutoScroll";
 import { useMessagesRealtime } from "@/hooks/inbox/useMessagesRealtime";
@@ -325,6 +327,8 @@ export function ChatThread({
                     })
                   }
                 />
+              ) : item.kind === "note" && ehEventoDaConversa(item.data.body) ? (
+                <EventoDaConversa key={`evt-${item.data.id}`} note={item.data} />
               ) : item.kind === "note" ? (
                 <NoteCard
                   key={`note-${item.data.id}`}

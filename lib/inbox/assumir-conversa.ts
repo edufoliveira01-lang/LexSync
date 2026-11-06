@@ -10,6 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { audit } from "@/lib/audit";
 import type { Actor } from "@/lib/api/handlers/types";
+import { registrarEventoNaConversa } from "@/lib/inbox/evento-na-conversa";
 import { registrarTrocaDeComando } from "@/lib/inbox/atividade-de-comando";
 import { sincronizarNegocioAbertoDoContato } from "@/lib/inbox/negocio-aberto-do-contato";
 import type { Conversation } from "@/lib/types/messaging";
@@ -99,6 +100,12 @@ export async function assumirConversaComEfeitos(
     // Canônico em português: quem traduz é a LEITURA (`t(item.reason)`). Ver o
     // bloco "vocabulario de dominio persistido" em `lib/i18n/dicionario.ts`.
     motivo: "Assumiu o atendimento desta conversa",
+  });
+  await registrarEventoNaConversa({
+    organizationId: conv.organization_id,
+    conversationId: conv.id,
+    userId: p.actor.id ?? null,
+    acao: "assumiu",
   });
 
   return { conversation: conv, error: null };

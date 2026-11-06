@@ -21,6 +21,7 @@ import { normalizarTermoDeBusca, termoSemAcento } from "@/lib/inbox/termo-de-bus
 import { ORDEM_DA_ESPERA, ehAFila } from "@/lib/inbox/comando-da-conversa";
 import { aplicarMarcadores } from "@/lib/inbox/marcador-da-conversa";
 import { exigirControleDaConversa } from "@/lib/inbox/controle-da-conversa";
+import { registrarEventoNaConversa } from "@/lib/inbox/evento-na-conversa";
 
 /**
  * Prepara o termo digitado para viajar dentro de um `or=` do PostgREST.
@@ -652,6 +653,18 @@ export async function patchConversationHandler(
     if (statusError) throw new ApiError(conflito ? 409 : statusError.code === "P0002" ? 404 : 500,
       conflito ? "conflict" : statusError.code === "P0002" ? "not_found" : "internal_error", undefined, ctx.requestId,
       conflito ? traduzir("O atendimento mudou. Atualize e tente novamente.", ctx.idioma ?? "pt-BR") : statusError.message);
+    // Fork Sales: reabrir/arquivar também ficam registrados na conversa (fechar tem rota própria).
+    const acaoDoStatus = ({ open: "reabriu", archived: "arquivou", closed: "fechou" } as const)[
+      input.status as "open" | "archived" | "closed"
+    ];
+    if (acaoDoStatus && input.status !== observed?.status) {
+      await registrarEventoNaConversa({
+        organizationId: ctx.organization_id,
+        conversationId,
+        userId: ctx.actor.id ?? null,
+        acao: acaoDoStatus,
+      });
+    }
   }
   if (input.tags !== undefined) {
     update.tags = input.tags;
