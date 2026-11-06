@@ -12,7 +12,7 @@ import { MessageBubble } from "./MessageBubble";
 import { separarReacoes } from "@/lib/inbox/reacoes-no-fio";
 import { NoteCard } from "./NoteCard";
 import { EventoDaConversa } from "./EventoDaConversa";
-import { ehEventoDaConversa } from "@/lib/inbox/evento-na-conversa";
+import { ehEventoDaConversa } from "@/lib/inbox/evento-na-conversa-marca";
 import { PassagemCard } from "./PassagemCard";
 import { useThreadAutoScroll } from "@/hooks/inbox/useThreadAutoScroll";
 import { useMessagesRealtime } from "@/hooks/inbox/useMessagesRealtime";

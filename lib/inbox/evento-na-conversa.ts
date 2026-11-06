@@ -11,15 +11,7 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export const MARCA_DE_EVENTO = "⁣[evento]⁣ ";
-
-export function ehEventoDaConversa(corpo: string | null | undefined): boolean {
-  return typeof corpo === "string" && corpo.startsWith(MARCA_DE_EVENTO);
-}
-
-export function textoDoEvento(corpo: string): string {
-  return corpo.slice(MARCA_DE_EVENTO.length);
-}
+import { MARCA_DE_EVENTO } from "@/lib/inbox/evento-na-conversa-marca";
 
 async function nomeDe(admin: ReturnType<typeof createAdminClient>, userId: string): Promise<string> {
   try {

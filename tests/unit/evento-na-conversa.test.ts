@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ehEventoDaConversa, MARCA_DE_EVENTO, textoDoEvento } from "@/lib/inbox/evento-na-conversa";
+import { ehEventoDaConversa, MARCA_DE_EVENTO, textoDoEvento } from "@/lib/inbox/evento-na-conversa-marca";
 
 describe("evento na conversa (Fork Sales)", () => {
   it("reconhece a marca e devolve só o texto", () => {

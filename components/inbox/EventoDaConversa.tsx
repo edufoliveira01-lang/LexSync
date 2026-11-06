@@ -3,7 +3,7 @@
 import { format } from "date-fns";
 
 import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
-import { textoDoEvento } from "@/lib/inbox/evento-na-conversa";
+import { textoDoEvento } from "@/lib/inbox/evento-na-conversa-marca";
 import type { Note } from "@/lib/types/messaging";
 
 /** Fork Sales — linha centralizada: "Fulano assumiu / transferiu / fechou a conversa". */
