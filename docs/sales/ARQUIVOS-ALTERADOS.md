@@ -33,3 +33,8 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 - `components/inbox/ConversationHeader.tsx` (+ `GerarContrato.tsx` novo): botão "Gerar contrato" (Assumir foi para "Mais ações"), botão copiar, linha do cabeçalho clicável para abrir a ficha.
 - `components/inbox/ConversationListItem.tsx`, `ConversationList.tsx`, `BarraDeAcoesEmLote.tsx`: seleção em lote sobre o avatar, barra em lote em duas linhas.
 - `components/inbox/InboxLayout.tsx` + `app/app/inbox/page.tsx`: ficha do contato nasce fechada e sem trilho.
+
+## Barra de cima no menu lateral (sales.13)
+
+- `components/shell/TopBar.tsx` (`md:hidden`), `Sidebar.tsx`, `UserMenu.tsx`: notificações, tema e perfil no rodapé do menu; idioma só em Configurações → Perfil.
+- `components/inbox/InboxLayout.tsx` + `counts/route.ts`: aba "Todas" só com abertas/ativas.

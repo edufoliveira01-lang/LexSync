@@ -200,7 +200,8 @@ export async function GET(req: NextRequest): Promise<Response> {
           user.id,
         ))
       .not("status", "in", `(${CONVERSATION_TERMINAL_STATUSES.join(",")})`),
-    countExact(),
+    // Fork Sales: "Todas" são só as conversas abertas e ativas (fechadas e arquivadas têm aba própria).
+    countExact().not("status", "in", `(${CONVERSATION_TERMINAL_STATUSES.join(",")})`),
     // A aba "Fechadas" existia SEM número nenhum. Num inbox antigo, é o número
     // que diz o tamanho do arquivo — e a sua ausência fazia a aba parecer um
     // lugar vazio. Mesma fábrica: herda organização e filtros.

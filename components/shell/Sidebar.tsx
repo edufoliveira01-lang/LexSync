@@ -13,6 +13,11 @@ import { ContadorDaFila } from "@/components/shell/ContadorDaFila";
 import { ContadorDeTarefas } from "@/components/shell/ContadorDeTarefas";
 import { VersionFooter } from "@/components/shell/VersionFooter";
 import { SearchTrigger } from "./SearchTrigger";
+import { AlertsBell } from "./AlertsBell";
+import { TenantSwitcher } from "./TenantSwitcher";
+import { AvisoDePropostaEmDestaque } from "./AvisoDePropostaEmDestaque";
+import { UserMenu } from "./UserMenu";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { LogotipoDoProduto, SimboloDoProduto } from "@/components/branding/MarcaDoProduto";
 import { marcaEhADoProduto } from "@/lib/branding";
 import { useMarcaDaInstalacao } from "@/lib/branding/contexto";
@@ -259,6 +264,10 @@ export function SidebarContent({
       <div className={cn("px-3 pt-3", collapsed && "px-2")}>
         <SearchTrigger noMenu recolhido={collapsed} />
       </div>
+      {/* Seletor de organização (só aparece com mais de uma); a barra de cima não existe mais no computador. */}
+      <div className="hidden px-3 pt-2 empty:hidden md:block">
+        <TenantSwitcher />
+      </div>
       {/* Issue #2722 — no trilho recolhido (64px) não cabe controle ao lado
           do símbolo: ele vira uma faixa imediatamente abaixo da marca. */}
       {showCollapseControl && collapsed && (
@@ -429,6 +438,13 @@ export function SidebarContent({
         })}
       </nav>
       <div className="border-t px-2 py-1">
+        {/* Fork Sales: notificações, tema e perfil moram aqui (a barra de cima só existe no celular). */}
+        <div className={cn("mb-1 hidden items-center gap-1 px-1 md:flex", collapsed && "flex-col")}>
+          <AlertsBell />
+          <ThemeToggle />
+          <UserMenu noMenuLateral />
+          <AvisoDePropostaEmDestaque />
+        </div>
         {rodape && (
           <Link
             href={rodape.href}

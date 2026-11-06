@@ -25,7 +25,7 @@ function initials(name: string | null, email: string): string {
   return email.slice(0, 2).toUpperCase();
 }
 
-export function UserMenu() {
+export function UserMenu({ noMenuLateral = false }: { noMenuLateral?: boolean } = {}) {
   const t = useT();
   const user = useUser();
   const { signOut } = useAuth();
@@ -34,8 +34,9 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center gap-2">
-      <SeletorDeIdioma />
-      <ThemeToggle />
+      {/* Fork Sales: no menu lateral o idioma sai (fica em Configurações → Perfil) e o tema vem logo ao lado. */}
+      {!noMenuLateral && <SeletorDeIdioma />}
+      {!noMenuLateral && <ThemeToggle />}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-full" aria-label={`${t("Menu do usuário")}: ${initials(user.full_name, user.email)}`}>
@@ -45,7 +46,7 @@ export function UserMenu() {
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-[220px]">
+        <DropdownMenuContent align={noMenuLateral ? "start" : "end"} side={noMenuLateral ? "top" : "bottom"} className="min-w-[220px]">
           <DropdownMenuLabel>
             <div className="flex flex-col">
               <span className="text-sm font-medium">{user.full_name ?? user.email}</span>

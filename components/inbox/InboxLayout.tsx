@@ -228,6 +228,9 @@ export function tabToFilter(
       if (automaticoDaOrg === false) return { comando: ["automatico"], status: "closed" };
       return { comando: ["automatico"] };
     case "all":
+      // Fork Sales: "Todas" = abertas e ativas, de qualquer atendente ou agente de IA.
+      // Fechadas e arquivadas têm a sua própria visão (menu de filtros).
+      return { exclude_finished: true };
     default:
       return {};
   }

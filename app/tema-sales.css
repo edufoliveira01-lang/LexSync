@@ -453,3 +453,8 @@ aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-md"][
 }
 /* busca no topo do menu lateral */
 .busca-do-menu { height: 36px; border-radius: 12px; background: var(--color-surface); }
+
+/* sem barra de cima no computador: a Inbox usa a altura toda */
+@media (min-width: 768px) {
+  [data-realtime-status] { height: calc(100dvh - var(--faixas-de-cima, 0px)); border-top: 0; }
+}
