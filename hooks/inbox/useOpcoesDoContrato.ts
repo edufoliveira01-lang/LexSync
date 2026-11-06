@@ -12,7 +12,7 @@ export function useOpcoesDoContrato(ativo = true) {
     queryKey: ["contrato-opcoes"],
     enabled: ativo,
     staleTime: 60_000,
-    queryFn: async () => (await apiClient.get<{ data: { padrao: AposAssinatura; pipelines: FunilComEtapas[] } }>("/api/v1/sales/contrato-opcoes")).data,
+    queryFn: async () => (await apiClient.get<{ data: { padrao: AposAssinatura; pipelines: FunilComEtapas[]; mensagem: string; mensagem_padrao: string } }>("/api/v1/sales/contrato-opcoes")).data,
   });
 }
 

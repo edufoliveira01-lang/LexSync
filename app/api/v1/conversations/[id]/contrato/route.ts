@@ -13,7 +13,7 @@ import { fail, ok } from "@/lib/api/wrappers";
 import { requireRole } from "@/lib/auth/require-role";
 import { registrarEventoNaConversa } from "@/lib/inbox/evento-na-conversa";
 import { MARCA_DE_EVENTO } from "@/lib/inbox/evento-na-conversa-marca";
-import { aposAssinaturaSchema, embutirEscolha, escolhaEfetiva, lerEscolhaEmbutida, padraoDaEmpresa, resumoDoQueFoiFeito, type AposAssinatura } from "@/lib/sales/apos-assinatura";
+import { aposAssinaturaSchema, embutirEscolha, escolhaEfetiva, lerEscolhaEmbutida, mensagemAposAssinatura, padraoDaEmpresa, resumoDoQueFoiFeito, type AposAssinatura } from "@/lib/sales/apos-assinatura";
 import { ErroContratoSales, estadoDoContrato, pedirContrato } from "@/lib/sales/contratos";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -48,15 +48,21 @@ async function padraoDaOrg(orgId: string): Promise<AposAssinatura> {
 /** Aplica o que o escritório escolheu para depois da assinatura. Cada passo falha sozinho, sem derrubar os outros. */
 async function aplicar(orgId: string, conversationId: string, escolha: AposAssinatura) {
   const admin = createAdminClient();
-  const r = { moveu: null as string | null, semNegocio: false, tag: null as string | null, fechou: false };
+  const r = { moveu: null as string | null, criou: null as string | null, semNegocio: false, tag: null as string | null, fechou: false, criarNegocio: null as null | { pipeline_id: string; stage_id: string; contact_id: string; title: string } };
   const { data: conv } = await admin.from("conversations").select("contact_id, service_revision, status").eq("id", conversationId).eq("organization_id", orgId).maybeSingle();
   const c = conv as { contact_id: string | null; service_revision: number; status: string } | null;
   if (!c) return r;
   if (escolha.stage_id && escolha.pipeline_id && c.contact_id) {
     try {
       const { data: neg } = await admin.from("crm_leads").select("id, stage_id").eq("organization_id", orgId).eq("contact_id", c.contact_id).eq("pipeline_id", escolha.pipeline_id).eq("status", "open").order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (!neg) r.semNegocio = true;
-      else {
+      if (!neg) {
+        // Sem negócio aberto neste funil: o NAVEGADOR cria um na etapa escolhida (pela rota oficial de leads, com todas as regras dela).
+        const { data: ct } = await admin.from("contacts").select("display_name, name, phone_number").eq("id", c.contact_id).maybeSingle();
+        const nomeDoContato = ((ct as { display_name: string | null; name: string | null; phone_number: string | null } | null)?.display_name ?? (ct as { name: string | null } | null)?.name ?? (ct as { phone_number: string | null } | null)?.phone_number ?? "Cliente");
+        const { data: et } = await admin.from("crm_stages").select("name").eq("id", escolha.stage_id).maybeSingle();
+        r.criarNegocio = { pipeline_id: escolha.pipeline_id, stage_id: escolha.stage_id, contact_id: c.contact_id, title: String(nomeDoContato).slice(0, 200) };
+        r.criou = (et as { name: string } | null)?.name ?? "etapa escolhida";
+      } else {
         const { error } = await admin.from("crm_leads").update({ stage_id: escolha.stage_id }).eq("id", (neg as { id: string }).id);
         if (!error) {
           const { data: et } = await admin.from("crm_stages").select("name").eq("id", escolha.stage_id).maybeSingle();
@@ -108,7 +114,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
       organizationId: authz.org.orgId, conversationId: id, userId: authz.user.id,
       acao: "contrato_enviado", detalhe: `${parsed.data.nome} · nº ${r.id}`, oculto: embutirEscolha("", efetiva),
     });
-    return ok({ contrato_id: r.id, sign_url: r.sign_url, email_enviado: r.email_enviado }, { requestId });
+    return ok({ contrato_id: r.id, sign_url: r.sign_url, documentos: r.documentos, email_enviado: r.email_enviado }, { requestId });
   } catch (e) {
     // 5xx viraria "Erro interno" genérico na tela; a mensagem do painel/escritório diz o que aconteceu, então vai como 424.
     if (e instanceof ErroContratoSales) return fail("upstream_error", e.message, e.status >= 500 ? 424 : e.status, { requestId });
@@ -132,16 +138,24 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const slug = await slugDaOrg(authz.org.orgId);
   if (!slug) return ok({ pendentes: pendentes.length, assinados: assinados.size }, { requestId });
   let novos = 0;
+  const acoes: { criarNegocio: unknown; mensagem: string | null } = { criarNegocio: null, mensagem: null };
   for (const n of pendentes) {
     try {
       const e = await estadoDoContrato(slug, n);
       if (e.status === "assinado") {
         const escolha = escolhaEfetiva(await padraoDaOrg(authz.org.orgId), lerEscolhaEmbutida(corpoDoEnviado(n)));
-        const feito = resumoDoQueFoiFeito(await aplicar(authz.org.orgId, id, escolha));
-        await registrarEventoNaConversa({ organizationId: authz.org.orgId, conversationId: id, userId: null, acao: "contrato_assinado", detalhe: `nº ${n}${feito ? ` · ${feito}` : ""}${e.arquivo_salvo === false ? " · PDF assinado ainda não guardado no cadastro" : ""}` });
+        const feito = await aplicar(authz.org.orgId, id, escolha);
+        const { data: org } = await createAdminClient().from("organizations").select("settings").eq("id", authz.org.orgId).maybeSingle();
+        const { data: cv } = await createAdminClient().from("conversations").select("contacts(display_name, name)").eq("id", id).maybeSingle();
+        const contato = (Array.isArray((cv as { contacts?: unknown } | null)?.contacts) ? ((cv as { contacts: unknown[] }).contacts[0]) : (cv as { contacts?: unknown } | null)?.contacts) as { display_name?: string | null; name?: string | null } | null;
+        const mensagem = mensagemAposAssinatura(org?.settings, contato?.display_name ?? contato?.name ?? null);
+        if (feito.criarNegocio) acoes.criarNegocio = feito.criarNegocio;
+        if (mensagem) acoes.mensagem = mensagem;
+        const resumo = resumoDoQueFoiFeito({ ...feito, mensagem: Boolean(mensagem) });
+        await registrarEventoNaConversa({ organizationId: authz.org.orgId, conversationId: id, userId: null, acao: "contrato_assinado", detalhe: `nº ${n}${resumo ? ` · ${resumo}` : ""}${e.arquivo_salvo === false ? " · PDF assinado ainda não guardado no cadastro" : ""}` });
         novos += 1;
       }
     } catch { /* o painel pode estar fora por instantes: tenta na próxima conferência */ }
   }
-  return ok({ pendentes: pendentes.length - novos, assinados: assinados.size + novos }, { requestId });
+  return ok({ pendentes: pendentes.length - novos, assinados: assinados.size + novos, acoes }, { requestId });
 }

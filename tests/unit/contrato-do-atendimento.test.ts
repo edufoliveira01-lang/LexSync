@@ -43,10 +43,13 @@ describe("contrato do atendimento (Fork Sales)", () => {
     await expect(estadoDoContrato("alfa", 1)).rejects.toBeInstanceOf(ErroContratoSales);
   });
 
-  it("a mensagem ao cliente leva o primeiro nome, o link e a cópia por e-mail quando houver", () => {
-    const m = mensagemDoContrato("Maria Aparecida", "https://z/assina", true);
-    expect(m).toContain("Maria"); expect(m).not.toContain("Aparecida"); expect(m).toContain("https://z/assina"); expect(m).toContain("e-mail");
-    expect(mensagemDoContrato("Maria", "https://z/a", false)).not.toContain("e-mail");
+  it("a mensagem ao cliente lista os 3 documentos, com o primeiro nome e a cópia por e-mail quando houver", () => {
+    const docs = [{ nome: "Procuração", sign_url: "https://z/1" }, { nome: "Declaração de hipossuficiência", sign_url: "https://z/2" }, { nome: "Contrato e declarações", sign_url: "https://z/3" }];
+    const m = mensagemDoContrato("Maria Aparecida", docs, true);
+    expect(m).toContain("Maria"); expect(m).not.toContain("Aparecida");
+    expect(m).toContain("1) Procuração:\nhttps://z/1"); expect(m).toContain("3) Contrato e declarações:\nhttps://z/3"); expect(m).toContain("os 3 documentos");
+    expect(m).toContain("e-mail");
+    expect(mensagemDoContrato("Maria", [docs[0]], false)).not.toContain("e-mail");
   });
 
   it("acompanha enquanto houver contrato enviado sem o assinado do mesmo número", () => {

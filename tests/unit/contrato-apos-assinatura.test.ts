@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { textoDoEvento, MARCA_DE_EVENTO } from "@/lib/inbox/evento-na-conversa-marca";
-import { embutirEscolha, escolhaEfetiva, lerEscolhaEmbutida, limparEscolha, padraoDaEmpresa, resumoDoQueFoiFeito } from "@/lib/sales/apos-assinatura";
+import { embutirEscolha, escolhaEfetiva, lerEscolhaEmbutida, limparEscolha, MENSAGEM_PADRAO_APOS_ASSINATURA, mensagemAposAssinatura, padraoDaEmpresa, resumoDoQueFoiFeito } from "@/lib/sales/apos-assinatura";
 import { sugerirDados } from "@/lib/sales/sugerir-dados";
 
 const FUNIL = "11111111-1111-4111-8111-111111111111", ETAPA = "22222222-2222-4222-8222-222222222222";
@@ -28,7 +28,14 @@ describe("depois da assinatura — escolha do escritório e do contrato", () => 
     expect(padraoDaEmpresa({ sales: { apos_assinatura: { tag: "X" } } })).toEqual({ tag: "X" });
     expect(padraoDaEmpresa(null)).toEqual({});
   });
+  it("a mensagem depois da assinatura: padrão, personalizada com o primeiro nome, ou desligada", () => {
+    expect(mensagemAposAssinatura(null, "Maria Souza")).toBe(MENSAGEM_PADRAO_APOS_ASSINATURA.replace("{{nome}}", "Maria"));
+    expect(mensagemAposAssinatura({ sales: { mensagem_apos_assinatura: "Oi {{nome}}, tudo assinado!" } }, "Maria Souza")).toBe("Oi Maria, tudo assinado!");
+    expect(mensagemAposAssinatura({ sales: { mensagem_apos_assinatura: "Oi {{nome}} !" } }, null)).toBe("Oi!");
+    expect(mensagemAposAssinatura({ sales: { mensagem_apos_assinatura: "   " } }, "Maria")).toBeNull();
+  });
   it("o resumo diz o que foi feito e o que não deu", () => {
+    expect(resumoDoQueFoiFeito({ moveu: null, criou: "Contrato assinado", semNegocio: false, tag: null, fechou: false, mensagem: true })).toBe('negócio criado na etapa "Contrato assinado" · mensagem enviada ao cliente');
     expect(resumoDoQueFoiFeito({ moveu: "Contrato assinado", semNegocio: false, tag: "Cliente", fechou: true })).toBe('negócio movido para "Contrato assinado" · etiqueta "Cliente" adicionada · conversa fechada');
     expect(resumoDoQueFoiFeito({ moveu: null, semNegocio: true, tag: null, fechou: false })).toBe("sem negócio aberto para mover");
     expect(resumoDoQueFoiFeito({ moveu: null, semNegocio: false, tag: null, fechou: false })).toBe("");

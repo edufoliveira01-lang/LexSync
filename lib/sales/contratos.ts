@@ -16,8 +16,9 @@ export interface DadosDoContrato {
   logradouro: string; numero?: string; complemento?: string; bairro?: string; cidade?: string; uf?: string; cep?: string;
   email?: string; telefone?: string; conversa_ref?: string; criado_por?: string;
 }
-export interface ContratoPedido { id: number; pessoa_id: number; status: string; sign_url: string; email_enviado: boolean }
-export interface EstadoDoContrato { id: number; status: "enviado" | "assinado"; sign_url: string; assinado_em: string | null; arquivo_salvo?: boolean }
+export interface EnvelopePedido { tipo: string; nome: string; sign_url: string }
+export interface ContratoPedido { id: number; pessoa_id: number; status: string; sign_url: string; documentos: EnvelopePedido[]; email_enviado: boolean }
+export interface EstadoDoContrato { id: number; status: "enviado" | "assinado"; assinado_em: string | null; arquivo_salvo?: boolean; assinados?: number; total?: number }
 
 const sha256 = (v: string) => createHash("sha256").update(v).digest("hex");
 

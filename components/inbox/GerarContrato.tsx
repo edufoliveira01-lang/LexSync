@@ -15,12 +15,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { EscolhaAposAssinatura } from "@/components/inbox/EscolhaAposAssinatura";
-import { useOpcoesDoContrato, useSugestoesDoContrato } from "@/hooks/inbox/useOpcoesDoContrato";
+import { useSugestoesDoContrato } from "@/hooks/inbox/useOpcoesDoContrato";
 import { useSendMessage } from "@/hooks/inbox/useSendMessage";
 import { useT } from "@/hooks/i18n/useT";
 import { apiClient } from "@/lib/api/client";
-import type { AposAssinatura } from "@/lib/sales/apos-assinatura";
 
 /**
  * Fork Sales — botão "Gerar contrato" do cabeçalho da conversa.
@@ -48,9 +46,13 @@ const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","P
 const ESTADOS_CIVIS = ["solteiro(a)", "casado(a)", "divorciado(a)", "viúvo(a)", "em união estável", "separado(a)"];
 const campo = "h-9 w-full rounded-md border border-input bg-background px-3 text-sm";
 
-export function mensagemDoContrato(nome: string, link: string, comEmail: boolean): string {
+export function mensagemDoContrato(nome: string, documentos: { nome: string; sign_url: string }[], comEmail: boolean): string {
   const primeiro = nome.trim().split(/\s+/)[0] || "";
-  return `Olá${primeiro ? `, ${primeiro}` : ""}! Segue o link para você assinar os seus documentos de forma segura, direto pelo celular:\n\n${link}${comEmail ? "\n\nEnviamos uma cópia também para o seu e-mail." : ""}`;
+  const lista = documentos.length === 1
+    ? (documentos[0]?.sign_url ?? "")
+    : documentos.map((d, i) => `${i + 1}) ${d.nome}:\n${d.sign_url}`).join("\n\n");
+  const quantos = documentos.length > 1 ? `os ${documentos.length} documentos abaixo (cada um leva menos de 1 minuto)` : "o documento abaixo";
+  return `Olá${primeiro ? `, ${primeiro}` : ""}! Para darmos andamento, precisamos que você assine ${quantos}, de forma segura, direto pelo celular:\n\n${lista}${comEmail ? "\n\nEnviamos uma cópia também para o seu e-mail." : ""}`;
 }
 
 function FormularioDoContrato({ conversationId, nomeInicial, telefoneInicial, emailInicial, onFechar }: Dados & { onFechar: () => void }) {
@@ -62,12 +64,7 @@ function FormularioDoContrato({ conversationId, nomeInicial, telefoneInicial, em
     email: emailInicial ?? "", telefone: telefoneInicial ?? "",
   });
   const [porWhatsApp, setPorWhatsApp] = useState(true);
-  const [apos, setApos] = useState<AposAssinatura>({});
-  const opcoes = useOpcoesDoContrato();
   const sugestoes = useSugestoesDoContrato(conversationId);
-  // O padrão da empresa entra uma vez; o atendente pode trocar só para este contrato.
-  const padraoAplicado = useRef(false);
-  useEffect(() => { if (opcoes.data && !padraoAplicado.current) { padraoAplicado.current = true; setApos(opcoes.data.padrao); } }, [opcoes.data]);
   // O que o Deskcomm já sabe do contato preenche só o que ainda está vazio — nunca por cima do que foi digitado.
   const sugestaoAplicada = useRef(false);
   useEffect(() => {
@@ -85,15 +82,16 @@ function FormularioDoContrato({ conversationId, nomeInicial, telefoneInicial, em
     if (!f.logradouro.trim()) return void toast.error(t("Informe o endereço do cliente."));
     setGerando(true);
     try {
-      const corpo = { ...Object.fromEntries(Object.entries(f).filter(([, v]) => v !== "")), ...(Object.keys(apos).length ? { apos_assinatura: apos } : {}) };
-      const r = await apiClient.post<{ data: { contrato_id: number; sign_url: string; email_enviado: boolean } }>(`/api/v1/conversations/${conversationId}/contrato`, corpo);
+      const corpo = { ...Object.fromEntries(Object.entries(f).filter(([, v]) => v !== "")) };
+      const r = await apiClient.post<{ data: { contrato_id: number; sign_url: string; documentos: { nome: string; sign_url: string }[]; email_enviado: boolean } }>(`/api/v1/conversations/${conversationId}/contrato`, corpo);
       const { sign_url, email_enviado } = r.data;
+      const documentos = r.data.documentos?.length ? r.data.documentos : [{ nome: "Contrato", sign_url }];
       if (porWhatsApp) {
-        await enviar.mutateAsync({ conversation_id: conversationId, body: mensagemDoContrato(f.nome, sign_url, email_enviado) });
+        await enviar.mutateAsync({ conversation_id: conversationId, body: mensagemDoContrato(f.nome, documentos, email_enviado) });
         toast.success(t("Contrato gerado e o link de assinatura foi enviado ao cliente pelo WhatsApp."));
       } else {
         await navigator.clipboard?.writeText(sign_url).catch(() => undefined);
-        toast.success(t("Contrato gerado. O link de assinatura foi copiado."));
+        toast.success(t("Contrato gerado. O primeiro link de assinatura foi copiado."));
       }
       onFechar();
     } catch (e) {
@@ -145,10 +143,6 @@ function FormularioDoContrato({ conversationId, nomeInicial, telefoneInicial, em
           </div>
           <div className="space-y-1.5 sm:col-span-3"><Label htmlFor="gc-tel">{t("Telefone")}</Label><Input id="gc-tel" value={f.telefone} onChange={muda("telefone")} /></div>
           <div className="space-y-1.5 sm:col-span-3"><Label htmlFor="gc-email">E-mail</Label><Input id="gc-email" type="email" value={f.email} onChange={muda("email")} /></div>
-        </div>
-        <div className="space-y-2 rounded-lg border border-border p-3">
-          <p className="text-sm font-medium">{t("Depois que o cliente assinar")}</p>
-          <EscolhaAposAssinatura valor={apos} onChange={setApos} funis={opcoes.data?.pipelines ?? []} idPrefixo="gc-apos" />
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={porWhatsApp} onChange={(e) => setPorWhatsApp(e.target.checked)} />

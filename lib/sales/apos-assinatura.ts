@@ -47,12 +47,27 @@ export function padraoDaEmpresa(settings: unknown): AposAssinatura {
   return limparEscolha(s.sales?.apos_assinatura);
 }
 
+/** Mensagem enviada ao cliente quando todos os documentos estão assinados. `{{nome}}` vira o primeiro nome do cliente. */
+export const MENSAGEM_PADRAO_APOS_ASSINATURA =
+  "Olá, {{nome}}! Recebemos todos os seus documentos assinados. Obrigado pela confiança! Nossa equipe já vai dar andamento e entra em contato com os próximos passos.";
+
+/** `undefined` (nunca configurada) usa o texto padrão; texto vazio significa "não enviar mensagem". */
+export function mensagemAposAssinatura(settings: unknown, nomeCompleto: string | null): string | null {
+  const s = (settings ?? {}) as { sales?: { mensagem_apos_assinatura?: unknown } };
+  const bruto = s.sales?.mensagem_apos_assinatura;
+  const modelo = typeof bruto === "string" ? bruto : MENSAGEM_PADRAO_APOS_ASSINATURA;
+  if (!modelo.trim()) return null;
+  const primeiro = (nomeCompleto ?? "").trim().split(/\s+/)[0] ?? "";
+  return modelo.replace(/\{\{\s*nome\s*\}\}/gi, primeiro || "").replace(/\s+([!,.?])/g, "$1").trim();
+}
+
 /** Frase para o histórico: o que foi feito (ou não) ao assinar. */
-export function resumoDoQueFoiFeito(r: { moveu: string | null; semNegocio: boolean; tag: string | null; fechou: boolean }): string {
+export function resumoDoQueFoiFeito(r: { moveu: string | null; criou?: string | null; semNegocio: boolean; tag: string | null; fechou: boolean; mensagem?: boolean }): string {
   const partes = [
-    r.moveu ? `negócio movido para "${r.moveu}"` : r.semNegocio ? "sem negócio aberto para mover" : null,
+    r.moveu ? `negócio movido para "${r.moveu}"` : r.criou ? `negócio criado na etapa "${r.criou}"` : r.semNegocio ? "sem negócio aberto para mover" : null,
     r.tag ? `etiqueta "${r.tag}" adicionada` : null,
     r.fechou ? "conversa fechada" : null,
+    r.mensagem ? "mensagem enviada ao cliente" : null,
   ].filter(Boolean);
   return partes.join(" · ");
 }

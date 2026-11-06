@@ -14,7 +14,8 @@ Arquivos do fork: `lib/sales/contratos.ts`, `app/api/v1/conversations/[id]/contr
 ## Depois da assinatura (sales.18)
 
 - **Padrão da empresa:** Configurações → Empresa → "Contratos: depois da assinatura" (`organizations.settings.sales.apos_assinatura`): mover o negócio para uma etapa (mesmo funil do negócio aberto), etiqueta no contato e fechar a conversa.
-- **Por contrato:** no formulário "Gerar contrato" o atendente pode trocar isso; a escolha viaja escondida na linha "Contrato enviado…" e é aplicada quando a assinatura é detectada.
+- **Mensagem ao cliente:** ao assinar os 3 documentos o cliente recebe uma mensagem (padrão editável no mesmo cartão; `{{nome}}` = primeiro nome; em branco = não enviar). O navegador do atendente que está com a conversa aberta a envia pelo caminho normal de mensagens.
+- **Negócio:** se o contato não tem negócio aberto no funil escolhido, o navegador cria um na etapa escolhida (rota oficial `POST /api/v1/leads`).
 - **Formulário preenchido:** nome, telefone, e-mail e os campos do negócio (CPF, RG, endereço…) reconhecidos pelo nome (`lib/sales/sugerir-dados.ts`).
 - **PDF assinado:** o sistema do escritório o guarda na pasta do cliente (categoria "Contrato assinado").
 - Arquivos: `lib/sales/apos-assinatura.ts`, `app/api/v1/sales/contrato-opcoes/route.ts`, `app/api/v1/conversations/[id]/contrato/dados/route.ts`, `components/inbox/EscolhaAposAssinatura.tsx`, `app/app/settings/tenant/_contrato.tsx`.
