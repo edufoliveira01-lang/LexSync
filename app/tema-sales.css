@@ -149,62 +149,50 @@ body {
 
 h1, h2, h3 { letter-spacing: -0.015em; }
 
-/* ============================== 4. Menu lateral: painel azul-marinho flutuante (igual ao do DisparaZap) ============================== */
+/* ============================== 4. Menu lateral claro (modelo: referência 1) ============================== */
 aside.sticky.shrink-0.flex-col {
-  /* escuro nos dois temas, como no DisparaZap */
-  --color-bg: #101626;
-  --color-surface: #182033;
-  --color-surface-elevated: #202a3f;
-  --color-text: #f6f7fb;
-  --color-text-muted: #c7cedd;
-  --color-text-subtle: #8993aa;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --background: #101626;
-  --foreground: #f6f7fb;
-  --card: transparent;
-  --card-foreground: #f6f7fb;
-  --muted: rgba(255, 255, 255, 0.06);
-  --muted-foreground: #c7cedd;
-  --border: rgba(255, 255, 255, 0.08);
-
-  margin: 12px 0 12px 12px;
-  top: calc(var(--faixas-de-cima, 0px) + 12px);
-  height: calc(100dvh - var(--faixas-de-cima, 0px) - 24px);
-  border: 0;
-  border-radius: 28px;
-  color: #f6f7fb;
-  background-image: linear-gradient(165deg, #1d1b45 0%, #181a3d 38%, #131a33 100%);
-  box-shadow: 0 24px 60px -24px rgba(39, 30, 80, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 aside.sticky.shrink-0.flex-col > div,
 aside.sticky.shrink-0.flex-col .border-b,
-aside.sticky.shrink-0.flex-col .border-t { border-color: rgba(255, 255, 255, 0.08); }
+aside.sticky.shrink-0.flex-col .border-t { border-color: var(--color-border); }
 
-/* itens do menu */
+/* itens do menu: pílulas arredondadas, ativo em lilás com barra de acento */
 aside.sticky.shrink-0.flex-col nav a {
-  border-radius: 14px;
-  padding-block: 9px;
-  color: #c7cedd;
+  position: relative;
+  border-radius: 12px;
+  padding-block: 8px;
+  color: var(--color-text-muted);
   font-weight: 500;
-  letter-spacing: 0.01em;
 }
-aside.sticky.shrink-0.flex-col nav a:hover { background: rgba(255, 255, 255, 0.07); color: #ffffff; }
+aside.sticky.shrink-0.flex-col nav a:hover { background: var(--color-surface-elevated); color: var(--color-text); }
 aside.sticky.shrink-0.flex-col nav a[aria-current="page"] {
-  background: rgba(255, 255, 255, 0.11);
-  color: #ffffff;
-  box-shadow: inset 3px 0 0 #a07aff;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-700);
+  font-weight: 600;
 }
-aside.sticky.shrink-0.flex-col nav a svg { color: #bba2ff; }
-aside.sticky.shrink-0.flex-col nav a[aria-current="page"] svg { color: #d6c8ff; }
-/* títulos de grupo (Atendimento, CRM, Agente de IA…): caixa-alta pequena e roxa */
+aside.sticky.shrink-0.flex-col nav a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--color-accent);
+}
+[data-theme="dark"] aside.sticky.shrink-0.flex-col nav a[aria-current="page"] { color: var(--color-accent-300); }
+aside.sticky.shrink-0.flex-col nav a svg { color: currentColor; }
+/* títulos de grupo: caixa-alta pequena e discreta */
 aside.sticky.shrink-0.flex-col nav h2 button {
-  color: #bba2ff;
+  color: var(--color-text-subtle);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   font-size: 10.5px;
   font-weight: 700;
 }
-aside.sticky.shrink-0.flex-col button:hover { background: rgba(255, 255, 255, 0.07); }
+aside.sticky.shrink-0.flex-col button:hover { background: var(--color-surface-elevated); }
 aside.sticky.shrink-0.flex-col img { border-radius: 10px; }
 
 /* ============================== 5. Barra superior ============================== */
@@ -231,3 +219,80 @@ button[class*="bg-primary"]:hover, a[class*="bg-primary"]:hover { box-shadow: 0 
 
 /* barras de rolagem discretas */
 * { scrollbar-width: thin; scrollbar-color: rgba(100, 112, 137, 0.35) transparent; }
+
+/* ============================== 7. Conversas: lista (modelo: referência 2, refinada) ============================== */
+/* abas da lista (Automático, Fila, Minhas, Todas…): sublinhado roxo na ativa */
+[role="tablist"] [role="tab"] { font-weight: 600; letter-spacing: 0.005em; }
+[role="tablist"] [role="tab"][data-state="active"] { color: var(--color-accent); border-bottom-color: var(--color-accent); }
+
+/* linha da conversa */
+div.relative.flex.w-full.items-start.border-b { border-color: var(--color-border); }
+button[data-conversation-id] { padding: 13px 14px; border-radius: 0; }
+button[data-conversation-id]:hover { background: var(--color-surface-elevated); }
+button[data-conversation-id][aria-current="true"] { background: var(--color-accent-soft); }
+button[data-conversation-id][aria-current="true"] > span.absolute.inset-y-0.left-0 {
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-accent);
+}
+/* avatar quadrado arredondado, como na referência */
+button[data-conversation-id] .h-10.w-10,
+button[data-conversation-id] .h-10.w-10 > * { border-radius: 14px; }
+/* contador de não lidas */
+button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10px -4px rgba(115, 64, 217, 0.6); }
+
+/* ============================== 8. Conversa: fundo com padrão, balões e caixa de resposta (modelo: referência 1) ============================== */
+/* área das mensagens: fundo claro com o padrão sutil de balõezinhos */
+[data-testid="chat-thread"] .overflow-y-auto {
+  background-color: var(--color-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%237a8bb0' stroke-opacity='.11' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 20h22a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5h-9l-7 6v-6h-6a5 5 0 0 1-5-5V25a5 5 0 0 1 5-5z'/%3E%3Ccircle cx='68' cy='66' r='9'/%3E%3Cpath d='M60 22l8 8M68 22l-8 8'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* balões: o do cliente é branco com borda fina; o nosso é lilás suave */
+[data-testid="message-bubble"] { border-radius: 20px; box-shadow: var(--shadow-xs); }
+[data-testid="message-bubble"].bg-muted {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-bottom-left-radius: 6px;
+}
+[data-testid="message-bubble"].bg-primary {
+  background: var(--color-accent-100);
+  color: var(--color-text);
+  border-bottom-right-radius: 6px;
+}
+[data-theme="dark"] [data-testid="message-bubble"].bg-primary { background: rgba(133, 86, 238, 0.3); color: #f6f7fb; }
+
+/* caixa de resposta: cartão flutuante com abas em pílula */
+[data-testid="composer"] {
+  margin: 0 14px 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+[data-testid="composer"] > [class~="mb-1.5"][class~="flex"] {
+  display: inline-flex;
+  width: fit-content;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--color-surface-elevated);
+}
+[data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > button { border-radius: 12px; padding: 6px 14px; font-weight: 600; }
+[data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > button.bg-accent {
+  background: var(--color-surface);
+  color: var(--color-accent-700);
+  box-shadow: var(--shadow-sm);
+}
+[data-theme="dark"] [data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > button.bg-accent { color: var(--color-accent-300); }
+[data-testid="composer"] textarea {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  padding-inline: 4px;
+}
+[data-testid="composer"] textarea:focus { box-shadow: none; outline: none; }
+button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px rgba(115, 64, 217, 0.75); }
