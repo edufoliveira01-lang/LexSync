@@ -62,7 +62,8 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     });
     return ok({ contrato_id: r.id, sign_url: r.sign_url, email_enviado: r.email_enviado }, { requestId });
   } catch (e) {
-    if (e instanceof ErroContratoSales) return fail("upstream_error", e.message, e.status, { requestId });
+    // 5xx viraria "Erro interno" genérico na tela; a mensagem do painel/escritório diz o que aconteceu, então vai como 424.
+    if (e instanceof ErroContratoSales) return fail("upstream_error", e.message, e.status >= 500 ? 424 : e.status, { requestId });
     throw e;
   }
 }
