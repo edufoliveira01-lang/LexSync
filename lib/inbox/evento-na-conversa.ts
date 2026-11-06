@@ -23,7 +23,7 @@ async function nomeDe(admin: ReturnType<typeof createAdminClient>, userId: strin
   }
 }
 
-export type AcaoDoEvento = "assumiu" | "transferiu" | "liberou" | "fechou" | "reabriu" | "arquivou" | "pausou_ia";
+export type AcaoDoEvento = "contrato_enviado" | "contrato_assinado" | "assumiu" | "transferiu" | "liberou" | "fechou" | "reabriu" | "arquivou" | "pausou_ia";
 
 export async function registrarEventoNaConversa(p: {
   organizationId: string;
@@ -47,6 +47,8 @@ export async function registrarEventoNaConversa(p: {
       reabriu: `${nome} reabriu a conversa`,
       arquivou: `${nome} arquivou a conversa`,
       pausou_ia: `${nome} assumiu e pausou a IA`,
+      contrato_enviado: "Contrato enviado para assinatura",
+      contrato_assinado: "Contrato assinado",
     };
     const extra = p.detalhe?.trim() ? ` — ${p.detalhe.trim()}` : "";
     await admin.from("conversation_notes").insert({

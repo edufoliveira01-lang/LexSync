@@ -18,6 +18,7 @@ import { useThreadAutoScroll } from "@/hooks/inbox/useThreadAutoScroll";
 import { useMessagesRealtime } from "@/hooks/inbox/useMessagesRealtime";
 import { useConversationNotes } from "@/hooks/inbox/useConversationNotes";
 import { usePassagensDaConversa } from "@/hooks/inbox/usePassagensDaConversa";
+import { useAcompanharContratos } from "@/hooks/inbox/useAcompanharContratos";
 import { useClaimConversation } from "@/hooks/inbox/useClaimConversation";
 import { useDeleteNote } from "@/hooks/inbox/useDeleteNote";
 import { useAlterarMensagem } from "@/hooks/inbox/useAlterarMensagem";
@@ -104,6 +105,7 @@ export function ChatThread({
   const q = useMessagesRealtime(conversationId);
   const notes = useConversationNotes(conversationId);
   const passagens = usePassagensDaConversa(conversationId);
+  useAcompanharContratos(conversationId, notes);
   const claim = useClaimConversation();
   const activeOrg = useActiveOrg();
   const currentUser = useUser();
