@@ -157,13 +157,18 @@ aside.sticky.shrink-0.flex-col {
 aside.sticky.shrink-0.flex-col > div,
 aside.sticky.shrink-0.flex-col .border-b,
 aside.sticky.shrink-0.flex-col .border-t { border-color: var(--color-border); }
+aside.sticky.shrink-0.flex-col > div:first-child { height: 56px; font-size: 15px; letter-spacing: -0.01em; }
+aside.sticky.shrink-0.flex-col nav { padding: 6px 10px; }
+aside.sticky.shrink-0.flex-col nav > div { padding-top: 6px; }
+aside.sticky.shrink-0.flex-col nav > div + div { border-top: 1px solid var(--color-border); margin-top: 6px; }
 
-/* itens do menu: pílulas arredondadas, ativo em lilás com barra de acento */
+/* itens: compactos, arredondados; ativo em lilás */
 aside.sticky.shrink-0.flex-col nav a {
   position: relative;
-  border-radius: 12px;
-  padding-block: 8px;
+  border-radius: 10px;
+  padding-block: 6px;
   color: var(--color-text-muted);
+  font-size: 13.5px;
   font-weight: 500;
 }
 aside.sticky.shrink-0.flex-col nav a:hover { background: var(--color-surface-elevated); color: var(--color-text); }
@@ -172,32 +177,32 @@ aside.sticky.shrink-0.flex-col nav a[aria-current="page"] {
   color: var(--color-accent-700);
   font-weight: 600;
 }
-aside.sticky.shrink-0.flex-col nav a[aria-current="page"]::before {
-  content: "";
-  position: absolute;
-  left: -8px;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 3px;
-  background: var(--color-accent);
-}
 [data-theme="dark"] aside.sticky.shrink-0.flex-col nav a[aria-current="page"] { color: var(--color-accent-300); }
-aside.sticky.shrink-0.flex-col nav a svg { color: currentColor; }
-/* títulos de grupo: caixa-alta pequena e discreta */
+aside.sticky.shrink-0.flex-col nav a svg { color: currentColor; opacity: 0.9; }
+/* contadores: pílulas cinza-lilás, como na referência (o ativo fica roxo) */
+aside.sticky.shrink-0.flex-col nav a span.rounded-full[class*="bg-accent"] {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-muted);
+  box-shadow: none;
+  font-weight: 600;
+}
+aside.sticky.shrink-0.flex-col nav a[aria-current="page"] span.rounded-full[class*="bg-accent"] { background: var(--color-accent); color: #fff; }
+/* títulos de grupo: legendas discretas */
 aside.sticky.shrink-0.flex-col nav h2 button {
+  padding-block: 4px;
   color: var(--color-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
 }
+aside.sticky.shrink-0.flex-col nav h2 button svg { opacity: 0.55; }
 aside.sticky.shrink-0.flex-col button:hover { background: var(--color-surface-elevated); }
 aside.sticky.shrink-0.flex-col img { border-radius: 10px; }
 
-/* ============================== 5. Barra superior ============================== */
+/* ============================== 5. Barra superior enxuta ============================== */
 header.sticky.z-20.items-center.justify-between {
-  height: 64px;
+  height: 56px;
   border-bottom: 0;
   background: transparent;
   backdrop-filter: blur(10px);
@@ -205,9 +210,7 @@ header.sticky.z-20.items-center.justify-between {
 
 /* ============================== 6. Cartões, campos e botões ============================== */
 [class*="rounded-lg"][class*="border"][class*="bg-card"],
-[class*="rounded-xl"][class*="border"][class*="bg-card"] {
-  box-shadow: var(--shadow-sm);
-}
+[class*="rounded-xl"][class*="border"][class*="bg-card"] { box-shadow: var(--shadow-sm); }
 input, select, textarea { border-radius: var(--radius-md); }
 input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: none;
@@ -216,18 +219,59 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 button[class*="bg-primary"], a[class*="bg-primary"] { font-weight: 600; box-shadow: 0 6px 16px -8px rgba(115, 64, 217, 0.65); }
 button[class*="bg-primary"]:hover, a[class*="bg-primary"]:hover { box-shadow: 0 8px 20px -8px rgba(115, 64, 217, 0.8); }
-
-/* barras de rolagem discretas */
 * { scrollbar-width: thin; scrollbar-color: rgba(100, 112, 137, 0.35) transparent; }
 
-/* ============================== 7. Conversas: lista (modelo: referência 2, refinada) ============================== */
-/* abas da lista (Automático, Fila, Minhas, Todas…): sublinhado roxo na ativa */
-[role="tablist"] [role="tab"] { font-weight: 600; letter-spacing: 0.005em; }
-[role="tablist"] [role="tab"][data-state="active"] { color: var(--color-accent); border-bottom-color: var(--color-accent); }
+/* ============================== 7. Inbox: colunas de ponta a ponta (como nas referências) ============================== */
+main:has([data-realtime-status]) { padding: 0; overflow: hidden; }
+[data-realtime-status] {
+  height: calc(100dvh - var(--faixas-de-cima, 0px) - 56px);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+@media (min-width: 1280px) {
+  [data-realtime-status].grid { grid-template-columns: 344px minmax(0, 1fr) 320px; }
+}
 
-/* linha da conversa */
+/* ---- cabeçalho da lista: compacto ---- */
+[data-realtime-status] > div:first-child { background: var(--color-surface); }
+[data-realtime-status] > div:first-child > div.px-3.pt-3:first-child { padding: 12px 14px 0; }
+[data-realtime-status] > div:first-child > div.px-3.pt-3:first-child button {
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-700);
+  font-weight: 600;
+  box-shadow: none;
+}
+[data-theme="dark"] [data-realtime-status] > div:first-child > div.px-3.pt-3:first-child button { color: var(--color-accent-300); }
+/* busca em linha própria; os filtros viram pílulas pequenas numa linha só */
+[data-realtime-status] .space-y-2 { padding: 10px 14px 6px; }
+[data-realtime-status] .space-y-2 > div.flex.items-center.gap-2 { flex-wrap: wrap; gap: 6px; }
+[data-realtime-status] .space-y-2 > div.flex.items-center.gap-2 > div.relative { flex: 1 0 100%; }
+[data-realtime-status] .space-y-2 > div.flex.items-center.gap-2 > button { height: 28px; padding-inline: 12px; }
+[data-realtime-status] .space-y-2 > div.flex.gap-2 { gap: 6px; }
+[data-realtime-status] .space-y-2 > div.flex.gap-2 > button { height: 28px; }
+[data-realtime-status] .space-y-2 input { height: 38px; border-radius: 12px; }
+/* abas: uma linha só, rolagem sem barra; sublinhado roxo na ativa */
+[role="tablist"] {
+  flex-wrap: nowrap !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  overflow-x: auto;
+}
+[role="tablist"] [role="tab"] { font-weight: 600; font-size: 12px; letter-spacing: 0; }
+[role="tablist"] [role="tab"][data-state="active"] {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+  box-shadow: none;
+  outline: none;
+}
+[data-theme="dark"] [role="tablist"] [role="tab"][data-state="active"] { color: var(--color-accent-300); border-bottom-color: var(--color-accent-400); }
+
+/* ---- linhas de conversa ---- */
 div.relative.flex.w-full.items-start.border-b { border-color: var(--color-border); }
-button[data-conversation-id] { padding: 13px 14px; border-radius: 0; }
+button[data-conversation-id] { padding: 12px 14px; border-radius: 0; }
 button[data-conversation-id]:hover { background: var(--color-surface-elevated); }
 button[data-conversation-id][aria-current="true"] { background: var(--color-accent-soft); }
 button[data-conversation-id][aria-current="true"] > span.absolute.inset-y-0.left-0 {
@@ -235,20 +279,24 @@ button[data-conversation-id][aria-current="true"] > span.absolute.inset-y-0.left
   border-radius: 0 3px 3px 0;
   background: var(--color-accent);
 }
-/* avatar quadrado arredondado, como na referência */
 button[data-conversation-id] .h-10.w-10,
-button[data-conversation-id] .h-10.w-10 > * { border-radius: 14px; }
-/* contador de não lidas */
+button[data-conversation-id] .h-10.w-10 > * { border-radius: 13px; }
+/* iniciais em cores pastel que se alternam */
+div.relative.flex.w-full.items-start.border-b:nth-child(6n+1) .h-10.w-10 > span { background: #e9e2ff; color: #6030b9; }
+div.relative.flex.w-full.items-start.border-b:nth-child(6n+2) .h-10.w-10 > span { background: #fde2f1; color: #b4307a; }
+div.relative.flex.w-full.items-start.border-b:nth-child(6n+3) .h-10.w-10 > span { background: #ffe8d2; color: #b25a12; }
+div.relative.flex.w-full.items-start.border-b:nth-child(6n+4) .h-10.w-10 > span { background: #d9f4e6; color: #1f7a4d; }
+div.relative.flex.w-full.items-start.border-b:nth-child(6n+5) .h-10.w-10 > span { background: #dcecff; color: #2a5fb0; }
+div.relative.flex.w-full.items-start.border-b:nth-child(6n) .h-10.w-10 > span { background: #e7e9f0; color: #505d75; }
+[data-theme="dark"] div.relative.flex.w-full.items-start.border-b .h-10.w-10 > span { filter: saturate(0.85) brightness(0.8); }
 button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10px -4px rgba(115, 64, 217, 0.6); }
 
-/* ============================== 8. Conversa: fundo com padrão, balões e caixa de resposta (modelo: referência 1) ============================== */
-/* área das mensagens: fundo claro com o padrão sutil de balõezinhos */
+/* ============================== 8. Conversa: cabeçalho, fundo, balões e caixa de resposta (modelo: referência 1) ============================== */
+[data-realtime-status] > div:nth-child(2) > div:first-child.border-b { background: var(--color-surface); border-color: var(--color-border); }
 [data-testid="chat-thread"] .overflow-y-auto {
   background-color: var(--color-bg);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%237a8bb0' stroke-opacity='.11' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 20h22a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5h-9l-7 6v-6h-6a5 5 0 0 1-5-5V25a5 5 0 0 1 5-5z'/%3E%3Ccircle cx='68' cy='66' r='9'/%3E%3Cpath d='M60 22l8 8M68 22l-8 8'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%237a8bb0' stroke-opacity='.07' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 20h22a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5h-9l-7 6v-6h-6a5 5 0 0 1-5-5V25a5 5 0 0 1 5-5z'/%3E%3Ccircle cx='68' cy='66' r='9'/%3E%3Cpath d='M60 22l8 8M68 22l-8 8'/%3E%3C/g%3E%3C/svg%3E");
 }
-
-/* balões: o do cliente é branco com borda fina; o nosso é lilás suave */
 [data-testid="message-bubble"] { border-radius: 20px; box-shadow: var(--shadow-xs); }
 [data-testid="message-bubble"].bg-muted {
   background: var(--color-surface);
@@ -263,9 +311,8 @@ button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10p
 }
 [data-theme="dark"] [data-testid="message-bubble"].bg-primary { background: rgba(133, 86, 238, 0.3); color: #f6f7fb; }
 
-/* caixa de resposta: cartão flutuante com abas em pílula */
 [data-testid="composer"] {
-  margin: 0 14px 14px;
+  margin: 0 16px 16px;
   padding: 12px 14px;
   border: 1px solid var(--color-border);
   border-radius: 22px;
@@ -287,12 +334,6 @@ button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10p
   box-shadow: var(--shadow-sm);
 }
 [data-theme="dark"] [data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > button.bg-accent { color: var(--color-accent-300); }
-[data-testid="composer"] textarea {
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  outline: none;
-  padding-inline: 4px;
-}
+[data-testid="composer"] textarea { border: 0; background: transparent; box-shadow: none; outline: none; padding-inline: 4px; }
 [data-testid="composer"] textarea:focus { box-shadow: none; outline: none; }
 button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px rgba(115, 64, 217, 0.75); }
