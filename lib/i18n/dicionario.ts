@@ -52,6 +52,7 @@ export const DICIONARIO: Traducoes = {
   "Acidentário": { es: "De accidentes" },
   "Trabalhista": { es: "Laboral" },
   "Prepara o contrato deste cliente com os dados da conversa.": { es: "Prepara el contrato de este cliente con los datos de la conversación." },
+  "Detalhes do contato": { es: "Detalles del contacto" },
   "Abrir a ficha do contato": { es: "Abrir la ficha del contacto" },
   "Filtros": { es: "Filtros" },
   "IA": { es: "IA" },

@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { ChipDeEtiqueta } from "@/components/tags/ChipDeEtiqueta";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -1065,8 +1066,17 @@ export function CRMSidePanel({
           {t("Contato")}
         </h3>
         <Card className="mt-2 space-y-2 p-3 text-sm">
+          {/* Fork Sales: avatar grande no topo do cartão (foto do WhatsApp ou iniciais). */}
+          <Avatar className="avatar-do-contato mx-auto h-16 w-16">
+            {contact?.avatar_storage_path && !contact?.is_anonymized ? (
+              <AvatarImage src={`/api/v1/contacts/${contact.id}/avatar`} alt="" className="object-cover" />
+            ) : null}
+            <AvatarFallback className="bg-surface-elevated text-base font-medium text-text-muted">
+              {([...displayName][0] ?? "?").toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="font-medium">{displayName}</div>
+            <div className="font-medium nome-do-contato">{displayName}</div>
             {/*
               O TIPO DO CONTATO (issue 3005, fatia 1): lido da COLUNA
               (`contacts.contact_type`, migration 0763), nunca da etiqueta
@@ -1461,6 +1471,7 @@ export function CRMSidePanel({
         className="sticky top-0 z-10 -mx-4 -mt-4 flex shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-4 py-1"
         data-testid="inbox-cabecalho-do-painel"
       >
+        <span className="titulo-do-painel">{t("Detalhes do contato")}</span>
         <DialogoDosModulos modulos={modulos} onSalvos={setModulos} />
         {onAlternarRecolhido ? (
           <BotaoDeRecolherDoPainel recolhido={false} onAlternar={onAlternarRecolhido} />

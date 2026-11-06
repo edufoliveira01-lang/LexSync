@@ -391,30 +391,7 @@ button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px r
 .mais-acoes a:hover { background: var(--color-surface-elevated); color: var(--color-text); }
 .mais-acoes svg { color: var(--color-text-muted); }
 
-/* ============================== 10. Ficha do contato (painel direito) ============================== */
-aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l {
-  gap: 18px;
-  padding: 18px 18px 24px;
-  border-color: var(--color-border);
-  background: var(--color-surface);
-}
-aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l h3 {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-text-subtle);
-}
-aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-lg"][class*="border"] {
-  border: 0;
-  border-radius: 16px;
-  background: var(--color-surface-elevated);
-  box-shadow: none;
-}
-aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-lg"][class*="border"] .font-medium { font-size: 15px; font-weight: 700; }
-aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l button { border-radius: 10px; }
-aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l select { height: 38px; border-radius: 12px; background: var(--color-surface); }
-aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-md"][class*="border"][class*="text-[11px]"] { border-radius: 999px; background: var(--color-surface-elevated); border-color: transparent; }
+/* (10. Ficha do contato: reescrita na seção 14, "Painel do contato — cartões") */
 
 /* ============================== 11. Menu de filtros (popover) e botão "Nova" ============================== */
 .menu-de-filtros {
@@ -444,7 +421,11 @@ aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-md"][
 .selecionar-todas { font-size: 12px; }
 /* cabeçalho da conversa: identidade (nome, estado, copiar, responsável, telefone) à ESQUERDA; botões (lupa, Gerar contrato, Fechar, ⋯) à DIREITA, na mesma linha; a linha inteira é clicável */
 .cabecalho-conversa { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; }
-.cabecalho-conversa > div.min-w-0:not(.acoes-da-conversa) { flex: 1 1 auto; min-width: 0; }
+/* a identidade ENCOLHE (nome com reticências, linha de apoio cortada) em vez de empurrar os botões para uma segunda linha */
+.cabecalho-conversa > div.min-w-0:not(.acoes-da-conversa) { flex: 1 1 0; min-width: 0; max-width: 100%; overflow: hidden; }
+.cabecalho-conversa .linha-de-apoio { flex-wrap: nowrap; overflow: hidden; white-space: nowrap; }
+.cabecalho-conversa .linha-de-apoio > * { min-width: 0; flex-shrink: 1; }
+.cabecalho-conversa .linha-de-apoio > p, .cabecalho-conversa .linha-de-apoio [class*="text-[10px]"] { overflow: hidden; text-overflow: ellipsis; }
 .cabecalho-conversa > .acoes-da-conversa { flex: none; margin-left: auto; cursor: default; }
 /* painel do contato: recolhido = some por completo (abre pelo clique no cabeçalho) */
 @media (min-width: 1280px) {
@@ -458,3 +439,53 @@ aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-md"][
 @media (min-width: 768px) {
   [data-realtime-status] { height: calc(100dvh - var(--faixas-de-cima, 0px)); border-top: 0; }
 }
+
+/* ============================== 14. Painel do contato (detalhes) — cartões ============================== */
+.painel-do-contato > aside {
+  background: var(--color-bg-subtle, #f4f6fb);
+  border-left: 1px solid var(--color-border);
+  padding: 14px; gap: 12px;
+}
+[data-theme="dark"] .painel-do-contato > aside { background: color-mix(in srgb, var(--color-surface) 70%, black); }
+/* faixa do alto: título + personalizar + recolher, sem linha divisória */
+.painel-do-contato [data-testid="inbox-cabecalho-do-painel"] {
+  position: static; margin: 0; padding: 2px 2px 4px; border: 0; background: transparent;
+  gap: 8px;
+}
+.painel-do-contato .titulo-do-painel { flex: 1; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--color-text); order: -1; }
+.painel-do-contato [data-testid="inbox-cabecalho-do-painel"] button { height: 32px; border-radius: 10px; }
+/* cada módulo vira um cartão */
+.painel-do-contato [data-modulo] > section,
+.painel-do-contato [data-modulo] > .rounded-lg {
+  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 18px;
+  padding: 14px 14px 16px; box-shadow: 0 1px 2px rgba(20, 28, 50, 0.04);
+}
+.painel-do-contato [data-modulo] > [role="none"] { display: none; }
+/* título do cartão: pílula pequena */
+.painel-do-contato [data-modulo] h3 {
+  display: inline-flex; align-items: center; margin: 0 0 12px; padding: 3px 11px;
+  border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface);
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted);
+}
+/* cartões dentro de cartões: achatados (sem segundo fundo/borda) */
+.painel-do-contato [data-modulo] section .rounded-lg.border,
+.painel-do-contato [data-modulo] > .rounded-lg .rounded-lg.border {
+  background: transparent; border: 0; box-shadow: none; padding: 0; margin-top: 0;
+}
+.painel-do-contato [data-modulo] section > .space-y-2.p-3 { padding: 0; }
+/* ações */
+.painel-do-contato [data-modulo] a.underline {
+  display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 999px;
+  text-decoration: none; font-size: 12.5px; font-weight: 600;
+  color: var(--color-accent); background: var(--color-accent-soft); }
+.painel-do-contato [data-modulo] button { border-radius: 999px; }
+.painel-do-contato [data-modulo] select,
+.painel-do-contato [data-modulo] input:not([type="checkbox"]) { height: 38px; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-surface); padding: 0 12px; font-size: 13px; }
+.painel-do-contato [data-modulo] p { line-height: 1.45; }
+/* cartão do contato: centralizado, com avatar; o título em pílula some (o próprio cartão se explica) */
+.painel-do-contato [data-testid="inbox-contato"] > h3 { display: none; }
+.painel-do-contato [data-testid="inbox-contato"] .rounded-lg { text-align: center; }
+.painel-do-contato [data-testid="inbox-contato"] .rounded-lg > div { justify-content: center; }
+.painel-do-contato [data-testid="inbox-contato"] .nome-do-contato { font-size: 17px; font-weight: 700; }
+.painel-do-contato [data-testid="inbox-contato"] .rounded-lg button, .painel-do-contato [data-testid="inbox-contato"] .rounded-lg a { font-size: 12.5px; font-weight: 600; }
+.painel-do-contato [data-testid="inbox-contato"] .avatar-do-contato { margin-bottom: 4px; box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 4px var(--color-border); }

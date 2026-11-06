@@ -38,3 +38,8 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 
 - `components/shell/TopBar.tsx` (`md:hidden`), `Sidebar.tsx`, `UserMenu.tsx`: notificações, tema e perfil no rodapé do menu; idioma só em Configurações → Perfil.
 - `components/inbox/InboxLayout.tsx` + `counts/route.ts`: aba "Todas" só com abertas/ativas.
+
+## Painel de detalhes do contato (sales.15)
+
+- `components/inbox/CRMSidePanel.tsx`: título "Detalhes do contato" na faixa do alto e avatar grande no cartão do contato (o resto do visual é CSS em `app/tema-sales.css`, seção 14).
+- Cabeçalho da conversa: a identidade encolhe (reticências) em vez de empurrar os botões para uma segunda linha.
