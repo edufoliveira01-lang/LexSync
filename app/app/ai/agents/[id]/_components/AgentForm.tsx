@@ -44,6 +44,7 @@ import { rotuloDoEstadoDoCanal } from "@/lib/channels/estado";
 import { bloqueioDePublicacao } from "@/lib/ai/agents/bloqueio-de-publicacao";
 import { mesmoRascunho } from "@/lib/ai/agents/mesmo-rascunho";
 import { ToolPicker } from "./ToolPicker";
+import { UsarTextoDoEscritorio } from "./UsarTextoDoEscritorio";
 import { TriggerEditor, type TriggerValue } from "./TriggerEditor";
 import { HandoffKeywordsInput } from "./HandoffKeywordsInput";
 import { LimiarDeSentimento } from "./LimiarDeSentimento";
@@ -1321,6 +1322,8 @@ export function AgentForm(props: Props) {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">{t("As instruções dele")}</h3>
               <div className="flex items-center gap-2">
+                {/* Fork Sales: o texto do escritório vem pronto do Sales. */}
+                <UsarTextoDoEscritorio atual={form.system_prompt} disabled={disabled} onPreencher={(texto) => patch({ system_prompt: texto })} />
                 {/* O contador é o aviso que chega ANTES do erro: quem cola um
                     texto grande vê na hora que ele não vai caber, em vez de
                     descobrir depois — ou nunca. */}

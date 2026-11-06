@@ -54,3 +54,4 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 - `app/api/v1/sales/agente-do-escritorio/route.ts` (novo): GET (agentes + pendências do cadastro) e POST `{ agent_id }` → grava uma NOVA VERSÃO RASCUNHO do agente (copia o resto com `versionPayloadFrom`, troca só o `system_prompt`). Nunca publica.
 - `components/ai/AtualizarAgenteDoEscritorio.tsx` (novo) + `app/app/ai/agents/_components/AgentsList.tsx` (botão ao lado de "Criar novo").
 - Cadastro: no Sales, Configurações › Atendimento com IA (`gestao_atendimento_ia`). Modelo: `docs/sales/agente-juridico.md`.
+- `app/app/ai/agents/[id]/_components/UsarTextoDoEscritorio.tsx` (novo) + `AgentForm.tsx` (uma linha de import e um componente no cabeçalho de "As instruções dele"): botão "Usar o texto do escritório" preenche o campo com o prompt do Sales — funciona na criação do agente (empresa sem agente nenhum) e na edição. O `GET` da rota passou a devolver também o `prompt`.

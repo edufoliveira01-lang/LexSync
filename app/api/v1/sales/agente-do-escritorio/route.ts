@@ -45,6 +45,7 @@ export async function GET(): Promise<Response> {
   const slug = await slugDaOrg(authz.org.orgId);
   let pendencias: string[] = [];
   let nomeAgente = "";
+  let prompt = "";
   let semLigacao: string | null = null;
   if (!slug) semLigacao = "Esta empresa não está ligada ao Sales.";
   else {
@@ -52,11 +53,12 @@ export async function GET(): Promise<Response> {
       const p = await promptDoAgenteDoEscritorio(slug);
       pendencias = p.pendencias;
       nomeAgente = p.nome_agente;
+      prompt = p.prompt;
     } catch (e) {
       semLigacao = e instanceof ErroContratoSales ? e.message : "Não foi possível falar com o Sales.";
     }
   }
-  return ok({ agentes: agentes ?? [], pendencias, nome_agente: nomeAgente, erro_sales: semLigacao }, { requestId });
+  return ok({ agentes: agentes ?? [], pendencias, nome_agente: nomeAgente, prompt, erro_sales: semLigacao }, { requestId });
 }
 
 const corpo = z.object({ agent_id: z.string().uuid() }).strict();
