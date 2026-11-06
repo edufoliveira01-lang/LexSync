@@ -220,6 +220,12 @@ export function tabToFilter(
       // `ai_handling` é escrito por UM caminho só em produção (a volta pelo botão
       // "Devolver ao automático"), então a aba vivia mostrando 2 enquanto o robô
       // atendia 47. Agora ela pergunta a régua do MOTOR.
+      //
+      // Fork Sales: sem nenhum agente de IA no ar, "automatico" é só a conversa
+      // que está esperando gente (a mesma que a Fila mostra) — a aba IA fica
+      // vazia em vez de repetir a Fila. `status: "closed"` + comando
+      // "automatico" nunca coexistem, então é um filtro que não casa com nada.
+      if (automaticoDaOrg === false) return { comando: ["automatico"], status: "closed" };
       return { comando: ["automatico"] };
     case "all":
     default:
@@ -932,6 +938,7 @@ export function InboxLayout({
        */
       data-realtime-status={listQ.realtimeStatus}
       data-sem-conversa={selectedId ? undefined : ""}
+      data-painel-recolhido={painelRecolhido ? "" : undefined}
       data-refetch-divergencias={listQ.seguranca?.divergencias ?? 0}
     >
       {/*

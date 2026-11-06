@@ -228,7 +228,8 @@ export async function GET(req: NextRequest): Promise<Response> {
   return ok(
     {
       fila: fila.count ?? 0,
-      automatico: automatico.count ?? 0,
+      // Fork Sales: sem agente de IA no ar a aba IA não repete a Fila.
+      automatico: automaticoDaOrg === false ? 0 : (automatico.count ?? 0),
       // `unassigned` continua respondendo, com o MESMO valor de `fila`. É rota
       // `/api/v1/` versionada: campo não some de uma versão para outra, e um
       // cliente com a página aberta desde antes do deploy segue lendo o nome

@@ -20,3 +20,9 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 - `lib/inbox/evento-na-conversa.ts` (novo): grava uma nota interna com marca invisível.
 - `components/inbox/EventoDaConversa.tsx` (novo) e 1 ramo em `components/inbox/ChatThread.tsx`: desenha a linha centralizada.
 - Chamadas em `lib/inbox/assumir-conversa*.ts`, rotas `release`, `transfer`, `close` e `_handler.ts` (reabrir/arquivar).
+
+## Correções da sales.10
+
+- `components/inbox/InboxLayout.tsx`: atributo `data-painel-recolhido` na grade; aba IA vazia quando a organização não tem agente no ar (`tabToFilter`).
+- `app/api/v1/conversations/counts/route.ts`: contador da aba IA = 0 sem agente no ar.
+- `app/tema-sales.css`: colunas fixas 344/320, trilho de 44px quando o painel está recolhido, divisórias arrastáveis ocultas.
