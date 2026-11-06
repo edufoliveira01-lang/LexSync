@@ -274,7 +274,7 @@ export function ConversationListItem({
   return (
     <div
       className={cn(
-        "relative flex w-full items-start border-b border-border/70",
+        "group/linha relative flex w-full items-start border-b border-border/70",
         selecionado && "bg-accent-soft",
       )}
     >
@@ -293,11 +293,13 @@ export function ConversationListItem({
           data-testid={`selecao-em-lote-${conversation.id}`}
           onClick={() => onAlternarSelecao(conversation.id)}
           className={cn(
-            "mt-3 ml-2 flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border transition-colors",
+            // Fork Sales: a marca mora SOBRE o avatar (canto superior esquerdo) e só aparece
+            // ao passar o mouse, ao focar ou quando há seleção — não ocupa coluna própria.
+            "caixa-de-selecao absolute left-1.5 top-2 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 transition",
             "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent",
             selecionado
-              ? "border-accent bg-accent text-accent-foreground"
-              : "border-muted-foreground bg-background hover:bg-surface-elevated",
+              ? "border-accent bg-accent text-accent-foreground opacity-100"
+              : "border-white bg-black/30 opacity-0 hover:bg-black/50 focus-visible:opacity-100 group-hover/linha:opacity-100",
           )}
         >
           {selecionado && <Check size={12} weight="bold" aria-hidden />}

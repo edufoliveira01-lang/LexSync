@@ -42,6 +42,16 @@ type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>
 export const DICIONARIO: Traducoes = {
   // Fork Sales: textos novos do cabeçalho da conversa e da lista do Inbox.
   "Conversa ainda sem responsável": { es: "Conversación aún sin responsable" },
+  "Gerar contrato": { es: "Generar contrato" },
+  "Informe o nome do cliente.": { es: "Indique el nombre del cliente." },
+  "Contrato registrado na conversa. O envio para assinatura será ligado em breve.": { es: "Contrato registrado en la conversación. El envío para firma se conectará pronto." },
+  "Confira os dados do cliente. O envio para assinatura eletrônica será conectado em seguida.": { es: "Revise los datos del cliente. El envío para firma electrónica se conectará a continuación." },
+  "Tipo de contrato": { es: "Tipo de contrato" },
+  "Copiar nome e telefone": { es: "Copiar nombre y teléfono" },
+  "Previdenciário": { es: "Previsional" },
+  "Acidentário": { es: "De accidentes" },
+  "Trabalhista": { es: "Laboral" },
+  "Prepara o contrato deste cliente com os dados da conversa.": { es: "Prepara el contrato de este cliente con los datos de la conversación." },
   "Abrir a ficha do contato": { es: "Abrir la ficha del contacto" },
   "Filtros": { es: "Filtros" },
   "IA": { es: "IA" },

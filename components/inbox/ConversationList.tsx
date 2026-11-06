@@ -226,7 +226,7 @@ export function ConversationList({
             está na tela. Some com a lista vazia — oferecer "selecionar todas"
             quando não há nenhuma é botão de mentira. */}
         {onAlternarSelecao && items.length > 0 && (
-          <div className="flex items-center gap-2 border-b border-border/70 px-3 py-1.5">
+          <div className="selecionar-todas flex items-center gap-2 border-b border-border/70 px-3 py-1">
             <button
               type="button"
               role="checkbox"
@@ -239,7 +239,7 @@ export function ConversationList({
               title={t("Selecionar todas")}
               data-testid="selecionar-todas-visiveis"
               onClick={onSelecionarTodosVisiveis}
-              className="flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-muted-foreground bg-background transition-colors hover:bg-surface-elevated focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
+              className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 border-muted-foreground bg-background transition-colors hover:bg-surface-elevated focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
             >
               {selecionados && items.every((c) => selecionados.has(c.id)) && (
                 <Check size={12} weight="bold" aria-hidden />

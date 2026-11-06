@@ -431,3 +431,25 @@ aside.flex.h-full.flex-col.gap-4.overflow-y-auto.border-l [class*="rounded-md"][
 
 /* ============================== 12. Caixa travada até assumir ============================== */
 .aviso-assumir { background: color-mix(in srgb, var(--color-accent) 7%, white); }
+
+/* ============================== 13. Refinos: lista, seleção em lote, cabeçalho, painel recolhido ============================== */
+/* seleção: quando há conversas marcadas, todas as bolinhas ficam visíveis */
+[data-realtime-status]:has([data-testid="barra-de-acoes-em-lote"]) [data-testid^="selecao-em-lote-"] { opacity: 1; }
+/* barra de ações em lote: contagem + limpar na primeira linha, botões na segunda */
+.barra-de-lote { background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface)); padding: 10px 14px; gap: 8px; border-bottom: 1px solid var(--color-border); }
+.barra-de-lote > * { order: 2; }
+.barra-de-lote > span:first-child { order: 0; flex: 1; font-size: 13px; font-weight: 700; color: var(--color-accent); }
+.barra-de-lote > [data-testid="lote-limpar"] { order: 1; margin-left: 0; height: 28px; width: 28px; padding: 0; border-radius: 999px; }
+.barra-de-lote button:not([data-testid="lote-limpar"]) { height: 32px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: var(--color-surface); }
+.selecionar-todas { font-size: 12px; }
+/* cabeçalho da conversa: identidade em cima, botões à esquerda embaixo; a linha inteira é clicável */
+.cabecalho-conversa { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 10px; cursor: pointer; }
+.cabecalho-conversa > div.min-w-0:not(.acoes-da-conversa) { max-width: 100%; }
+.cabecalho-conversa > .acoes-da-conversa { margin-left: 0; cursor: default; }
+/* painel do contato: recolhido = some por completo (abre pelo clique no cabeçalho) */
+@media (min-width: 1280px) {
+  [data-realtime-status][data-painel-recolhido].grid:not([data-sem-conversa]) { grid-template-columns: 344px minmax(0, 1fr); }
+  [data-realtime-status][data-painel-recolhido] .painel-do-contato { display: none; }
+}
+/* busca no topo do menu lateral */
+.busca-do-menu { height: 36px; border-radius: 12px; background: var(--color-surface); }

@@ -96,7 +96,7 @@ export function BarraDeAcoesEmLote({
 
   return (
     <div
-      className="flex flex-wrap items-center gap-1.5 border-b border-border bg-surface-elevated px-3 py-2"
+      className="barra-de-lote flex flex-wrap items-center gap-1.5 border-b border-border bg-surface-elevated px-3 py-2"
       role="toolbar"
       aria-label={t("Ações em lote")}
       data-testid="barra-de-acoes-em-lote"

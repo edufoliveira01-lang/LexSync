@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useT } from "@/hooks/i18n/useT";
 import { CommandPalette } from "@/components/shell/CommandPalette";
 
-export function SearchTrigger() {
+export function SearchTrigger({ noMenu = false, recolhido = false }: { noMenu?: boolean; recolhido?: boolean } = {}) {
   const t = useT();
   const [open, setOpen] = useState(false);
 
@@ -19,12 +19,14 @@ export function SearchTrigger() {
       <Button
         variant="outline"
         size="sm"
-        className="gap-2 text-muted-foreground"
+        // Fork Sales: no menu lateral a busca ocupa a largura toda (ou vira só o ícone com o menu recolhido).
+        className={noMenu ? "busca-do-menu w-full justify-start gap-2 text-muted-foreground" : "gap-2 text-muted-foreground"}
         onClick={() => setOpen(true)}
+        aria-label={recolhido ? t("Buscar...") : undefined}
       >
         <MagnifyingGlass size={14} aria-hidden />
-        <span className="max-md:sr-only">{t("Buscar...")}</span>
-        <kbd className="ml-2 hidden md:inline rounded-md border bg-muted px-1.5 py-0.5 text-[10px]">⌘K</kbd>
+        <span className={recolhido ? "sr-only" : "max-md:sr-only"}>{t("Buscar...")}</span>
+        <kbd className={recolhido ? "sr-only" : "ml-auto hidden md:inline rounded-md border bg-muted px-1.5 py-0.5 text-[10px]"}>⌘K</kbd>
       </Button>
       <CommandPalette open={open} onOpenChange={setOpen} />
     </>

@@ -1195,7 +1195,7 @@ export function InboxLayout({
         )}
       </div>
 
-      <div className={cn("hidden h-full min-h-0 min-w-0 xl:block", !selectedId && "xl:hidden")}>
+      <div className={cn("painel-do-contato hidden h-full min-h-0 min-w-0 xl:block", !selectedId && "xl:hidden")}>
         <CRMSidePanel
           conversation={selectedConversation}
           recolhido={painelRecolhido}

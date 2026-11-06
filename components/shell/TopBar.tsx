@@ -4,7 +4,6 @@ import { AvisoDePropostaEmDestaque } from "./AvisoDePropostaEmDestaque";
 import { MobileSidebar } from "./MobileSidebar";
 import { TenantSwitcher } from "./TenantSwitcher";
 import { UserMenu } from "./UserMenu";
-import { SearchTrigger } from "./SearchTrigger";
 
 export function TopBar() {
   return (
@@ -13,9 +12,8 @@ export function TopBar() {
         <MobileSidebar />
         <TenantSwitcher />
       </div>
-      <div className="flex min-w-0 flex-1 justify-center md:max-w-md">
-        <SearchTrigger />
-      </div>
+      {/* Fork Sales: a busca (⌘K) mora no topo do menu lateral. */}
+      <div className="min-w-0 flex-1" />
       <div className="flex shrink-0 items-center gap-2">
         <AlertsBell />
         <AvisoDePropostaEmDestaque />

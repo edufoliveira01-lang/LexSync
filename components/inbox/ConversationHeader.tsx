@@ -1,5 +1,5 @@
 "use client";
-import { useState, type RefObject } from "react";
+import { useState, type MouseEvent, type RefObject } from "react";
 import { useT } from "@/hooks/i18n/useT";
 import Link from "next/link";
 import {
@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { JanelaSelo } from "@/components/inbox/JanelaSelo";
 import { ChannelLogo } from "@/components/inbox/ChannelLogo";
-import { Phone, ArrowRight, MagnifyingGlass, DotsThree } from "@/lib/ui/icons";
+import { Phone, ArrowRight, MagnifyingGlass, DotsThree, Copy, Check } from "@/lib/ui/icons";
+import { GerarContrato } from "@/components/inbox/GerarContrato";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useClaimConversation } from "@/hooks/inbox/useClaimConversation";
@@ -276,7 +277,17 @@ export function ConversationHeader({
     // fileira que rola na horizontal — a mesma régua de não esconder ação, sem
     // pagar em altura. `py-2` pelo mesmo motivo: cada pixel de altura ali é
     // tirado da conversa.
-    <div className="cabecalho-conversa flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 md:gap-3 md:px-4 md:py-3">
+    <div
+      className="cabecalho-conversa flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 md:gap-3 md:px-4 md:py-3"
+      // Fork Sales: a linha inteira do cabeçalho abre/fecha a ficha do contato.
+      // Cliques em botões, links, campos e nos menus/diálogos (que vêm por portal) não contam.
+      onClick={(e: MouseEvent<HTMLDivElement>) => {
+        if (!onAbrirFicha) return;
+        const alvo = e.target as HTMLElement;
+        if (alvo.closest("button, a, input, textarea, select, [role='dialog'], [role='alertdialog'], [data-radix-popper-content-wrapper]")) return;
+        onAbrirFicha();
+      }}
+    >
       {/* FAIXA DA CARTEIRA (#2591, regra 2): "este cliente pertence à carteira de
           A". `w-full` a põe numa linha própria acima da identidade, sem disputar
           espaço com a barra de ações — a faixa só existe quando o dono é OUTRA
@@ -305,6 +316,7 @@ export function ConversationHeader({
           <Badge variant="outline" className="h-4 shrink-0 px-1.5 text-[10px]">
             {t(STATUS_LABEL[status] ?? status)}
           </Badge>
+          <BotaoCopiar texto={phone ? `${displayName} — ${phone}` : displayName} />
           {/* Ao lado do estado, não escondido num painel: a pergunta "dá para
               escrever agora?" se faz ANTES de digitar, não depois de receber um
               `failed` com um código de cinco dígitos. */}
@@ -408,28 +420,15 @@ export function ConversationHeader({
             <MagnifyingGlass size={16} aria-hidden />
           </Button>
         )}
-        {isOpen && (
-          <Button
-            size="sm"
-            variant="default"
-            // No celular, a ação que a pessoa veio fazer abre a fileira — sem
-            // rolar para achá-la. Só CSS: a ordem do DOM não muda.
-            className="max-md:order-first"
-            disabled={claim.isPending}
-            // O rótulo NÃO muda (é contrato: `inbox-header-nao-trava` e o
-            // dicionário de espanhol o citam). O que faltava era a consequência
-            // dita: desde a 0173 assumir também para o atendimento automático, e
-            // um botão que muda duas coisas precisa anunciar as duas.
-            title={t("Você passa a responder esta conversa e o atendimento automático para aqui.")}
-            onClick={() =>
-              claim.mutate({
-                conversation_id: conversation.id,
-                expected_assignee: conversation.assigned_to_user_id,
-              })
-            }
-          >
-            {t("Assumir")}
-          </Button>
+        {/* Fork Sales: o botão principal do cabeçalho é "Gerar contrato". "Assumir" continua
+            disponível em "Mais ações" (e dentro da caixa de mensagem quando ela está travada). */}
+        {!encerrada && (
+          <GerarContrato
+            conversationId={conversation.id}
+            nomeInicial={displayName}
+            telefoneInicial={phone}
+            emailInicial={(c as { email?: string | null } | null)?.email ?? null}
+          />
         )}
         {isMineAssigned && (
           <Button
@@ -499,6 +498,23 @@ export function ConversationHeader({
             className="mais-acoes ds-painel z-50 w-64 rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-lg outline-hidden data-[state=closed]:hidden"
           >
             <div className="flex flex-col gap-0.5">
+        {isOpen && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="justify-start"
+            disabled={claim.isPending}
+            title={t("Você passa a responder esta conversa e o atendimento automático para aqui.")}
+            onClick={() =>
+              claim.mutate({
+                conversation_id: conversation.id,
+                expected_assignee: conversation.assigned_to_user_id,
+              })
+            }
+          >
+            {t("Assumir")}
+          </Button>
+        )}
         {/* A chamada usa o telefone da ficha, mesmo quando o contato chegou por
             outro canal. Grupos não representam uma pessoa para ligar. */}
         {!conversation.is_group && c?.id && (
@@ -849,5 +865,32 @@ export function ConversationHeader({
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+
+/** Fork Sales: copia "nome — telefone" para a área de transferência. */
+function BotaoCopiar({ texto }: { texto: string }) {
+  const t = useT();
+  const [copiado, setCopiado] = useState(false);
+  return (
+    <button
+      type="button"
+      data-testid="copiar-contato"
+      title={copiado ? t("Copiado") : t("Copiar nome e telefone")}
+      aria-label={t("Copiar nome e telefone")}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(texto);
+          setCopiado(true);
+          setTimeout(() => setCopiado(false), 1500);
+        } catch {
+          /* sem permissão de área de transferência: não há o que fazer */
+        }
+      }}
+      className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground"
+    >
+      {copiado ? <Check size={13} weight="bold" aria-hidden /> : <Copy size={13} aria-hidden />}
+    </button>
   );
 }

@@ -26,3 +26,10 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 - `components/inbox/InboxLayout.tsx`: atributo `data-painel-recolhido` na grade; aba IA vazia quando a organização não tem agente no ar (`tabToFilter`).
 - `app/api/v1/conversations/counts/route.ts`: contador da aba IA = 0 sem agente no ar.
 - `app/tema-sales.css`: colunas fixas 344/320, trilho de 44px quando o painel está recolhido, divisórias arrastáveis ocultas.
+
+## Refinos (sales.12)
+
+- `components/shell/SearchTrigger.tsx`, `Sidebar.tsx`, `TopBar.tsx`: busca (⌘K) no topo do menu lateral.
+- `components/inbox/ConversationHeader.tsx` (+ `GerarContrato.tsx` novo): botão "Gerar contrato" (Assumir foi para "Mais ações"), botão copiar, linha do cabeçalho clicável para abrir a ficha.
+- `components/inbox/ConversationListItem.tsx`, `ConversationList.tsx`, `BarraDeAcoesEmLote.tsx`: seleção em lote sobre o avatar, barra em lote em duas linhas.
+- `components/inbox/InboxLayout.tsx` + `app/app/inbox/page.tsx`: ficha do contato nasce fechada e sem trilho.

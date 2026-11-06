@@ -12,6 +12,7 @@ import { ContadorDeCasos } from "@/components/shell/ContadorDeCasos";
 import { ContadorDaFila } from "@/components/shell/ContadorDaFila";
 import { ContadorDeTarefas } from "@/components/shell/ContadorDeTarefas";
 import { VersionFooter } from "@/components/shell/VersionFooter";
+import { SearchTrigger } from "./SearchTrigger";
 import { LogotipoDoProduto, SimboloDoProduto } from "@/components/branding/MarcaDoProduto";
 import { marcaEhADoProduto } from "@/lib/branding";
 import { useMarcaDaInstalacao } from "@/lib/branding/contexto";
@@ -253,6 +254,10 @@ export function SidebarContent({
             />
           </div>
         )}
+      </div>
+      {/* Fork Sales: busca global (⌘K) no topo do menu. */}
+      <div className={cn("px-3 pt-3", collapsed && "px-2")}>
+        <SearchTrigger noMenu recolhido={collapsed} />
       </div>
       {/* Issue #2722 — no trilho recolhido (64px) não cabe controle ao lado
           do símbolo: ele vira uma faixa imediatamente abaixo da marca. */}

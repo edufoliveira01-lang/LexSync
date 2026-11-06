@@ -115,13 +115,13 @@ describe("header do inbox — não trava a largura da tela (fork Sales)", () => 
       // a busca só existe com `onBuscar`; sem ele o botão nem entra
       expect(screen.queryByRole("button", { name: rotulo })).toBeNull();
     }
-    for (const rotulo of ["Assumir", "Fechar"]) {
+    for (const rotulo of ["Gerar contrato", "Fechar"]) {
       expect(barra.contains(screen.getByRole("button", { name: rotulo })), `"${rotulo}" tem de estar na barra`).toBe(true);
     }
     const gatilho = screen.getByRole("button", { name: "Mais ações" });
     expect(barra.contains(gatilho), "o gatilho do menu fica na barra").toBe(true);
     // As ações menos frequentes continuam montadas (diálogos e estados vivos), só dentro do menu.
-    for (const rotulo of ["Transferir", "Arquivar"]) {
+    for (const rotulo of ["Assumir", "Transferir", "Arquivar"]) {
       const botao = screen.getByRole("button", { name: rotulo });
       expect(barra.contains(botao), `"${rotulo}" não pode ficar na fileira à vista`).toBe(false);
       expect(botao.closest(".mais-acoes"), `"${rotulo}" tem de estar no menu Mais ações`).toBeTruthy();
