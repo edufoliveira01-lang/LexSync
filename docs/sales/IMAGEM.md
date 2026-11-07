@@ -15,3 +15,16 @@ Altere o CSS aqui, publique, espere o workflow terminar e repita o passo 2 e 3 c
 
 ## Receber atualizações do original
 `UPSTREAM_REF=vX.Y.Z bash scripts/sales/sincronizar-upstream.sh` (veja `UPSTREAM.md`), confira, commite: a imagem nova sai sozinha.
+
+## Worker com o nosso código (necessário para o agente enviar contrato)
+
+O agente roda no container **worker**. Como as ferramentas do fork (como `crm_enviar_contrato`) só existem no nosso código, o worker precisa da imagem
+`ghcr.io/edufoliveira01-lang/deskcomm-sales-worker:<mesma versão do app>`. Na VPS, em `~/DeskcommCRM`:
+
+```bash
+docker pull ghcr.io/edufoliveira01-lang/deskcomm-sales-worker:1.101.0-sales.N
+grep -q '^WORKER_IMAGE=' .env && sed -i 's|^WORKER_IMAGE=.*|WORKER_IMAGE=ghcr.io/edufoliveira01-lang/deskcomm-sales-worker:1.101.0-sales.N|' .env || echo 'WORKER_IMAGE=ghcr.io/edufoliveira01-lang/deskcomm-sales-worker:1.101.0-sales.N' >> .env
+docker compose -f docker-compose.prod.yml -f docker-compose.cloudflared.yml --env-file .env up -d worker
+```
+
+Para voltar atrás: apague a linha `WORKER_IMAGE` do `.env` e repita o `up -d worker`.

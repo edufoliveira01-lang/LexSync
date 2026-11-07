@@ -2,7 +2,8 @@ name: Imagem do Deskcomm (Sales & Associados)
 
 # Constrói a imagem do APP do DeskcommCRM com a nossa aparência (app/tema-sales.css) e publica no GitHub Container Registry.
 # É a mesma imagem genérica do original (NEXT_PUBLIC_* viram placeholder no build e entram em runtime), só com o nosso tema.
-# O worker e o scheduler continuam sendo as imagens do original. Instalação na VPS: docs/sales/IMAGEM.md.
+# O worker (que roda o agente e as ferramentas dele, como crm_enviar_contrato) também sai com o nosso código: deskcomm-sales-worker.
+# O scheduler continua sendo a imagem do original. Instalação na VPS: docs/sales/IMAGEM.md.
 on:
   push:
     branches: [main]
@@ -64,3 +65,22 @@ jobs:
             APP_VERSION=${{ steps.ver.outputs.versao }}
           cache-from: type=gha,scope=deskcomm-sales
           cache-to: type=gha,mode=max,scope=deskcomm-sales
+
+      - name: Constrói e publica o worker (o agente roda aqui: sem isto as ferramentas do fork não existem para ele)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.worker
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/deskcomm-sales-worker:${{ steps.ver.outputs.versao }}
+            ghcr.io/${{ github.repository_owner }}/deskcomm-sales-worker:${{ steps.ver.outputs.base }}-sales
+          labels: |
+            org.opencontainers.image.title=Deskcomm worker (Sales & Associados)
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          build-args: |
+            APP_VERSION=${{ steps.ver.outputs.versao }}
+          cache-from: type=gha,scope=deskcomm-sales-worker
+          cache-to: type=gha,mode=max,scope=deskcomm-sales-worker
