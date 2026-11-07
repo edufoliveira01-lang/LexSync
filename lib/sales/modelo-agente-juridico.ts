@@ -54,7 +54,7 @@ export function pedacoDoAgenteJuridico(args: { nomeDoAgente: string; nomeAtual: 
     image_vision_enabled: true,
     split_messages: true,
     split_max_chars: 400,
-    history_message_window: 30,
+    history_message_window: 60,
     ...(funil ? { pipeline_ids: Array.from(new Set([...args.pipelinesAtuais, funil.id])) } : {}),
   };
 }

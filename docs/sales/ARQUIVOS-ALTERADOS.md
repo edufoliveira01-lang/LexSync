@@ -71,3 +71,6 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 - `lib/sales/contrato-na-conversa.ts` (novo): o que morava na rota (`slugDaOrg`, `padraoDaOrg`, `sincronizarContato`, `aplicar`) + `criarContratoNaConversa` (rota e agente usam a MESMA implementação) + `contratoPendenteDaConversa`. `lib/sales/mensagem-do-contrato.ts` (novo, extraído do formulário).
 - `lib/sales/acompanhar-contratos.ts` (novo): o acompanhamento da assinatura NO SERVIDOR — move o negócio (ou cria, pela mesma regra do botão), etiqueta, fecha a conversa, grava "Contrato assinado" ANTES de avisar o cliente e envia a mensagem de agradecimento. A rota GET usa a mesma função (o navegador só dispara a conferência). Rodada de 60 s ligada em `instrumentation.ts` (um bloco de 2 linhas, só no runtime nodejs; sem `SALES_PAINEL_URL`/`CONTRATOS_SEGREDO` não liga). Trava em memória: uma instância do app por instalação.
 - `app/api/v1/conversations/[id]/contrato/route.ts`: POST/GET enxutos (usam as funções acima).
+
+- `lib/leads/escopo-de-funil.ts`: `crm_enviar_contrato` classificada como `sem_funil` (sem isso o motor recusava a ferramenta em silêncio, pela regra de vacuidade).
+- `lib/sales/modelo-agente-juridico.ts`: janela de histórico do agente jurídico de 30 para 60 mensagens (menos perguntas repetidas em conversa longa).

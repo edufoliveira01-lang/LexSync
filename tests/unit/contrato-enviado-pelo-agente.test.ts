@@ -11,6 +11,7 @@ vi.mock("@/lib/sales/contrato-na-conversa", () => ({
 }));
 
 import { crmEnviarContrato } from "@/lib/mcp/tools/contratos-sales";
+import { ALVO_DE_FUNIL, podeChamarFerramenta } from "@/lib/leads/escopo-de-funil";
 
 const dados = { confirmou_com_o_cliente: true as const, nome: "Ana Maria Souza", cpf: "52998224725", logradouro: "Rua das Flores" };
 const ctx = (contatoDoTurno?: string, conversa: string | null = "conv-1") => ({
@@ -55,5 +56,13 @@ describe("crm_enviar_contrato — o agente envia o contrato do escritório", () 
     const r = (await crmEnviarContrato.handler(dados, ctx("c1"))) as { ok: boolean; erro: string; proximo_passo: string };
     expect(r).toMatchObject({ ok: false, erro: "Informe o endereço do cliente." });
     expect(r.proximo_passo).toContain("atendente");
+  });
+  it("está classificada no escopo de funil: sem isso o motor RECUSA a ferramenta em silêncio (regra de vacuidade) e o agente promete um contrato que não sai", async () => {
+    expect(ALVO_DE_FUNIL.crm_enviar_contrato).toBe("sem_funil");
+    const v = await podeChamarFerramenta({
+      ferramenta: "crm_enviar_contrato", argumentos: dados, escopo: ["funil-juridico"], ehEscrita: true,
+      resolvePipelineDoLead: async () => null, resolveLeadDoContato: async () => ({ kind: "nenhum" }) as never,
+    } as never);
+    expect(v).toMatchObject({ permitido: true });
   });
 });
