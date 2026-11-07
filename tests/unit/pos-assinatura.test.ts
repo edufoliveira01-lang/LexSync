@@ -6,7 +6,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { contact_id: "c1" } }) }) }) }) }) }),
 }));
 
-import { acordarAgenteAposAssinatura, ATRASO_DO_AGENTE_APOS_ASSINATURA_MS, MOTIVO_DO_RETORNO_APOS_ASSINATURA } from "@/lib/sales/pos-assinatura";
+import { acordarAgenteAposAssinatura, ATRASO_DO_AGENTE_APOS_ASSINATURA_MS, ETAPAS_QUE_PEDEM_AVANCO_APOS_ASSINATURA, MOTIVO_DO_RETORNO_APOS_ASSINATURA } from "@/lib/sales/pos-assinatura";
 
 describe("depois da assinatura a conversa não para", () => {
   beforeEach(() => agenda.mockReset());
@@ -36,5 +36,8 @@ describe("depois da assinatura a conversa não para", () => {
   it("resposta inesperada do agendador (erro interno) também não derruba: devolve false", async () => {
     agenda.mockResolvedValue(undefined);
     expect(await acordarAgenteAposAssinatura("org-1", "conv-1")).toBe(false);
+  });
+  it("a rede de segurança leva ao ganho tanto quem parou em 'Contrato assinado' quanto quem ficou em 'Contrato enviado' com o contrato já assinado", () => {
+    expect(ETAPAS_QUE_PEDEM_AVANCO_APOS_ASSINATURA).toEqual(["contrato assinado", "contrato enviado"]);
   });
 });

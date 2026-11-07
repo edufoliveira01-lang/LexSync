@@ -3,7 +3,7 @@
  *
  *   1. `acordarAgenteAposAssinatura`: agenda um retorno (o mecanismo do motor: uma linha em `cron_jobs` que enfileira um turno do agente) para
  *      daqui a pouco, com o motivo explicado. O agente então agradece, pede os documentos da área e segue conduzindo.
- *   2. `fecharEtapasPosAssinatura`: alguns minutos depois, se o negócio ainda está em "Contrato assinado", o sistema o leva à etapa de ganho
+ *   2. `fecharEtapasPosAssinatura`: alguns minutos depois, se o negócio ainda está em "Contrato assinado" (ou, se algo falhou no caminho, em "Contrato enviado"), o sistema o leva à etapa de ganho
  *      ("Aguardando documentos"). É a garantia de que o funil anda mesmo que o agente não o mova.
  * Tudo falha sozinho: o contrato já foi tratado, e o card pode ser movido à mão.
  */
@@ -27,6 +27,9 @@ export const MOTIVO_DO_RETORNO_APOS_ASSINATURA =
   "O cliente acabou de ASSINAR o contrato (o sistema já agradeceu por mensagem). Continue conduzindo: agradeça de forma breve, peça os documentos da área do cliente, " +
   "aos poucos (uma lista curta, foto nítida ou PDF), explique que pode enviar quando conseguir e registre em nota o que falta. Não gere outro contrato.";
 export const PROMESSA_DO_RETORNO_APOS_ASSINATURA = "Pedir ao cliente os documentos que faltam, agora que o contrato foi assinado.";
+
+/** Etapas em que um contrato JÁ ASSINADO não deveria mais estar: "Contrato assinado" e, se algo falhou no caminho, "Contrato enviado". */
+export const ETAPAS_QUE_PEDEM_AVANCO_APOS_ASSINATURA: readonly string[] = ["contrato assinado", "contrato enviado"];
 
 const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 
@@ -76,7 +79,7 @@ export async function fecharEtapasPosAssinatura(agora = Date.now()): Promise<num
           const lista = (etapas ?? []) as { id: string; name: string; is_won: boolean; agent_stage_hint: string | null }[];
           const atual = lista.find((e) => e.id === n.stage_id);
           const ganho = lista.find((e) => e.is_won && e.agent_stage_hint === "won") ?? lista.find((e) => e.is_won);
-          if (!atual || !ganho || atual.is_won || semAcento(atual.name) !== "contrato assinado") continue;
+          if (!atual || !ganho || atual.is_won || !ETAPAS_QUE_PEDEM_AVANCO_APOS_ASSINATURA.includes(semAcento(atual.name))) continue;
           await moveLeadHandler(admin, { organization_id: orgId, actor: ATOR, requestId: randomUUID() }, n.id, { to_stage_id: ganho.id, reason: "Contrato assinado: aguardando os documentos do cliente" });
           movidos += 1;
           break;
