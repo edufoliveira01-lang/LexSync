@@ -14,6 +14,10 @@ describe("etapa do contrato — o funil anda sozinho", () => {
     expect(escolherEtapaDoContrato(funil, "assinado")?.name).toBe("Contrato assinado");
     expect(escolherEtapaDoContrato([e("Cliente fechado", { is_won: true })], "assinado")?.name).toBe("Cliente fechado");
   });
+  it("no funil novo, 'Contrato assinado' (aberta) vem antes da etapa de ganho 'Aguardando documentos'", () => {
+    const novo = [e("Contrato enviado"), e("Contrato assinado"), e("Aguardando documentos", { is_won: true, agent_stage_hint: "won" })];
+    expect(escolherEtapaDoContrato(novo, "assinado")?.name).toBe("Contrato assinado");
+  });
   it("prefere a etapa de ganho marcada como 'won' do agente quando há mais de uma", () => {
     const duas = [e("Ganho A", { is_won: true }), e("Ganho B", { is_won: true, agent_stage_hint: "won" })];
     expect(escolherEtapaDoContrato(duas, "assinado")?.name).toBe("Ganho B");

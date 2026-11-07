@@ -24,6 +24,18 @@ export const PALAVRAS_DE_PASSAGEM_JURIDICO: readonly string[] = ["falar com huma
 
 export const SLUG_DO_FUNIL_JURIDICO = "atendimento-juridico";
 
+/**
+ * O funil jurídico a ligar ao agente. Funil recriado nasce com o slug seguinte (`atendimento-juridico-2`, `-3`…), porque o antigo,
+ * mesmo arquivado, ainda ocupa o slug: vale o de MAIOR número.
+ */
+export function funilJuridicoMaisRecente<T extends { slug: string }>(funis: readonly T[]): T | undefined {
+  const rx = new RegExp(`^${SLUG_DO_FUNIL_JURIDICO}(?:-(\\d+))?$`);
+  return funis
+    .map((f) => ({ f, n: rx.exec(f.slug) }))
+    .filter((x): x is { f: T; n: RegExpExecArray } => x.n !== null)
+    .sort((a, b) => Number(b.n[1] ?? 1) - Number(a.n[1] ?? 1))[0]?.f;
+}
+
 export interface PedacoDoAgente {
   name?: string;
   description: string;
@@ -41,7 +53,7 @@ export interface PedacoDoAgente {
 
 /** `nomeAtual` e `funis` só decidem o que NÃO sobrescrever: nome já digitado fica; sem o funil jurídico, o escopo não é alterado. */
 export function pedacoDoAgenteJuridico(args: { nomeDoAgente: string; nomeAtual: string; funis: { id: string; slug: string }[]; pipelinesAtuais: string[]; ferramentasRemotas?: readonly string[] }): PedacoDoAgente {
-  const funil = args.funis.find((f) => f.slug === SLUG_DO_FUNIL_JURIDICO);
+  const funil = funilJuridicoMaisRecente(args.funis);
   const nome = args.nomeAtual.trim() ? undefined : args.nomeDoAgente.trim() || "Atendimento jurídico";
   return {
     ...(nome ? { name: nome } : {}),

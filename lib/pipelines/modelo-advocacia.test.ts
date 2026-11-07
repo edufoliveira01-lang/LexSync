@@ -18,7 +18,17 @@ describe("funil de escritório de advocacia", () => {
     expect(new Set(ETAPAS_ADVOCACIA.map((e) => e.name)).size).toBe(ETAPAS_ADVOCACIA.length);
   });
   it("a ordem é a do atendimento", () => {
-    expect(ETAPAS_ADVOCACIA.map((e) => e.name)).toEqual(["Novo contato", "Em triagem", "Aguardando documentos", "Proposta enviada", "Contrato enviado", "Contrato assinado", "Sem interesse"]);
+    expect(ETAPAS_ADVOCACIA.map((e) => e.name)).toEqual(["Novo contato", "Em triagem", "Proposta enviada", "Proposta aceita", "Contrato enviado", "Contrato assinado", "Aguardando documentos", "Sem interesse"]);
+  });
+  it("os passos do agente seguem a ordem fixa do motor (novo, triagem, qualificado, negociando, ganho) e contrato enviado/assinado ficam sem passo", () => {
+    const porNome = (n: string) => ETAPAS_ADVOCACIA.find((e) => e.name === n)!;
+    expect(porNome("Novo contato").agent_stage_hint).toBe("new");
+    expect(porNome("Em triagem").agent_stage_hint).toBe("qualifying");
+    expect(porNome("Proposta enviada").agent_stage_hint).toBe("qualified");
+    expect(porNome("Proposta aceita").agent_stage_hint).toBe("negotiating");
+    expect(porNome("Contrato enviado").agent_stage_hint).toBeNull();
+    expect(porNome("Contrato assinado").agent_stage_hint).toBeNull();
+    expect(porNome("Aguardando documentos")).toMatchObject({ is_won: true, agent_stage_hint: "won" });
   });
   it("os campos do contrato são válidos para o funil e cada um é reconhecido pelo formulário de contrato (pelo rótulo)", () => {
     for (const c of CAMPOS_DE_CONTRATO_ADVOCACIA) {

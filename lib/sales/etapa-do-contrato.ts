@@ -1,7 +1,7 @@
 /**
  * Fork Sales — o funil anda sozinho com o contrato, sem o escritório precisar configurar nada:
  *   - ao ENVIAR o contrato, o negócio aberto do contato vai para a etapa "Contrato enviado" do funil dele;
- *   - ao ASSINAR (quando o escritório não escolheu outro destino em "depois da assinatura"), vai para a etapa de ganho ("Contrato assinado").
+ *   - ao ASSINAR (quando o escritório não escolheu outro destino em "depois da assinatura"), vai para "Contrato assinado" (ou, num funil sem ela, para a etapa de ganho).
  * A mudança usa a função oficial de mover negócio (`moveLeadHandler`), com todas as regras do funil. Qualquer recusa só fica no log:
  * o contrato já foi tratado e o card pode ser movido à mão.
  */
@@ -21,7 +21,8 @@ const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLo
 export function escolherEtapaDoContrato(etapas: readonly EtapaDoFunil[], momento: MomentoDoContrato): EtapaDoFunil | undefined {
   const porNome = (nome: string) => etapas.find((e) => !e.is_lost && semAcento(e.name) === nome);
   if (momento === "enviado") return porNome("contrato enviado");
-  return etapas.find((e) => e.is_won && e.agent_stage_hint === "won") ?? etapas.find((e) => e.is_won) ?? porNome("contrato assinado");
+  // Pelo NOME primeiro: no funil novo a etapa de ganho é "Aguardando documentos", e quem leva o card até ela é o agente, depois da assinatura.
+  return porNome("contrato assinado") ?? etapas.find((e) => e.is_won && e.agent_stage_hint === "won") ?? etapas.find((e) => e.is_won);
 }
 
 const ATOR = { type: "api_token", id: "sales-contrato" } as const;
