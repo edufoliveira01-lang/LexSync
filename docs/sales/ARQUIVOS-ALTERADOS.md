@@ -74,3 +74,4 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 
 - `lib/leads/escopo-de-funil.ts`: `crm_enviar_contrato` classificada como `sem_funil` (sem isso o motor recusava a ferramenta em silêncio, pela regra de vacuidade).
 - `lib/sales/modelo-agente-juridico.ts`: janela de histórico do agente jurídico de 30 para 60 mensagens (menos perguntas repetidas em conversa longa).
+- `lib/sales/etapa-do-contrato.ts` (novo): o funil anda sozinho com o contrato. Ao enviar, o negócio aberto do contato vai para "Contrato enviado"; ao assinar (sem destino escolhido em "depois da assinatura"), vai para a etapa de ganho. Usa `moveLeadHandler`, com todas as regras do funil. Ligado em `contrato-na-conversa.ts` e `acompanhar-contratos.ts`.

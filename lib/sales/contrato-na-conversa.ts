@@ -7,6 +7,7 @@ import { camposDoFunil } from "@/lib/leads/campos-do-funil";
 import { preencherCamposDoNegocio, type DadosDoCliente } from "@/lib/sales/campos-do-contrato";
 import { embutirEscolha, escolhaEfetiva, padraoDaEmpresa, type AposAssinatura } from "@/lib/sales/apos-assinatura";
 import { ErroContratoSales, pedirContrato, type ContratoPedido, type DadosDoContrato } from "@/lib/sales/contratos";
+import { moverParaEtapaDoContrato } from "@/lib/sales/etapa-do-contrato";
 import { mensagemDoContrato } from "@/lib/sales/mensagem-do-contrato";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -120,6 +121,8 @@ export async function criarContratoNaConversa(p: {
     organizationId: p.orgId, conversationId: p.conversationId, userId: p.userId,
     acao: "contrato_enviado", detalhe: `${p.dados.nome} · nº ${r.id}`, oculto: embutirEscolha("", efetiva, paraOsCampos),
   });
+  // O funil anda sozinho: "Contrato enviado" (nunca derruba o envio; o card pode ser movido à mão)
+  await moverParaEtapaDoContrato(p.orgId, p.conversationId, "enviado");
   const documentos = r.documentos?.length ? r.documentos : [{ nome: "Contrato", sign_url: r.sign_url }];
   return { contrato: r, mensagem: mensagemDoContrato(p.dados.nome, documentos, r.email_enviado) };
 }
