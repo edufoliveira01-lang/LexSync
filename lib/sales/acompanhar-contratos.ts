@@ -19,7 +19,7 @@ import { depsDoRitmo, registrarEnvioPorToken, segurarEnvioPorToken } from "@/lib
 import { escolhaEfetiva, lerDadosEmbutidos, lerEscolhaEmbutida, mensagemAposAssinatura, resumoDoQueFoiFeito } from "@/lib/sales/apos-assinatura";
 import { aplicar, padraoDaOrg, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { configDosContratos, estadoDoContrato } from "@/lib/sales/contratos";
-import { moverParaEtapaDoContrato } from "@/lib/sales/etapa-do-contrato";
+import { moverParaEtapaDoContrato, temNegocioAbertoNoFunil } from "@/lib/sales/etapa-do-contrato";
 import { acordarAgenteAposAssinatura, fecharEtapasPosAssinatura } from "@/lib/sales/pos-assinatura";
 import { sendMessageSchema } from "@/lib/schemas/messaging";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -70,12 +70,16 @@ export async function conferirContratosDaConversa(orgId: string, conversationId:
         const escolhida = escolhaEfetiva(await padraoDaOrg(orgId), lerEscolhaEmbutida(corpoDoEnviado(n)));
         // etiqueta padrão: a equipe enxerga, na lista de conversas, quem já assinou (o escritório pode escolher outra)
         const escolha = escolhida.tag ? escolhida : { ...escolhida, tag: "Contrato assinado" };
-        const feito = await aplicar(orgId, conversationId, escolha, lerDadosEmbutidos(corpoDoEnviado(n)));
-        // O escritório não escolheu um destino para depois da assinatura: o negócio vai para a etapa de ganho do funil dele
-        if (!escolha.stage_id) {
-          const etapa = await moverParaEtapaDoContrato(orgId, conversationId, "assinado");
-          if (etapa) feito.moveu = etapa;
+        // O funil do PRÓPRIO cliente manda: um destino configurado só vale se o cliente tem negócio aberto naquele funil. Senão (ou sem destino),
+        // o negócio dele vai para "Contrato assinado"; criar um negócio novo em outro funil duplicaria o cliente.
+        let escolhaFinal = escolha;
+        let etapaDoFunil: string | null = null;
+        if (!escolha.stage_id || !escolha.pipeline_id || !(await temNegocioAbertoNoFunil(orgId, conversationId, escolha.pipeline_id))) {
+          etapaDoFunil = await moverParaEtapaDoContrato(orgId, conversationId, "assinado");
+          if (etapaDoFunil) escolhaFinal = { ...escolha, stage_id: undefined, pipeline_id: undefined };
         }
+        const feito = await aplicar(orgId, conversationId, escolhaFinal, lerDadosEmbutidos(corpoDoEnviado(n)));
+        if (etapaDoFunil) feito.moveu = etapaDoFunil;
         // sem negócio aberto no funil escolhido: cria um na etapa escolhida, pela mesma regra do botão "Novo negócio"
         if (feito.criarNegocio) {
           try { await createLeadHandler(admin, { organization_id: orgId, actor: ATOR, requestId: randomUUID() }, { ...feito.criarNegocio, tags: [], source: "contrato_assinado" } as never); } catch (err) {

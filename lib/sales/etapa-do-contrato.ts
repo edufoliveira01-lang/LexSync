@@ -48,3 +48,17 @@ export async function moverParaEtapaDoContrato(orgId: string, conversationId: st
   }
   return null;
 }
+
+/** O contato desta conversa tem negócio ABERTO neste funil? (para saber se um destino configurado serve a este cliente) */
+export async function temNegocioAbertoNoFunil(orgId: string, conversationId: string, pipelineId: string): Promise<boolean> {
+  try {
+    const admin = createAdminClient();
+    const { data: conv } = await admin.from("conversations").select("contact_id").eq("id", conversationId).eq("organization_id", orgId).maybeSingle();
+    const contactId = (conv as { contact_id: string | null } | null)?.contact_id;
+    if (!contactId) return false;
+    const { data } = await admin.from("crm_leads").select("id").eq("organization_id", orgId).eq("contact_id", contactId).eq("pipeline_id", pipelineId).eq("status", "open").limit(1);
+    return (data ?? []).length > 0;
+  } catch {
+    return false;
+  }
+}
