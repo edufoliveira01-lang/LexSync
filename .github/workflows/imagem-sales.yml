@@ -66,7 +66,7 @@ jobs:
           cache-from: type=gha,scope=deskcomm-sales
           cache-to: type=gha,mode=max,scope=deskcomm-sales
 
-      - name: Constrói e publica o worker (o agente roda aqui: sem isto as ferramentas do fork não existem para ele)
+      - name: Constrói e publica o worker (o agente roda nele; sem isto as ferramentas do fork não existem para ele)
         uses: docker/build-push-action@v6
         with:
           context: .
