@@ -21,14 +21,19 @@ const limpa = (v: unknown) => String(v ?? "").replace(/\s+/g, " ").trim();
 /** O nome tem ao menos nome e sobrenome? É o que o contrato exige (na conversa, o primeiro nome basta). */
 export const nomeCompleto = (nome: string | undefined | null): boolean => limpa(nome).split(" ").filter((p) => p.length > 1).length >= 2;
 
-/** O que falta para o contrato sair: os obrigatórios (sem eles o Sales recusa) e os recomendados (constam nos documentos). */
+/**
+ * O que falta para o contrato sair COMPLETO. Obrigatórios: o que qualifica a pessoa no contrato (nome completo, CPF, RG, nacionalidade, estado civil,
+ * profissão) e o endereço (rua, número, bairro, cidade e UF). Recomendados: e-mail (a cópia vai por ele) e CEP. O agente só chama o contrato quando
+ * nenhum obrigatório falta; se a pessoa realmente não tem um dado (ex.: sem RG), o agente passa a conversa à equipe em vez de gerar um contrato incompleto.
+ */
 export function faltaParaOContrato(d: DadosGravados): { obrigatorios: string[]; recomendados: string[] } {
   const obrigatorios: string[] = [];
   if (!nomeCompleto(d.nome)) obrigatorios.push("nome completo (nome e sobrenome)");
   if (limpa(d.cpf).replace(/\D/g, "").length < 11) obrigatorios.push("CPF");
+  for (const [k, rotulo] of [["rg", "RG"], ["nacionalidade", "nacionalidade"], ["estado_civil", "estado civil"], ["profissao", "profissão"]] as const) if (vazio(d[k])) obrigatorios.push(rotulo);
   if (vazio(d.logradouro)) obrigatorios.push("endereço (rua ou avenida)");
-  const recomendados = ([["rg", "RG"], ["nacionalidade", "nacionalidade"], ["estado_civil", "estado civil"], ["profissao", "profissão"], ["email", "e-mail"], ["cep", "CEP"], ["numero", "número"], ["bairro", "bairro"], ["cidade", "cidade"], ["uf", "UF"]] as const)
-    .filter(([k]) => vazio(d[k])).map(([, rotulo]) => rotulo);
+  for (const [k, rotulo] of [["numero", "número da casa ou prédio"], ["bairro", "bairro"], ["cidade", "cidade"], ["uf", "UF"]] as const) if (vazio(d[k])) obrigatorios.push(rotulo);
+  const recomendados = ([["email", "e-mail"], ["cep", "CEP"]] as const).filter(([k]) => vazio(d[k])).map(([, rotulo]) => rotulo);
   return { obrigatorios, recomendados };
 }
 

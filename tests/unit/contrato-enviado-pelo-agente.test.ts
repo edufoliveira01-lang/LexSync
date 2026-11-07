@@ -18,7 +18,7 @@ vi.mock("@/lib/sales/contrato-na-conversa", () => ({
 import { crmEnviarContrato, crmRegistrarDadosDoCliente } from "@/lib/mcp/tools/contratos-sales";
 import { ALVO_DE_FUNIL, podeChamarFerramenta } from "@/lib/leads/escopo-de-funil";
 
-const dados = { confirmou_com_o_cliente: true as const, nome: "Ana Maria Souza", cpf: "52998224725", logradouro: "Rua das Flores" };
+const dados = { confirmou_com_o_cliente: true as const, nome: "Ana Maria Souza", cpf: "52998224725", rg: "123456", nacionalidade: "brasileira", estado_civil: "solteira", profissao: "advogada", logradouro: "Rua das Flores", numero: "10", bairro: "Centro", cidade: "Santos", uf: "SP" };
 const ctx = (contatoDoTurno?: string, conversa: string | null = "conv-1") => ({
   organizationId: "org-1", contatoDoTurno,
   supabase: { from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ order: () => ({ limit: () => ({ maybeSingle: async () => ({ data: conversa ? { id: conversa } : null }) }) }) }) }) }) }) },
@@ -81,14 +81,14 @@ describe("crm_enviar_contrato — o agente envia o contrato do escritório", () 
     expect(v).toMatchObject({ permitido: true });
   });
   it("o contrato sai dos dados JÁ GRAVADOS: o agente só confirma, sem repassar tudo", async () => {
-    gravados.mockResolvedValue({ nome: "Ana Maria Souza", cpf: "52998224725", logradouro: "Rua das Flores", cidade: "Santos" });
+    gravados.mockResolvedValue({ nome: "Ana Maria Souza", cpf: "52998224725", rg: "1", nacionalidade: "brasileira", estado_civil: "solteira", profissao: "advogada", logradouro: "Rua das Flores", numero: "10", bairro: "Centro", cidade: "Santos", uf: "SP" });
     criar.mockResolvedValue({ contrato: { id: 11, email_enviado: false }, mensagem: "Olá! https://app.zapsign.com.br/verificar/y" });
     const r = (await crmEnviarContrato.handler({ confirmou_com_o_cliente: true as const }, ctx("c1"))) as { ok: boolean };
     expect(r.ok).toBe(true);
     expect(criar.mock.calls[0]![0].dados).toMatchObject({ nome: "Ana Maria Souza", cpf: "52998224725", logradouro: "Rua das Flores", cidade: "Santos" });
   });
   it("o que veio na chamada vale por cima do gravado", async () => {
-    gravados.mockResolvedValue({ nome: "Ana Maria Souza", cpf: "52998224725", logradouro: "Rua A" });
+    gravados.mockResolvedValue({ nome: "Ana Maria Souza", cpf: "52998224725", rg: "1", nacionalidade: "brasileira", estado_civil: "solteira", profissao: "advogada", logradouro: "Rua A", numero: "1", bairro: "B", cidade: "Santos", uf: "SP" });
     criar.mockResolvedValue({ contrato: { id: 12, email_enviado: false }, mensagem: "x https://zapsign" });
     await crmEnviarContrato.handler({ confirmou_com_o_cliente: true as const, logradouro: "Rua B" }, ctx("c1"));
     expect(criar.mock.calls[0]![0].dados.logradouro).toBe("Rua B");
