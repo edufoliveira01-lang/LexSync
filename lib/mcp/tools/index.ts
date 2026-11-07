@@ -44,7 +44,7 @@ import {
   crmResumeAiAttendance,
 } from "./escalacao";
 import { crmRequestHumanHandoff } from "./handoff";
-import { crmEnviarContrato } from "./contratos-sales";
+import { crmEnviarContrato, crmRegistrarDadosDoCliente } from "./contratos-sales";
 import {
   crmSearchKnowledge,
   crmListKnowledgeSources,
@@ -185,6 +185,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmDraftProposal,
   // fork Sales: contrato pelo agente
   crmEnviarContrato,
+  crmRegistrarDadosDoCliente,
   // handoff (special)
   crmRequestHumanHandoff,
 ] as unknown as ReadonlyArray<McpToolDefinition>;

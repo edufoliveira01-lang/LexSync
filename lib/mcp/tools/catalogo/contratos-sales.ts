@@ -15,4 +15,14 @@ export const TOOLS_CONTRATOS_SALES = declararTools([
     risco: "critico",
     pacotes: ["vender"],
   },
+  {
+    name: "crm_registrar_dados_do_cliente",
+    category: "write",
+    rotulo: "Gravar os dados do cliente na conversa",
+    explicacao:
+      "A cada dado que o cliente informa (nome, CPF, RG, estado civil, profissão, e-mail, endereço), o agente grava no cadastro na hora e não pergunta de novo. Na hora do contrato, ele só confirma o que já está gravado.",
+    oQueToca: "Cadastro do contato e campos do negócio",
+    risco: "atencao",
+    pacotes: ["vender"],
+  },
 ]);

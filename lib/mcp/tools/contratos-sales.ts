@@ -9,7 +9,8 @@ import { z } from "zod";
 
 import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
-import { ErroContratoSales } from "@/lib/sales/contratos";
+import { faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
+import { ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
 import type { McpToolDefinition } from "../types";
 
 const pessoa = z.object({
@@ -20,14 +21,14 @@ const pessoa = z.object({
 
 const inputShape = {
   confirmou_com_o_cliente: z.literal(true).describe("SÓ envie true se o cliente CONFIRMOU os dados (repetidos para ele) e disse que quer receber o contrato agora."),
-  nome: z.string().min(3).max(200).describe("Nome completo do CLIENTE."),
-  cpf: z.string().min(11).max(20),
+  nome: z.string().max(200).optional().describe("Nome completo do CLIENTE (se omitido, vale o gravado)."),
+  cpf: z.string().max(20).optional(),
   rg: z.string().max(30).optional(),
   nacionalidade: z.string().max(40).optional(),
   sexo: z.enum(["M", "F"]).optional(),
   estado_civil: z.string().max(40).optional(),
   profissao: z.string().max(100).optional(),
-  logradouro: z.string().min(2).max(200).describe("Rua/avenida do cliente."),
+  logradouro: z.string().max(200).optional().describe("Rua/avenida do cliente."),
   numero: z.string().max(20).optional(),
   complemento: z.string().max(100).optional(),
   bairro: z.string().max(100).optional(),
@@ -62,7 +63,12 @@ export const crmEnviarContrato: McpToolDefinition<typeof inputShape> = {
 
     const slug = await slugDaOrg(ctx.organizationId);
     if (!slug) return { ok: false, erro: "Esta empresa não está ligada ao Sales.", proximo_passo: "Passe a conversa a um atendente." };
-    const { confirmou_com_o_cliente: _c, ...dados } = input;
+    const { confirmou_com_o_cliente: _c, ...informados } = input;
+    // o contrato sai do que JÁ está gravado (crm_registrar_dados_do_cliente); o que veio nesta chamada vale por cima
+    const gravados = await lerDadosGravados(ctx.organizationId, contato);
+    const dados = { ...gravados, ...Object.fromEntries(Object.entries(informados).filter(([, v]) => v !== undefined && v !== null && String(v).trim() !== "")) } as unknown as DadosDoContrato & { nome: string };
+    const falta = faltaParaOContrato(dados);
+    if (falta.obrigatorios.length > 0) return { ok: false, erro: `Faltam dados obrigatórios: ${falta.obrigatorios.join(", ")}.`, proximo_passo: "Pergunte ao cliente SÓ o que falta, grave com crm_registrar_dados_do_cliente, confirme e chame de novo." };
     try {
       const { contrato, mensagem } = await criarContratoNaConversa({ orgId: ctx.organizationId, conversationId, slug, userId: null, nomeDeQuemPediu: "Assistente virtual", dados });
       // O link NÃO depende de o modelo lembrar de mandá-lo: o sistema envia a mensagem na hora, pelo mesmo caminho do atendimento.
@@ -81,6 +87,37 @@ export const crmEnviarContrato: McpToolDefinition<typeof inputShape> = {
     } catch (e) {
       if (e instanceof ErroContratoSales) return { ok: false, erro: e.message, proximo_passo: "Se o erro for de dado faltando, peça só o que faltou ao cliente. Caso contrário, diga que a equipe enviará o contrato e passe a conversa a um atendente." };
       throw e;
+    }
+  },
+};
+
+const dadosShape = {
+  nome: z.string().max(200).optional().describe("Nome do cliente (no começo o primeiro nome basta; o contrato exige nome e sobrenome)."),
+  email: z.string().max(254).optional(), cpf: z.string().max(20).optional(), rg: z.string().max(30).optional(),
+  nacionalidade: z.string().max(40).optional(), sexo: z.enum(["M", "F"]).optional(), estado_civil: z.string().max(40).optional(), profissao: z.string().max(100).optional(),
+  cep: z.string().max(12).optional(), logradouro: z.string().max(200).optional().describe("Rua/avenida."), numero: z.string().max(20).optional(),
+  complemento: z.string().max(100).optional(), bairro: z.string().max(100).optional(), cidade: z.string().max(100).optional(), uf: z.string().max(2).optional(),
+};
+
+export const crmRegistrarDadosDoCliente: McpToolDefinition<typeof dadosShape> = {
+  name: "crm_registrar_dados_do_cliente",
+  description:
+    "Grava no cadastro os dados que o cliente ACABOU de informar (só os campos informados) e devolve o que já está gravado e o que falta para o contrato. " +
+    "Chame a cada dado novo, e sem campos para consultar antes de perguntar. Nunca pergunte de novo o que já está gravado.",
+  inputSchema: dadosShape,
+  category: "write",
+  requiresRole: "ai_operator", // só o agente (token efêmero do turno); o alvo é sempre o contato do turno
+  requiresScope: "mcp:write",
+  handler: async (input, ctx) => {
+    const contato = ctx.contatoDoTurno;
+    if (!contato) return { ok: false, erro: "Não há contato nesta conversa para gravar dados.", proximo_passo: "Siga a conversa normalmente." };
+    try {
+      const novos = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined)) as Partial<Record<CampoDoCliente, string>>;
+      const gravado = Object.keys(novos).length ? await gravarDadosDoCliente(ctx.organizationId, contato, novos) : await lerDadosGravados(ctx.organizationId, contato);
+      const falta = faltaParaOContrato(gravado);
+      return { ok: true, gravado, falta_obrigatorios_para_o_contrato: falta.obrigatorios, falta_recomendados: falta.recomendados, proximo_passo: "Não pergunte de novo o que já está em `gravado`. Pergunte só o que falta, uma coisa por vez." };
+    } catch (e) {
+      return { ok: false, erro: e instanceof Error ? e.message : "não consegui gravar agora", proximo_passo: "Siga a conversa e registre uma nota com o dado, para a equipe." };
     }
   },
 };

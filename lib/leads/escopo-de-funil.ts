@@ -150,6 +150,8 @@ export const ALVO_DE_FUNIL: Record<string, AlvoDeFunil> = {
   // conversa, `ctx.contatoDoTurno`), então não há funil a escopar. As barreiras são OUTRAS: `requiresRole: ai_operator` (só o agente, nunca a rota
   // HTTP), risco `critico`, escopo do turno (`escopo-das-escritas`) e um único contrato pendente por conversa.
   crm_enviar_contrato: "sem_funil",
+  // Fork Sales: grava dados do contato do turno e do negócio aberto dele, sem receber `lead_id`/`pipeline_id`; a barreira é o papel `ai_operator` e o alvo fixo.
+  crm_registrar_dados_do_cliente: "sem_funil",
   // Rascunho sugerido por integração (#1611): opera por `conversation_id`,
   // nunca `lead_id`, e não mexe em estado de funil nenhum. A barreira é OUTRA,
   // e é dela que a segurança depende: o RBAC da rota (agent+), o escopo

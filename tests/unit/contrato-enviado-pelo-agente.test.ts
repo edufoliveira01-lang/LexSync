@@ -5,6 +5,9 @@ import { ErroContratoSales } from "@/lib/sales/contratos";
 const criar = vi.fn();
 const pendente = vi.fn();
 const enviar = vi.fn();
+const gravados = vi.fn();
+const gravar = vi.fn();
+vi.mock("@/lib/sales/dados-do-cliente", async (original) => ({ ...(await original<typeof import("@/lib/sales/dados-do-cliente")>()), lerDadosGravados: (...a: unknown[]) => gravados(...a), gravarDadosDoCliente: (...a: unknown[]) => gravar(...a) }));
 vi.mock("@/lib/sales/acompanhar-contratos", () => ({ enviarTexto: (...a: unknown[]) => enviar(...a) }));
 vi.mock("@/lib/sales/contrato-na-conversa", () => ({
   criarContratoNaConversa: (...a: unknown[]) => criar(...a),
@@ -12,7 +15,7 @@ vi.mock("@/lib/sales/contrato-na-conversa", () => ({
   slugDaOrg: async () => "alfa",
 }));
 
-import { crmEnviarContrato } from "@/lib/mcp/tools/contratos-sales";
+import { crmEnviarContrato, crmRegistrarDadosDoCliente } from "@/lib/mcp/tools/contratos-sales";
 import { ALVO_DE_FUNIL, podeChamarFerramenta } from "@/lib/leads/escopo-de-funil";
 
 const dados = { confirmou_com_o_cliente: true as const, nome: "Ana Maria Souza", cpf: "52998224725", logradouro: "Rua das Flores" };
@@ -22,7 +25,7 @@ const ctx = (contatoDoTurno?: string, conversa: string | null = "conv-1") => ({
 }) as never;
 
 describe("crm_enviar_contrato — o agente envia o contrato do escritório", () => {
-  beforeEach(() => { criar.mockReset(); pendente.mockReset(); pendente.mockResolvedValue(null); enviar.mockReset(); enviar.mockResolvedValue(true); });
+  beforeEach(() => { criar.mockReset(); pendente.mockReset(); pendente.mockResolvedValue(null); enviar.mockReset(); enviar.mockResolvedValue(true); gravados.mockReset(); gravados.mockResolvedValue({}); gravar.mockReset(); });
 
   it("é uma escrita do AGENTE (ai_operator), sem nenhum id no esquema: o alvo é sempre o contato do turno", () => {
     expect(crmEnviarContrato.category).toBe("write");
@@ -76,5 +79,48 @@ describe("crm_enviar_contrato — o agente envia o contrato do escritório", () 
       resolvePipelineDoLead: async () => null, resolveLeadDoContato: async () => ({ kind: "nenhum" }) as never,
     } as never);
     expect(v).toMatchObject({ permitido: true });
+  });
+  it("o contrato sai dos dados JÁ GRAVADOS: o agente só confirma, sem repassar tudo", async () => {
+    gravados.mockResolvedValue({ nome: "Ana Maria Souza", cpf: "52998224725", logradouro: "Rua das Flores", cidade: "Santos" });
+    criar.mockResolvedValue({ contrato: { id: 11, email_enviado: false }, mensagem: "Olá! https://app.zapsign.com.br/verificar/y" });
+    const r = (await crmEnviarContrato.handler({ confirmou_com_o_cliente: true as const }, ctx("c1"))) as { ok: boolean };
+    expect(r.ok).toBe(true);
+    expect(criar.mock.calls[0]![0].dados).toMatchObject({ nome: "Ana Maria Souza", cpf: "52998224725", logradouro: "Rua das Flores", cidade: "Santos" });
+  });
+  it("o que veio na chamada vale por cima do gravado", async () => {
+    gravados.mockResolvedValue({ nome: "Ana Maria Souza", cpf: "52998224725", logradouro: "Rua A" });
+    criar.mockResolvedValue({ contrato: { id: 12, email_enviado: false }, mensagem: "x https://zapsign" });
+    await crmEnviarContrato.handler({ confirmou_com_o_cliente: true as const, logradouro: "Rua B" }, ctx("c1"));
+    expect(criar.mock.calls[0]![0].dados.logradouro).toBe("Rua B");
+  });
+  it("sem o nome completo (só o primeiro) ou sem CPF/endereço, NÃO gera o contrato e diz o que perguntar", async () => {
+    gravados.mockResolvedValue({ nome: "Ana", cpf: "529" });
+    const r = (await crmEnviarContrato.handler({ confirmou_com_o_cliente: true as const }, ctx("c1"))) as { ok: boolean; erro: string };
+    expect(r.ok).toBe(false);
+    expect(r.erro).toMatch(/nome completo/);
+    expect(r.erro).toMatch(/CPF/);
+    expect(r.erro).toMatch(/endereço/);
+    expect(criar).not.toHaveBeenCalled();
+  });
+  it("crm_registrar_dados_do_cliente: é escrita do agente, sem id no esquema, e grava só o que o cliente informou", async () => {
+    expect(crmRegistrarDadosDoCliente.category).toBe("write");
+    expect(crmRegistrarDadosDoCliente.requiresRole).toBe("ai_operator");
+    expect(Object.keys(crmRegistrarDadosDoCliente.inputSchema).join(",")).not.toMatch(/contact|conversation|lead_id|org/);
+    gravar.mockResolvedValue({ nome: "Ana", cpf: "52998224725" });
+    const r = (await crmRegistrarDadosDoCliente.handler({ cpf: "52998224725" }, ctx("c1"))) as { ok: boolean; falta_obrigatorios_para_o_contrato: string[] };
+    expect(gravar).toHaveBeenCalledWith("org-1", "c1", { cpf: "52998224725" });
+    expect(r.ok).toBe(true);
+    expect(r.falta_obrigatorios_para_o_contrato.join(" ")).toMatch(/nome completo/);
+  });
+  it("sem campos, só consulta o que já está gravado (para não perguntar de novo)", async () => {
+    gravados.mockResolvedValue({ nome: "Ana Maria Souza" });
+    await crmRegistrarDadosDoCliente.handler({}, ctx("c1"));
+    expect(gravar).not.toHaveBeenCalled();
+    expect(gravados).toHaveBeenCalled();
+  });
+  it("sem contato no turno, não grava nada", async () => {
+    const r = (await crmRegistrarDadosDoCliente.handler({ cpf: "1" }, ctx(undefined))) as { ok: boolean };
+    expect(r.ok).toBe(false);
+    expect(gravar).not.toHaveBeenCalled();
   });
 });

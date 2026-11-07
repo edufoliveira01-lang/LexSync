@@ -69,7 +69,7 @@ export function padraoDaEmpresa(settings: unknown): AposAssinatura {
 
 /** Mensagem enviada ao cliente quando todos os documentos estão assinados. `{{nome}}` vira o primeiro nome do cliente. */
 export const MENSAGEM_PADRAO_APOS_ASSINATURA =
-  "Olá, {{nome}}! Recebemos todos os seus documentos assinados. Obrigado pela confiança! Nossa equipe já vai dar andamento e entra em contato com os próximos passos.";
+  "Olá, {{nome}}! Recebemos todos os seus documentos assinados. Obrigado pela confiança!";
 
 /** `undefined` (nunca configurada) usa o texto padrão; texto vazio significa "não enviar mensagem". */
 export function mensagemAposAssinatura(settings: unknown, nomeCompleto: string | null): string | null {

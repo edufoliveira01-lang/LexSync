@@ -20,6 +20,7 @@ import { escolhaEfetiva, lerDadosEmbutidos, lerEscolhaEmbutida, mensagemAposAssi
 import { aplicar, padraoDaOrg, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { configDosContratos, estadoDoContrato } from "@/lib/sales/contratos";
 import { moverParaEtapaDoContrato } from "@/lib/sales/etapa-do-contrato";
+import { acordarAgenteAposAssinatura, fecharEtapasPosAssinatura } from "@/lib/sales/pos-assinatura";
 import { sendMessageSchema } from "@/lib/schemas/messaging";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -66,7 +67,9 @@ export async function conferirContratosDaConversa(orgId: string, conversationId:
       try {
         const e = await estadoDoContrato(slug, n);
         if (e.status !== "assinado") continue;
-        const escolha = escolhaEfetiva(await padraoDaOrg(orgId), lerEscolhaEmbutida(corpoDoEnviado(n)));
+        const escolhida = escolhaEfetiva(await padraoDaOrg(orgId), lerEscolhaEmbutida(corpoDoEnviado(n)));
+        // etiqueta padrão: a equipe enxerga, na lista de conversas, quem já assinou (o escritório pode escolher outra)
+        const escolha = escolhida.tag ? escolhida : { ...escolhida, tag: "Contrato assinado" };
         const feito = await aplicar(orgId, conversationId, escolha, lerDadosEmbutidos(corpoDoEnviado(n)));
         // O escritório não escolheu um destino para depois da assinatura: o negócio vai para a etapa de ganho do funil dele
         if (!escolha.stage_id) {
@@ -89,6 +92,8 @@ export async function conferirContratosDaConversa(orgId: string, conversationId:
         // O evento é gravado ANTES de avisar o cliente: se algo falhar daqui em diante, o contrato já conta como tratado e a mensagem não sai duas vezes.
         await registrarEventoNaConversa({ organizationId: orgId, conversationId, userId: null, acao: "contrato_assinado", detalhe: `nº ${n}${resumo ? ` · ${resumo}` : ""}${e.arquivo_salvo ? " · arquivos salvos na pasta do cliente" : ""}` });
         if (mensagem) await enviarTexto(orgId, conversationId, mensagem);
+        // a conversa não para: o agente volta a falar daqui a pouco (pede os documentos) e a equipe acompanha pela fila
+        await acordarAgenteAposAssinatura(orgId, conversationId);
         novos += 1;
       } catch { /* o painel pode estar fora por instantes: tenta na próxima conferência */ }
     }
@@ -125,7 +130,10 @@ let ligado = false;
 export function iniciarAcompanhamentoDeContratos(intervaloMs = 60_000): void {
   if (ligado || !configDosContratos()) return;
   ligado = true;
-  const rodada = () => { void conferirContratosPendentes().catch((e) => logger.warn("[sales.contrato] rodada falhou", { erro: e instanceof Error ? e.message : String(e) })); };
+  const rodada = () => {
+    void conferirContratosPendentes().catch((e) => logger.warn("[sales.contrato] rodada falhou", { erro: e instanceof Error ? e.message : String(e) }));
+    void fecharEtapasPosAssinatura().catch((e) => logger.warn("[sales.contrato] rodada das etapas pós-assinatura falhou", { erro: e instanceof Error ? e.message : String(e) }));
+  };
   setTimeout(rodada, 20_000).unref();
   setInterval(rodada, intervaloMs).unref();
 }
