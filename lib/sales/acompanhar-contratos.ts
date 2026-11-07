@@ -26,7 +26,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const ATOR = { type: "api_token", id: "sales-contrato" } as const;
 const emAndamento = new Set<string>();
 
-async function enviarTexto(orgId: string, conversationId: string, body: string): Promise<boolean> {
+/** Manda um texto ao cliente pelo mesmo caminho do atendimento (ritmo anti-ban incluído). `false` quando não saiu. */
+export async function enviarTexto(orgId: string, conversationId: string, body: string): Promise<boolean> {
   const admin = createAdminClient();
   const requestId = randomUUID();
   try {
@@ -36,7 +37,7 @@ async function enviarTexto(orgId: string, conversationId: string, body: string):
     await registrarEnvioPorToken(ritmo, orgId, segurado, m.status);
     return m.status !== "failed";
   } catch (e) {
-    logger.warn("[sales.contrato] não consegui enviar a mensagem após a assinatura", { conversation_id: conversationId, erro: e instanceof Error ? e.message : String(e) });
+    logger.warn("[sales.contrato] não consegui enviar a mensagem ao cliente", { conversation_id: conversationId, erro: e instanceof Error ? e.message : String(e) });
     return false;
   }
 }

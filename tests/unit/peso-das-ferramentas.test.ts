@@ -62,7 +62,7 @@ const TETO: Readonly<Record<string, { tokens: number; motivo: string }>> = {
   "crm_get_honorarios_contrato": { tokens: 253, motivo: BASE },
   "crm_list_honorarios_parcelas": { tokens: 222, motivo: BASE },
   "crm_preparar_proposta": { tokens: 132, motivo: BASE },
-  "crm_enviar_contrato": { tokens: 800, motivo: "Fork Sales: os dados de qualificação (17 campos, 3 tipos de documento) entram numa chamada só, para o agente não pedir o contrato aos pedaços" },
+  "crm_enviar_contrato": { tokens: 810, motivo: "Fork Sales: os dados de qualificação (17 campos, 3 tipos de documento) entram numa chamada só, para o agente não pedir o contrato aos pedaços; a descrição também ensina que o sistema envia o link ao cliente (não reenviar)" },
   "crm_describe_external_data": { tokens: 300, motivo: BASE },
   "crm_query_external_data": { tokens: 641, motivo: BASE },
   "crm_consultar_receita": { tokens: 403, motivo: BASE },
@@ -133,7 +133,7 @@ const TETO: Readonly<Record<string, { tokens: number; motivo: string }>> = {
   "schedule_followup (com negócio)": { tokens: 314, motivo: BASE },
 };
 
-const TETO_TOTAL = 30359; // Fork Sales: +790 da ferramenta crm_enviar_contrato
+const TETO_TOTAL = 30374; // Fork Sales: +805 da ferramenta crm_enviar_contrato
 
 const VARIANTE = "schedule_followup (com negócio)";
 

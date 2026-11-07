@@ -7,6 +7,7 @@
  */
 import { z } from "zod";
 
+import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { ErroContratoSales } from "@/lib/sales/contratos";
 import type { McpToolDefinition } from "../types";
@@ -43,8 +44,8 @@ export const crmEnviarContrato: McpToolDefinition<typeof inputShape> = {
   name: "crm_enviar_contrato",
   description:
     "Gera os documentos do escritório (procuração, declarações, contrato) com os dados do cliente e envia o link de ASSINATURA. Use SÓ depois de o cliente confirmar os dados e querer o contrato. " +
-    "Devolve `mensagem_para_enviar` (já com o link): envie-a ao cliente exatamente como veio. Se já houver contrato aguardando assinatura nesta conversa, devolve `ja_enviado` e NÃO gera outro. " +
-    "Em caso de erro, diga ao cliente que a equipe vai enviar o contrato e passe a conversa a um atendente.",
+    "O sistema manda o link ao cliente no WhatsApp (`link_enviado_ao_cliente`: NÃO reenvie); só se falhar devolve `mensagem_para_enviar`, para você enviar como veio. Se já houver contrato aguardando assinatura, devolve `ja_enviado` e NÃO gera outro. " +
+    "Em caso de erro, diga que a equipe vai enviar o contrato e passe a conversa a um atendente.",
   inputSchema: inputShape,
   category: "write",
   requiresRole: "ai_operator", // só o agente (token efêmero do turno) envia contrato; a pessoa usa o botão "Gerar contrato"
@@ -64,9 +65,18 @@ export const crmEnviarContrato: McpToolDefinition<typeof inputShape> = {
     const { confirmou_com_o_cliente: _c, ...dados } = input;
     try {
       const { contrato, mensagem } = await criarContratoNaConversa({ orgId: ctx.organizationId, conversationId, slug, userId: null, nomeDeQuemPediu: "Assistente virtual", dados });
+      // O link NÃO depende de o modelo lembrar de mandá-lo: o sistema envia a mensagem na hora, pelo mesmo caminho do atendimento.
+      // Só se o envio falhar a mensagem volta para o agente mandar (como antes).
+      const enviado = await enviarTexto(ctx.organizationId, conversationId, mensagem);
+      if (enviado) {
+        return {
+          ok: true, contrato_id: contrato.id, email_enviado: contrato.email_enviado, link_enviado_ao_cliente: true,
+          proximo_passo: "O sistema JÁ enviou ao cliente, no WhatsApp, a mensagem com o link de assinatura. NÃO envie o link de novo. Em UMA mensagem curta, avise que a assinatura é pelo celular e leva poucos minutos, e que você acompanha. Não mova o negócio de etapa: o sistema já fez.",
+        };
+      }
       return {
         ok: true, contrato_id: contrato.id, email_enviado: contrato.email_enviado, mensagem_para_enviar: mensagem,
-        proximo_passo: "Envie `mensagem_para_enviar` ao cliente, sem alterar o link. Depois avise que a assinatura é pelo celular, leva poucos minutos e que você acompanha. Mova o negócio para a etapa 'Contrato enviado' se ela existir.",
+        proximo_passo: "O contrato foi criado, mas o envio automático falhou. Envie `mensagem_para_enviar` ao cliente com send_message, sem alterar o link. Depois avise que a assinatura é pelo celular e leva poucos minutos.",
       };
     } catch (e) {
       if (e instanceof ErroContratoSales) return { ok: false, erro: e.message, proximo_passo: "Se o erro for de dado faltando, peça só o que faltou ao cliente. Caso contrário, diga que a equipe enviará o contrato e passe a conversa a um atendente." };
