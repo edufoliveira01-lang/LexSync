@@ -6,6 +6,7 @@
  * O alvo é SEMPRE o contato do turno e o negócio aberto dele — a ferramenta não recebe id nenhum.
  */
 import { camposDoFunil } from "@/lib/leads/campos-do-funil";
+import { consultarCep } from "@/lib/sales/consulta-cep";
 import { isValidCpf } from "@/lib/legal/perfil-do-pais";
 import { valorParaOCampo, type DadosDoCliente } from "@/lib/sales/campos-do-contrato";
 import { REGRAS, sem } from "@/lib/sales/sugerir-dados";
@@ -93,6 +94,16 @@ export async function gravarDadosDoCliente(orgId: string, contactId: string, nov
   const recebidos: Record<string, string> = {};
   for (const k of CAMPOS_DE_TEXTO) { const v = novos[k]; if (!vazio(v)) recebidos[k] = limpa(v); }
   if (recebidos.uf) recebidos.uf = recebidos.uf.toUpperCase().slice(0, 2);
+  // CEP informado: completa rua, bairro, cidade e UF que a pessoa NÃO disse (o que ela disse nunca é trocado). Sem resposta do serviço, segue sem isso.
+  if (recebidos.cep && (!recebidos.logradouro || !recebidos.bairro || !recebidos.cidade || !recebidos.uf)) {
+    const e = await consultarCep(recebidos.cep);
+    if (e) {
+      if (!recebidos.logradouro && e.logradouro) recebidos.logradouro = e.logradouro;
+      if (!recebidos.bairro && e.bairro) recebidos.bairro = e.bairro;
+      if (!recebidos.cidade && e.cidade) recebidos.cidade = e.cidade;
+      if (!recebidos.uf && e.uf) recebidos.uf = e.uf;
+    }
+  }
   if (recebidos.cpf) recebidos.cpf = recebidos.cpf.replace(/[^\d.\-/]/g, "").trim();
 
   const patch: Record<string, unknown> = {};

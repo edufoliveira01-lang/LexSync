@@ -96,7 +96,7 @@ const dadosShape = {
   email: z.string().max(254).optional(), data_nascimento: z.string().max(20).optional(), nome_da_mae: z.string().max(120).optional(),
   cpf: z.string().max(20).optional(), rg: z.string().max(30).optional(),
   nacionalidade: z.string().max(40).optional(), sexo: z.enum(["M", "F"]).optional(), estado_civil: z.string().max(40).optional(), profissao: z.string().max(100).optional(),
-  cep: z.string().max(12).optional(), logradouro: z.string().max(200).optional().describe("Rua/avenida."), numero: z.string().max(20).optional(),
+  cep: z.string().max(12).optional().describe("Com o CEP, rua, bairro, cidade e UF vêm sozinhos: pergunte só CEP e número."), logradouro: z.string().max(200).optional().describe("Rua/avenida."), numero: z.string().max(20).optional(),
   complemento: z.string().max(100).optional(), bairro: z.string().max(100).optional(), cidade: z.string().max(100).optional(), uf: z.string().max(2).optional(),
 };
 
