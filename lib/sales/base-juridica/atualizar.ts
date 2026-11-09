@@ -204,11 +204,12 @@ export async function atualizarSalarioMinimo(deps: Dependencias, hoje = new Date
   const j = resposta ? (extrairJson(resposta) as { valor?: number; vigente_desde?: string; url?: string; trecho?: string } | null) : null;
   if (!j || typeof j.valor !== "number" || !j.url || !j.trecho || !/^\d{4}-\d{2}-\d{2}$/.test(j.vigente_desde ?? "")) return { gravado: false, motivo: "resposta ilegível" };
   if (atual && (j.valor < atual.valor * 0.9 || j.valor > atual.valor * 1.25)) return { gravado: false, motivo: "valor fora do plausível frente ao atual" };
-  if (atual && atual.valor === j.valor) return { gravado: false, motivo: "já está atualizado" };
+  // mesmo valor e já confirmado: nada a fazer. Mesmo valor ainda "a confirmar": confere na fonte e marca como confirmado.
+  if (atual && atual.valor === j.valor && atual.confirmado) return { gravado: false, motivo: "já está atualizado" };
   const texto = await deps.baixar(j.url);
   const formas = [j.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }), j.valor.toLocaleString("pt-BR")];
   if (!texto || !evidenciaConfere(j.trecho, texto) || !formas.some((f) => norm(j.trecho!).includes(norm(f)))) return { gravado: false, motivo: "o trecho não confere com a fonte oficial" };
-  const e = await escreve("sales_base_juridica_valores").upsert({ chave: "salario_minimo", vigente_desde: j.vigente_desde, valor: j.valor, fonte: j.url, revisado_em: hoje.toISOString().slice(0, 10), confirmado: true }, { onConflict: "chave,vigente_desde" });
+  const e = await escreve("sales_base_juridica_valores").upsert({ chave: "salario_minimo", vigente_desde: atual && atual.valor === j.valor ? atual.vigente_desde : j.vigente_desde, valor: j.valor, fonte: j.url, revisado_em: hoje.toISOString().slice(0, 10), confirmado: true }, { onConflict: "chave,vigente_desde" });
   if (e.error) return { gravado: false, motivo: e.error.message };
   limparCacheDaBase();
   return { gravado: true, motivo: "valor conferido na fonte oficial" };
