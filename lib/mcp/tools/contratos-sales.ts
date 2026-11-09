@@ -7,6 +7,8 @@
  */
 import { z } from "zod";
 
+import { acharFicha, temasDaBase } from "@/lib/sales/base-juridica/fichas";
+import { calcularRendaPerCapita } from "@/lib/sales/base-juridica/valores";
 import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
@@ -120,5 +122,51 @@ export const crmRegistrarDadosDoCliente: McpToolDefinition<typeof dadosShape> = 
     } catch (e) {
       return { ok: false, erro: e instanceof Error ? e.message : "não consegui gravar agora", proximo_passo: "Siga a conversa e registre uma nota com o dado, para a equipe." };
     }
+  },
+};
+
+const baseShape = { tema: z.string().min(2).max(120).describe("O assunto: bpc, loas, pensão por morte, auxílio por incapacidade…") };
+
+/** Ficha curada do tema (requisitos, alegações do INSS, teses, prazos, fonte e data). O agente responde com base nela, não de memória. */
+export const crmConsultarBaseJuridica: McpToolDefinition<typeof baseShape> = {
+  name: "crm_consultar_base_juridica",
+  description:
+    "Consulta a ficha jurídica do tema (requisitos, alegações do INSS, teses, prazos, fonte e data). Use ANTES de responder dúvida de direito, prazo ou benefício; responda com base nela. " +
+    "Se `cobertura: false`, a base não cobre: diga que o advogado confirma.",
+  inputSchema: baseShape,
+  category: "read",
+  requiresRole: "agent",
+  requiresScope: "mcp:read",
+  handler: async (input) => {
+    const r = acharFicha(input.tema);
+    if (!r) return { ok: true, cobertura: false, temas_disponiveis: temasDaBase(), proximo_passo: "A base não cobre este tema: responda só com o que for geral e seguro e diga que o advogado confirma." };
+    const { ficha, vencida } = r;
+    return {
+      ok: true, cobertura: true, ficha,
+      aviso: [vencida ? "A ficha passou da validade de revisão: responda com ressalva e diga que o advogado confirma." : null, ficha.status === "pendente_revisao" ? "Ficha ainda sem a conferência de um advogado: use, e diga que o advogado confirma pelo caso." : null].filter(Boolean),
+      proximo_passo: "Responda com segurança e em linguagem simples, com base na ficha; nunca prometa resultado; cite o prazo quando houver.",
+    };
+  },
+};
+
+const rendaShape = {
+  renda_total_mensal: z.number().min(0).max(1_000_000).describe("Renda mensal total da família, em reais."),
+  moradores: z.number().int().min(1).max(30).describe("Quantas pessoas moram na casa (a família para o cálculo)."),
+  gastos_saude_mensais: z.number().min(0).max(1_000_000).optional().describe("Gastos mensais de saúde comprovados (terapias, remédios, fraldas…), se houver."),
+};
+
+/** Aritmética do critério de renda do BPC com o salário mínimo VIGENTE: o modelo não calcula nem lembra o valor. */
+export const crmCalcularRendaPerCapita: McpToolDefinition<typeof rendaShape> = {
+  name: "crm_calcular_renda_per_capita",
+  description:
+    "Calcula a renda por pessoa da família contra 1/4 e 1/2 do salário mínimo vigente (BPC). Use SEMPRE que for falar de renda; nunca calcule de cabeça nem cite o salário mínimo de memória.",
+  inputSchema: rendaShape,
+  category: "read",
+  requiresRole: "agent",
+  requiresScope: "mcp:read",
+  handler: async (input) => {
+    const r = calcularRendaPerCapita(input.renda_total_mensal, input.moradores, input.gastos_saude_mensais ?? 0);
+    if (!r) return { ok: false, erro: "Não consegui calcular com esses números.", proximo_passo: "Diga que o advogado faz a conta com os números exatos." };
+    return { ok: true, ...r, proximo_passo: "Explique o resultado em linguagem simples, sem prometer: diga a faixa e que o advogado confirma pelo caso." };
   },
 };

@@ -1,0 +1,62 @@
+import { describe, expect, it } from "vitest";
+
+import { acharFicha, FICHAS } from "@/lib/sales/base-juridica/fichas";
+import { calcularRendaPerCapita, valorVigente } from "@/lib/sales/base-juridica/valores";
+
+describe("valores vigentes", () => {
+  it("devolve o salário mínimo da data, com a fonte", () => {
+    expect(valorVigente("salario_minimo", new Date("2025-06-01"))?.valor).toBe(1518);
+    expect(valorVigente("salario_minimo", new Date("2026-06-01"))?.valor).toBe(1621);
+  });
+  it("sem valor para a data, devolve null", () => {
+    expect(valorVigente("salario_minimo", new Date("2020-01-01"))).toBeNull();
+  });
+});
+
+describe("renda per capita (BPC)", () => {
+  it("o caso da Patrícia: 2.200 para 4 pessoas = 550, acima de 1/4 e dentro de 1/2", () => {
+    const r = calcularRendaPerCapita(2200, 4, 0, new Date("2026-11-09"))!;
+    expect(r.renda_per_capita).toBe(550);
+    expect(r.limite_um_quarto).toBe(405.25);
+    expect(r.limite_meio).toBe(810.5);
+    expect(r.faixa).toBe("entre_um_quarto_e_meio");
+  });
+  it("gastos de saúde descontados podem levar a renda para dentro do limite", () => {
+    const r = calcularRendaPerCapita(2200, 4, 900, new Date("2026-11-09"))!;
+    expect(r.renda_per_capita_descontados_gastos_de_saude).toBe(325);
+    expect(r.faixa_descontados_gastos_de_saude).toBe("ate_um_quarto");
+  });
+  it("acima de meio salário", () => {
+    expect(calcularRendaPerCapita(5000, 2, 0, new Date("2026-11-09"))!.faixa).toBe("acima_de_meio");
+  });
+  it("entradas inválidas não calculam", () => {
+    expect(calcularRendaPerCapita(1000, 0)).toBeNull();
+  });
+});
+
+describe("fichas", () => {
+  it("acha o BPC por palavras do cliente", () => {
+    expect(acharFicha("meu filho tem autismo e o INSS negou o BPC")?.ficha.tema).toBe("bpc");
+    expect(acharFicha("loas idoso")?.ficha.tema).toBe("bpc");
+  });
+  it("tema fora da base: null", () => {
+    expect(acharFicha("divórcio litigioso")).toBeNull();
+  });
+  it("ficha passada da validade vem marcada como vencida", () => {
+    expect(acharFicha("bpc", new Date("2027-06-01"))?.vencida).toBe(true);
+    expect(acharFicha("bpc", new Date("2026-11-20"))?.vencida).toBe(false);
+  });
+  it("toda ficha traz fonte, data, validade e prazos", () => {
+    for (const f of FICHAS) {
+      expect(f.fontes.length).toBeGreaterThan(0);
+      expect(f.revisado_em).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(f.validade_dias).toBeGreaterThan(0);
+      expect(f.prazos.length).toBeGreaterThan(0);
+    }
+  });
+  it("a ficha de BPC cita o prazo de 30 dias e a flexibilização até 1/2", () => {
+    const t = JSON.stringify(acharFicha("bpc")!.ficha);
+    expect(t).toContain("30 dias");
+    expect(t).toContain("1/2 salário mínimo");
+  });
+});

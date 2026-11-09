@@ -25,4 +25,22 @@ export const TOOLS_CONTRATOS_SALES = declararTools([
     risco: "atencao",
     pacotes: ["vender"],
   },
+  {
+    name: "crm_consultar_base_juridica",
+    category: "read",
+    rotulo: "Consultar a base jurídica",
+    explicacao: "Antes de responder uma dúvida de direito, prazo ou benefício, o agente consulta a ficha do tema (requisitos, prazos, fonte e data) em vez de responder de memória.",
+    oQueToca: "Nada é alterado: só leitura",
+    risco: "seguro",
+    pacotes: ["vender"],
+  },
+  {
+    name: "crm_calcular_renda_per_capita",
+    category: "read",
+    rotulo: "Calcular a renda por pessoa (BPC)",
+    explicacao: "Faz a conta da renda por pessoa da família contra 1/4 e 1/2 do salário mínimo vigente, para o agente não errar o número nem usar um salário mínimo antigo.",
+    oQueToca: "Nada é alterado: só cálculo",
+    risco: "seguro",
+    pacotes: ["vender"],
+  },
 ]);

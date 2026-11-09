@@ -17,6 +17,8 @@ export const FERRAMENTAS_DO_AGENTE_JURIDICO: readonly string[] = [
   "crm_enviar_contrato",
   // dados do cliente: gravados na hora, para não perguntar de novo e o contrato sair só com a confirmação
   "crm_registrar_dados_do_cliente",
+  // base jurídica e cálculo (BPC): responder com a ficha e a conta certa, não de memória
+  "crm_consultar_base_juridica", "crm_calcular_renda_per_capita",
   // agenda (consultas, confirmações)
   "crm_list_event_types", "crm_find_free_slots", "crm_book_appointment", "crm_list_appointments",
   "crm_confirm_appointment", "crm_reschedule_appointment", "crm_cancel_appointment",
