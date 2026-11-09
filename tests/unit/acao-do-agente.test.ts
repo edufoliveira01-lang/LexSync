@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { frasesDaFerramenta } from "@/lib/inbox/acao-do-agente";
+import { frasesDaFerramenta, frasesDeConsulta } from "@/lib/inbox/acao-do-agente";
 
 describe("anotações internas do chat — o que o agente fez", () => {
   it("dados gravados: lista só os NOMES dos campos, nunca os valores (CPF, RG e endereço não vão para a linha)", () => {
@@ -39,5 +39,25 @@ describe("anotações internas — ferramentas nativas do motor", () => {
   it("chamada que falhou ou foi bloqueada vira 'tentou …, mas não foi concluído'", () => {
     expect(frasesDaFerramentaNativa("update_lead_state", { stage: "won" }, "falhou")).toBe("tentou marcar o atendimento como «ganho», mas não foi concluído");
     expect(frasesDaFerramentaNativa("request_human_handoff", { reason: "x" }, "bloqueada")).toMatch(/^tentou passar a conversa para a equipe/);
+  });
+});
+
+describe("frasesDeConsulta: a equipe vê que a resposta veio da base", () => {
+  it("ficha consultada: título, data e fontes, com ressalva quando pendente", () => {
+    const f = frasesDeConsulta("crm_consultar_base_juridica", { ok: true, cobertura: true, ficha: { titulo: "BPC/LOAS", revisado_em: "2026-11-09", fontes: [{ url: "https://www.planalto.gov.br/x" }] }, aviso: ["sem conferência"] });
+    expect(f).toContain("BPC/LOAS");
+    expect(f).toContain("planalto.gov.br");
+    expect(f).toContain("com ressalva");
+  });
+  it("tema fora da base", () => {
+    expect(frasesDeConsulta("crm_consultar_base_juridica", { ok: true, cobertura: false })).toContain("não está na base");
+  });
+  it("renda per capita", () => {
+    const f = frasesDeConsulta("crm_calcular_renda_per_capita", { renda_per_capita: 550, limite_um_quarto: 405.25, limite_meio: 810.5, salario_minimo: 1621, salario_minimo_confirmado: true });
+    expect(f).toContain("550,00");
+    expect(f).toContain("405,25");
+  });
+  it("outras ferramentas não anotam", () => {
+    expect(frasesDeConsulta("crm_get_contact", {})).toBeNull();
   });
 });

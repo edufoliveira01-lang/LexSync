@@ -11,7 +11,7 @@
  * loop. We wrap that tool's execute to publish a one-shot signal via
  * `runtimeHandoffSignal`, which `runAgent` checks after each step.
  */
-import { frasesDaFerramenta, anotarMovimentoDoNegocio, anotarNaConversaDoContato } from "@/lib/inbox/acao-do-agente";
+import { frasesDaFerramenta, frasesDeConsulta, anotarMovimentoDoNegocio, anotarNaConversaDoContato } from "@/lib/inbox/acao-do-agente";
 import { tool, type Tool } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -555,6 +555,11 @@ function wrapMcpTool(
             const frase = frasesDaFerramenta(def.name, argsRecord);
             if (frase) void anotarNaConversaDoContato(input.ctx.organizationId, input.contatoDoTurno, frase);
           }
+        }
+        // Consultas à base jurídica (leitura): a equipe vê na conversa que a resposta veio da ficha e da calculadora.
+        if (input.contatoDoTurno && def.category === "read" && motivoDoVazio === null) {
+          const frase = frasesDeConsulta(def.name, result);
+          if (frase) void anotarNaConversaDoContato(input.ctx.organizationId, input.contatoDoTurno, frase);
         }
         return result;
       } catch (err) {

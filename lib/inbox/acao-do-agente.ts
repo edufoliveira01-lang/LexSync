@@ -34,6 +34,29 @@ export function frasesDaFerramenta(nome: string, entrada: Record<string, unknown
   }
 }
 
+const moeda = (n: unknown) => (typeof n === "number" ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "");
+
+/**
+ * O que o agente CONSULTOU na base jurídica (leituras não gravam nada, então não passavam pela anotação): a equipe vê na conversa que a resposta veio da
+ * ficha (com a data da revisão e a fonte) e da calculadora, e não da memória do modelo. `null` = não anota.
+ */
+export function frasesDeConsulta(nome: string, resultado: unknown): string | null {
+  const r = (resultado && typeof resultado === "object" ? resultado : {}) as Record<string, unknown>;
+  if (nome === "crm_consultar_base_juridica") {
+    if (r.cobertura === false) return "consultou a base jurídica: o tema não está na base (respondeu só o que é geral e disse que o advogado confirma)";
+    const f = (r.ficha ?? {}) as { titulo?: string; revisado_em?: string; status?: string; fontes?: { url?: string }[] };
+    if (!f.titulo) return null;
+    const hosts = [...new Set((f.fontes ?? []).map((x) => { try { return new URL(String(x.url)).hostname.replace(/^www\./, ""); } catch { return ""; } }).filter(Boolean))].slice(0, 3);
+    const aviso = Array.isArray(r.aviso) && r.aviso.length > 0 ? " · com ressalva (ficha ainda sem a conferência de um advogado)" : "";
+    return `consultou a base jurídica: ${f.titulo} (revisada em ${f.revisado_em ?? "?"}${hosts.length ? ` · fontes: ${hosts.join(", ")}` : ""})${aviso}`;
+  }
+  if (nome === "crm_calcular_renda_per_capita") {
+    if (typeof r.renda_per_capita !== "number") return null;
+    return `calculou a renda por pessoa: ${moeda(r.renda_per_capita)} (1/4 do salário mínimo: ${moeda(r.limite_um_quarto)} · 1/2: ${moeda(r.limite_meio)} · salário mínimo ${moeda(r.salario_minimo)}${r.salario_minimo_confirmado === false ? ", a confirmar" : ""})`;
+  }
+  return null;
+}
+
 async function conversaDoContato(admin: ReturnType<typeof createAdminClient>, orgId: string, contactId: string): Promise<string | null> {
   const { data } = await admin.from("conversations").select("id").eq("organization_id", orgId).eq("contact_id", contactId).order("last_inbound_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
   return (data as { id: string } | null)?.id ?? null;
