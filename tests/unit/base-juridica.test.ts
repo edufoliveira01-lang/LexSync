@@ -62,3 +62,22 @@ describe("fichas", () => {
     expect(t).toContain("1/2 salário mínimo");
   });
 });
+
+describe("fichas de todas as áreas", () => {
+  it("acha o tema certo pela fala do cliente", () => {
+    const t = (q: string) => acharFicha(q)?.ficha.tema;
+    expect(t("meu companheiro faleceu e o INSS negou a pensão por morte")).toBe("pensao_por_morte");
+    expect(t("me machuquei no trabalho e perdi dois dedos, a empresa abriu CAT")).toMatch(/auxilio_acidente|trabalhista_acidente_e_estabilidade/);
+    expect(t("fui demitido sem justa causa e não recebi as verbas rescisórias")).toBe("trabalhista_rescisao_e_verbas");
+    expect(t("trabalho sem carteira assinada e faço horas extras")).toBe("trabalhista_vinculo_e_horas_extras");
+    expect(t("quero pedir salário-maternidade")).toBe("salario_maternidade");
+  });
+  it("palavra curta só casa como palavra inteira", () => {
+    expect(acharFicha("quero uma categoria de produto")).toBeNull();
+  });
+  it("todo tema tem id único", () => {
+    const ids = FICHAS.map((f) => f.tema);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.length).toBeGreaterThanOrEqual(12);
+  });
+});

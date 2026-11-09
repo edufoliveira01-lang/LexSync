@@ -117,7 +117,7 @@ export const baixarOficial: Dependencias["baixar"] = async (url) => {
   try {
     const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "text/html,application/xhtml+xml" }, signal: ctl.signal, redirect: "follow" });
     if (!r.ok || !urlOficial(r.url || url)) return null;
-    return textoDaPagina((await r.text()).slice(0, 2_000_000)).slice(0, 200_000);
+    return textoDaPagina((await r.text()).slice(0, 4_000_000)).slice(0, 1_500_000);
   } catch {
     return null;
   } finally {
@@ -153,8 +153,23 @@ export const modeloAnthropic: Dependencias["modelo"] = async (prompt, { busca })
   }
 };
 
+/** As partes do texto mais ligadas ao tema (leis grandes não cabem inteiras no pedido ao modelo): pedaços ranqueados por termos da ficha. */
+export function trechosRelevantes(texto: string, termos: readonly string[], maxChars = 45_000, tamanho = 2_500): string {
+  if (texto.length <= maxChars) return texto;
+  const palavras = [...new Set(termos.flatMap((t) => norm(t).split(/[^a-z0-9]+/)).filter((w) => w.length >= 4))];
+  const pedacos: { i: number; pts: number; t: string }[] = [];
+  for (let i = 0, n = 0; i < texto.length; i += tamanho, n++) {
+    const t = texto.slice(i, i + tamanho);
+    const nt = norm(t);
+    pedacos.push({ i: n, pts: palavras.reduce((a, w) => a + (nt.includes(w) ? 1 : 0), 0), t });
+  }
+  const escolhidos = [...pedacos].sort((a, b) => b.pts - a.pts).slice(0, Math.max(1, Math.floor(maxChars / tamanho))).sort((a, b) => a.i - b.i);
+  return escolhidos.map((p) => p.t).join(" […] ");
+}
+
 function promptDaFicha(ficha: FichaJuridica, fontes: Record<string, string>): string {
-  const textos = Object.entries(fontes).map(([u, t]) => `### FONTE ${u}\n${t.slice(0, 60_000)}`).join("\n\n");
+  const termos = [ficha.titulo, ficha.resumo, ...ficha.palavras_chave, ...ficha.requisitos, ...ficha.prazos];
+  const textos = Object.entries(fontes).map(([u, t]) => `### FONTE ${u}\n${trechosRelevantes(t, termos)}`).join("\n\n");
   return `Você revisa uma ficha jurídica brasileira usada por um atendente virtual de escritório de advocacia. Compare a FICHA ATUAL com as fontes OFICIAIS abaixo (e, se tiver busca, com o que for mais recente em fontes oficiais: leis, decretos, portarias, súmulas, temas do STF/STJ/TNU).
 REGRAS: proponha mudança SOMENTE onde a fonte oficial mostrar que a ficha está desatualizada, incompleta ou errada. Cada mudança precisa de uma evidência com a URL oficial e um TRECHO LITERAL (copiado, entre 40 e 300 caracteres) dessa fonte; trecho que não existir na fonte será descartado. Não invente. Se nada mudou, devolva ficha_proposta vazia.
 Devolva APENAS um JSON: {"ficha_proposta": {<campo>: <novo valor completo do campo>}, "evidencias": [{"campo": "<campo>", "url": "<url oficial>", "trecho": "<trecho literal>"}], "observacao": "<resumo curto>"}.

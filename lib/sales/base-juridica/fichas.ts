@@ -3,6 +3,9 @@
  * Cada ficha traz fonte, data da revisão e validade; passou da validade, o agente responde com ressalva até alguém revalidar.
  * `status`: "pendente_revisao" = redigida por IA a partir de fontes oficiais e ainda sem a conferência de um advogado: o agente a usa, mas diz que o advogado confirma.
  */
+import { FICHAS_PREVIDENCIARIO } from "./fichas-previdenciario";
+import { FICHAS_TRABALHISTA } from "./fichas-trabalhista";
+
 export interface FonteDaFicha { titulo: string; url: string }
 export interface FichaJuridica {
   tema: string;
@@ -24,7 +27,7 @@ export interface FichaJuridica {
   status: "revisada" | "pendente_revisao";
 }
 
-export const FICHAS: readonly FichaJuridica[] = [
+const FICHA_BPC: FichaJuridica =
   {
     tema: "bpc",
     titulo: "BPC/LOAS — benefício assistencial à pessoa com deficiência e ao idoso",
@@ -68,8 +71,9 @@ export const FICHAS: readonly FichaJuridica[] = [
     revisado_em: "2026-11-09",
     validade_dias: 90,
     status: "pendente_revisao",
-  },
-];
+  };
+
+export const FICHAS: readonly FichaJuridica[] = [FICHA_BPC, ...FICHAS_PREVIDENCIARIO, ...FICHAS_TRABALHISTA];
 
 const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -79,7 +83,9 @@ export interface FichaConsultada { ficha: FichaJuridica; vencida: boolean }
 export function acharFicha(consulta: string, hoje: Date = new Date(), lista: readonly FichaJuridica[] = FICHAS): FichaConsultada | null {
   const q = norm(consulta);
   if (!q.trim()) return null;
-  const pontos = (f: FichaJuridica) => (norm(f.tema) === q ? 100 : 0) + f.palavras_chave.filter((p) => q.includes(norm(p))).length * 10 + (q.includes(norm(f.tema)) ? 5 : 0);
+  // palavra-chave como palavra inteira ("cat" não casa com "categoria")
+  const tem = (p: string) => new RegExp(`(^|[^a-z0-9])${norm(p).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^a-z0-9])`).test(q);
+  const pontos = (f: FichaJuridica) => (norm(f.tema) === q ? 100 : 0) + f.palavras_chave.filter(tem).length * 10 + (q.includes(norm(f.tema)) ? 5 : 0);
   const melhor = lista.map((f) => ({ f, p: pontos(f) })).filter((x) => x.p > 0).sort((a, b) => b.p - a.p)[0]?.f;
   if (!melhor) return null;
   const idadeDias = (hoje.getTime() - new Date(melhor.revisado_em).getTime()) / 86_400_000;

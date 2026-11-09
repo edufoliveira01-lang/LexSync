@@ -87,3 +87,14 @@ describe("atualizarFicha (ponta a ponta com dependências falsas)", () => {
     expect(b.nova).toBe(ficha);
   });
 });
+
+describe("trechosRelevantes", () => {
+  it("texto curto passa inteiro; texto longo fica com os pedaços do tema", async () => {
+    const { trechosRelevantes } = await import("@/lib/sales/base-juridica/atualizar");
+    expect(trechosRelevantes("curto", ["pensao"])).toBe("curto");
+    const longo = "lixo sem relacao ".repeat(8000) + " A pensao por morte sera devida ao conjuge e companheiro dependente " + "outro lixo ".repeat(8000);
+    const r = trechosRelevantes(longo, ["pensão por morte", "cônjuge", "companheiro"], 6000, 1000);
+    expect(r.length).toBeLessThan(longo.length);
+    expect(r).toContain("pensao por morte sera devida");
+  });
+});
