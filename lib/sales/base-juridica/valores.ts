@@ -21,9 +21,9 @@ export const VALORES: readonly ValorVigente[] = [
 ];
 
 /** O valor que vale na data (hoje por padrão), ou `null` se não houver. */
-export function valorVigente(chave: ValorVigente["chave"], em: Date = new Date()): ValorVigente | null {
+export function valorVigente(chave: ValorVigente["chave"], em: Date = new Date(), lista: readonly ValorVigente[] = VALORES): ValorVigente | null {
   const dia = em.toISOString().slice(0, 10);
-  return VALORES.filter((v) => v.chave === chave && v.vigente_desde <= dia).sort((a, b) => b.vigente_desde.localeCompare(a.vigente_desde))[0] ?? null;
+  return lista.filter((v) => v.chave === chave && v.vigente_desde <= dia).sort((a, b) => b.vigente_desde.localeCompare(a.vigente_desde))[0] ?? null;
 }
 
 export interface ResultadoRendaPerCapita {
@@ -44,8 +44,8 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 const faixaDe = (pc: number, quarto: number, meio: number): ResultadoRendaPerCapita["faixa"] => (pc <= quarto ? "ate_um_quarto" : pc <= meio ? "entre_um_quarto_e_meio" : "acima_de_meio");
 
 /** Renda por pessoa da família contra 1/4 e 1/2 do salário mínimo vigente (BPC). Aritmética aqui, nunca no modelo. */
-export function calcularRendaPerCapita(rendaTotal: number, moradores: number, gastosDeSaude = 0, em: Date = new Date()): ResultadoRendaPerCapita | null {
-  const sm = valorVigente("salario_minimo", em);
+export function calcularRendaPerCapita(rendaTotal: number, moradores: number, gastosDeSaude = 0, em: Date = new Date(), lista: readonly ValorVigente[] = VALORES): ResultadoRendaPerCapita | null {
+  const sm = valorVigente("salario_minimo", em, lista);
   if (!sm || !(moradores >= 1) || !(rendaTotal >= 0)) return null;
   const quarto = r2(sm.valor / 4), meio = r2(sm.valor / 2);
   const pc = r2(rendaTotal / moradores);

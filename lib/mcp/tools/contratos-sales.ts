@@ -7,6 +7,7 @@
  */
 import { z } from "zod";
 
+import { carregarBase } from "@/lib/sales/base-juridica/armazem";
 import { acharFicha, temasDaBase } from "@/lib/sales/base-juridica/fichas";
 import { calcularRendaPerCapita } from "@/lib/sales/base-juridica/valores";
 import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
@@ -138,8 +139,9 @@ export const crmConsultarBaseJuridica: McpToolDefinition<typeof baseShape> = {
   requiresRole: "agent",
   requiresScope: "mcp:read",
   handler: async (input) => {
-    const r = acharFicha(input.tema);
-    if (!r) return { ok: true, cobertura: false, temas_disponiveis: temasDaBase(), proximo_passo: "A base não cobre este tema: responda só com o que for geral e seguro e diga que o advogado confirma." };
+    const base = await carregarBase();
+    const r = acharFicha(input.tema, new Date(), base.fichas);
+    if (!r) return { ok: true, cobertura: false, temas_disponiveis: temasDaBase(base.fichas), proximo_passo: "A base não cobre este tema: responda só com o que for geral e seguro e diga que o advogado confirma." };
     const { ficha, vencida } = r;
     return {
       ok: true, cobertura: true, ficha,
@@ -165,7 +167,8 @@ export const crmCalcularRendaPerCapita: McpToolDefinition<typeof rendaShape> = {
   requiresRole: "agent",
   requiresScope: "mcp:read",
   handler: async (input) => {
-    const r = calcularRendaPerCapita(input.renda_total_mensal, input.moradores, input.gastos_saude_mensais ?? 0);
+    const base = await carregarBase();
+    const r = calcularRendaPerCapita(input.renda_total_mensal, input.moradores, input.gastos_saude_mensais ?? 0, new Date(), base.valores);
     if (!r) return { ok: false, erro: "Não consegui calcular com esses números.", proximo_passo: "Diga que o advogado faz a conta com os números exatos." };
     return { ok: true, ...r, proximo_passo: "Explique o resultado em linguagem simples, sem prometer: diga a faixa e que o advogado confirma pelo caso." };
   },

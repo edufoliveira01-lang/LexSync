@@ -76,14 +76,14 @@ const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCa
 export interface FichaConsultada { ficha: FichaJuridica; vencida: boolean }
 
 /** A ficha que melhor responde ao tema pedido (id exato, ou palavras-chave no texto). `null` = a base não cobre. */
-export function acharFicha(consulta: string, hoje: Date = new Date()): FichaConsultada | null {
+export function acharFicha(consulta: string, hoje: Date = new Date(), lista: readonly FichaJuridica[] = FICHAS): FichaConsultada | null {
   const q = norm(consulta);
   if (!q.trim()) return null;
   const pontos = (f: FichaJuridica) => (norm(f.tema) === q ? 100 : 0) + f.palavras_chave.filter((p) => q.includes(norm(p))).length * 10 + (q.includes(norm(f.tema)) ? 5 : 0);
-  const melhor = FICHAS.map((f) => ({ f, p: pontos(f) })).filter((x) => x.p > 0).sort((a, b) => b.p - a.p)[0]?.f;
+  const melhor = lista.map((f) => ({ f, p: pontos(f) })).filter((x) => x.p > 0).sort((a, b) => b.p - a.p)[0]?.f;
   if (!melhor) return null;
   const idadeDias = (hoje.getTime() - new Date(melhor.revisado_em).getTime()) / 86_400_000;
   return { ficha: melhor, vencida: idadeDias > melhor.validade_dias };
 }
 
-export const temasDaBase = (): string[] => FICHAS.map((f) => f.tema);
+export const temasDaBase = (lista: readonly FichaJuridica[] = FICHAS): string[] => lista.map((f) => f.tema);
