@@ -6,6 +6,7 @@
  * O alvo é SEMPRE o contato do turno e o negócio aberto dele — a ferramenta não recebe id nenhum.
  */
 import { camposDoFunil } from "@/lib/leads/campos-do-funil";
+import { isValidCpf } from "@/lib/legal/perfil-do-pais";
 import { valorParaOCampo, type DadosDoCliente } from "@/lib/sales/campos-do-contrato";
 import { REGRAS, sem } from "@/lib/sales/sugerir-dados";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -18,6 +19,12 @@ export type CampoDoCliente = (typeof CAMPOS_DE_TEXTO)[number];
 const vazio = (v: unknown) => v === undefined || v === null || String(v).trim() === "";
 const limpa = (v: unknown) => String(v ?? "").replace(/\s+/g, " ").trim();
 
+/** O CPF para confirmar na conversa: só os 3 últimos dígitos aparecem (***.***.***-00). Vazio se não houver. */
+export const cpfMascarado = (cpf: string | undefined | null): string => {
+  const n = limpa(cpf).replace(/\D/g, "");
+  return n.length >= 3 ? `***.***.***-${n.slice(-2).padStart(2, "0")}` : "";
+};
+
 /** O nome tem ao menos nome e sobrenome? É o que o contrato exige (na conversa, o primeiro nome basta). */
 export const nomeCompleto = (nome: string | undefined | null): boolean => limpa(nome).split(" ").filter((p) => p.length > 1).length >= 2;
 
@@ -29,7 +36,9 @@ export const nomeCompleto = (nome: string | undefined | null): boolean => limpa(
 export function faltaParaOContrato(d: DadosGravados): { obrigatorios: string[]; recomendados: string[] } {
   const obrigatorios: string[] = [];
   if (!nomeCompleto(d.nome)) obrigatorios.push("nome completo (nome e sobrenome)");
-  if (limpa(d.cpf).replace(/\D/g, "").length < 11) obrigatorios.push("CPF");
+  const cpf = limpa(d.cpf).replace(/\D/g, "");
+  if (cpf.length < 11) obrigatorios.push("CPF");
+  else if (!isValidCpf(cpf)) obrigatorios.push("CPF válido (os números informados não conferem: peça à pessoa para conferir e reenviar)");
   for (const [k, rotulo] of [["rg", "RG"], ["nacionalidade", "nacionalidade"], ["estado_civil", "estado civil"], ["profissao", "profissão"]] as const) if (vazio(d[k])) obrigatorios.push(rotulo);
   if (vazio(d.logradouro)) obrigatorios.push("endereço (rua ou avenida)");
   for (const [k, rotulo] of [["numero", "número da casa ou prédio"], ["bairro", "bairro"], ["cidade", "cidade"], ["uf", "UF"]] as const) if (vazio(d[k])) obrigatorios.push(rotulo);

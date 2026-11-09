@@ -272,6 +272,19 @@ export async function applyLeadStateUpdate(
   const current = await getLeadState(db, ids.tenantId, ids.leadId);
   const currentStage: LeadStage = current?.stage ?? 'new';
 
+  // Fork Sales: "ganho" não é uma marcação do agente (o card vai a "Aguardando documentos" pelo sistema, depois da assinatura).
+  // Marcar "won" por conta própria trava o estado (terminal) sem mover card nenhum.
+  if (input.stage === 'won' && currentStage !== 'won') {
+    return {
+      ok: false,
+      error: {
+        code: 'invalid_transition',
+        message:
+          'não marque o atendimento como "ganho": isso é feito pelo sistema depois que o contrato for assinado. ' +
+          'Se algo deu errado (por exemplo, o contrato não pôde ser enviado), use a passagem para a equipe e não mude o estágio.',
+      },
+    };
+  }
   let transition: { from: LeadStage; to: LeadStage; reason?: string } | null = null;
   let caminho: LeadStage[] | null = null;
   let noop = false;

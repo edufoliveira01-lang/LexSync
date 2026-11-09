@@ -9,7 +9,7 @@ import { z } from "zod";
 
 import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
-import { faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
+import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
 import { ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
 import type { McpToolDefinition } from "../types";
 
@@ -116,7 +116,7 @@ export const crmRegistrarDadosDoCliente: McpToolDefinition<typeof dadosShape> = 
       const novos = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined)) as Partial<Record<CampoDoCliente, string>>;
       const gravado = Object.keys(novos).length ? await gravarDadosDoCliente(ctx.organizationId, contato, novos) : await lerDadosGravados(ctx.organizationId, contato);
       const falta = faltaParaOContrato(gravado);
-      return { ok: true, gravado, falta_obrigatorios_para_o_contrato: falta.obrigatorios, falta_recomendados: falta.recomendados, proximo_passo: "Não pergunte de novo o que já está em `gravado`. Pergunte só o que falta, uma coisa por vez." };
+      return { ok: true, gravado, cpf_para_confirmar: cpfMascarado(gravado.cpf) || undefined, falta_obrigatorios_para_o_contrato: falta.obrigatorios, falta_recomendados: falta.recomendados, proximo_passo: "Não pergunte de novo o que já está em `gravado`. Pergunte só o que falta, uma coisa por vez." };
     } catch (e) {
       return { ok: false, erro: e instanceof Error ? e.message : "não consegui gravar agora", proximo_passo: "Siga a conversa e registre uma nota com o dado, para a equipe." };
     }
