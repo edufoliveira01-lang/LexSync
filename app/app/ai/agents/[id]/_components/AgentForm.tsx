@@ -1411,6 +1411,7 @@ export function AgentForm(props: Props) {
               onChange={(v) => patch({ system_prompt: v })}
               disabled={disabled}
               invalid={!!validation.system_prompt}
+              funis={funis}
               t={t}
             />
             {validation.system_prompt ? (

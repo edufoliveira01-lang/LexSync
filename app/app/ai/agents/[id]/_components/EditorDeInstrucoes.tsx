@@ -12,7 +12,10 @@
 import * as React from "react";
 
 import { Textarea } from "@/components/ui/textarea";
+import type { FunilDaResposta } from "@/hooks/pipelines/usePipelines";
 import { cn } from "@/lib/utils";
+
+import { linhaDaAcao, MenuDeAcoes, type TipoDeAcao } from "./MenuDeAcoes";
 
 export const MARCA_REGRAS = "=== REGRAS ===";
 export const MARCA_FAQ = "=== FAQ (respostas aprovadas) ===";
@@ -42,25 +45,25 @@ export function juntarPartes(p: PartesDoTexto): string {
   return blocos.join("\n\n");
 }
 
-export interface AcaoInserivel { id: string; grupo: "Mensagem e conversa" | "Ações no CRM" | "Consulta"; rotulo: string; linha: string }
+/** O bloco que entra no roteiro quando se escolhe uma ação: manda executar uma vez e nunca mostrar ao cliente. */
+export const CABECALHO_DA_ACAO = "⚙ AÇÃO — execute uma única vez; nunca mostre isto ao cliente:";
+export const blocoDaAcao = (tipo: TipoDeAcao, valor = ""): string => `\n${CABECALHO_DA_ACAO}\n${linhaDaAcao(tipo, valor)}\n`;
 
-/** As ações do menu `@`. O bloco inserido diz ao modelo o que executar e que isso nunca vai ao cliente; ‹…› marca o que a pessoa preenche. */
-export const ACOES: readonly AcaoInserivel[] = [
-  { id: "mensagem", grupo: "Mensagem e conversa", rotulo: "Enviar uma mensagem pronta", linha: "Envie ao cliente, exatamente assim: “‹texto da mensagem›”" },
-  { id: "chamar_equipe", grupo: "Mensagem e conversa", rotulo: "Chamar a equipe (passar a conversa)", linha: "Passe a conversa para a equipe, com um resumo curto do que já foi dito. Só diga ao cliente que encaminhou depois da confirmação." },
-  { id: "retorno", grupo: "Mensagem e conversa", rotulo: "Agendar um retorno", linha: "Agende um retorno para ‹quando› e retome o assunto com gentileza." },
-  { id: "etiqueta_add", grupo: "Ações no CRM", rotulo: "Adicionar etiqueta", linha: "Etiqueta: ‹nome da etiqueta›" },
-  { id: "etiqueta_rem", grupo: "Ações no CRM", rotulo: "Remover etiqueta", linha: "Remover etiqueta: ‹nome da etiqueta›" },
-  { id: "etapa", grupo: "Ações no CRM", rotulo: "Mudar etapa no CRM", linha: "Etapa: ‹funil › etapa›" },
-  { id: "responsavel", grupo: "Ações no CRM", rotulo: "Transferir para um responsável", linha: "Responsável: ‹nome da pessoa›" },
-  { id: "notificar", grupo: "Ações no CRM", rotulo: "Notificar a equipe", linha: "Notificar equipe: ‹mensagem ou nome do aviso›" },
-  { id: "dados", grupo: "Ações no CRM", rotulo: "Gravar um dado do cliente", linha: "Grave no cadastro o que o cliente informou (nome, CPF, endereço…)." },
-  { id: "contrato", grupo: "Ações no CRM", rotulo: "Enviar o contrato para assinar", linha: "Envie o contrato para assinatura (somente depois da confirmação dos dados pelo cliente)." },
-  { id: "base", grupo: "Consulta", rotulo: "Consultar a base jurídica", linha: "Consulte a base jurídica sobre ‹tema› e responda com base na ficha." },
-];
+export interface AcaoDoTexto { inicio: number; fim: number; linha: string }
 
-/** O bloco que entra no texto quando se escolhe uma ação. */
-export const blocoDaAcao = (a: AcaoInserivel): string => `\n⚙ AÇÃO — execute uma única vez; nunca mostre isto ao cliente:\n${a.linha}\n`;
+/** As ações que já estão no texto (para mostrar como etiquetas clicáveis e poder tirar). */
+export function acoesDoTexto(texto: string): AcaoDoTexto[] {
+  const out: AcaoDoTexto[] = [];
+  const rx = new RegExp(`\\n?${CABECALHO_DA_ACAO.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\n([^\\n]*)\\n?`, "g");
+  let m: RegExpExecArray | null;
+  while ((m = rx.exec(texto)) !== null) out.push({ inicio: m.index, fim: m.index + m[0].length, linha: (m[1] ?? "").trim() });
+  return out;
+}
+
+/** Tira uma ação do texto, sem deixar linha vazia sobrando. */
+export function tirarAcao(texto: string, a: AcaoDoTexto): string {
+  return (texto.slice(0, a.inicio) + (texto[a.inicio - 1] === "\n" || a.inicio === 0 ? "" : "\n") + texto.slice(a.fim)).replace(/\n{3,}/g, "\n\n");
+}
 
 /** Há um `@` aberto logo antes do cursor? Devolve onde começa e o que já foi digitado depois dele. */
 export function arrobaAberta(texto: string, cursor: number): { inicio: number; consulta: string } | null {
@@ -81,19 +84,19 @@ const ABAS = [
 ] as const;
 type IdDaAba = (typeof ABAS)[number]["id"];
 
-const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-
 export function EditorDeInstrucoes({
   value,
   onChange,
   disabled,
   invalid,
+  funis = [],
   t,
 }: {
   value: string;
   onChange: (v: string) => void;
   disabled?: boolean;
   invalid?: boolean;
+  funis?: readonly FunilDaResposta[];
   t: (s: string) => string;
 }) {
   const partes = React.useMemo(() => separarPartes(value), [value]);
@@ -108,28 +111,32 @@ export function EditorDeInstrucoes({
     setMenu(arrobaAberta(el.value, el.selectionStart ?? el.value.length));
   };
 
-  const filtradas = React.useMemo(() => {
-    const q = norm(menu?.consulta ?? "").trim();
-    return ACOES.filter((a) => !q || norm(a.rotulo).includes(q) || norm(a.grupo).includes(q));
-  }, [menu]);
-
-  const inserir = (a: AcaoInserivel) => {
+  const abrirNoCursor = () => {
     const el = ref.current;
-    if (!el || !menu) return;
+    const pos = el?.selectionStart ?? partes[aba].length;
+    setMenu({ inicio: pos, consulta: "" });
+  };
+
+  const inserir = (tipo: TipoDeAcao, valor: string) => {
+    const el = ref.current;
+    if (!menu) return;
     const texto = partes[aba];
-    const fim = el.selectionStart ?? texto.length;
-    const novo = texto.slice(0, menu.inicio) + blocoDaAcao(a) + texto.slice(fim);
+    const fim = el?.selectionStart ?? menu.inicio;
+    const bloco = blocoDaAcao(tipo, valor);
+    const novo = texto.slice(0, menu.inicio) + bloco + texto.slice(Math.max(fim, menu.inicio));
     atualizar(aba, novo);
     setMenu(null);
     requestAnimationFrame(() => {
+      if (!el) return;
       el.focus();
-      const pos = menu.inicio + blocoDaAcao(a).length;
+      const pos = menu.inicio + bloco.length;
       el.setSelectionRange(pos, pos);
     });
   };
 
+  const acoes = React.useMemo(() => (aba === "faq" ? [] : acoesDoTexto(partes[aba])), [aba, partes]);
+
   const dica = ABAS.find((x) => x.id === aba)!.dica;
-  const grupos = [...new Set(filtradas.map((a) => a.grupo))];
 
   return (
     <div className="space-y-2">
@@ -152,7 +159,18 @@ export function EditorDeInstrucoes({
           );
         })}
       </div>
-      <p className="text-xs text-muted-foreground">{t(dica)}</p>
+      {aba !== "faq" ? (
+        <button
+          type="button"
+          data-testid="inserir-acao"
+          disabled={disabled}
+          onClick={abrirNoCursor}
+          className="ml-2 rounded-full border px-3 py-1 text-sm font-medium hover:bg-muted disabled:opacity-50"
+        >
+          ＋ {t("Inserir ação")}
+        </button>
+      ) : null}
+      <p className="text-xs text-muted-foreground">{t(dica)} {aba !== "faq" ? t("Ou digite @.") : ""}</p>
 
       <div className="relative">
         <Textarea
@@ -165,7 +183,6 @@ export function EditorDeInstrucoes({
           onKeyDown={(e) => {
             if (!menu) return;
             if (e.key === "Escape") { e.preventDefault(); setMenu(null); }
-            if (e.key === "Enter" && filtradas[0]) { e.preventDefault(); inserir(filtradas[0]); }
           }}
           disabled={disabled}
           rows={aba === "roteiro" ? 16 : 10}
@@ -175,30 +192,21 @@ export function EditorDeInstrucoes({
           className="font-mono text-xs"
           aria-invalid={invalid || undefined}
         />
-        {menu && filtradas.length > 0 ? (
-          <div role="listbox" data-testid="menu-de-acoes" className="absolute left-2 top-8 z-30 max-h-72 w-72 overflow-y-auto rounded-lg border bg-popover p-1 text-sm shadow-lg">
-            <p className="px-2 py-1 text-[11px] text-muted-foreground">{t("Inserir uma ação no texto")} · Enter · Esc</p>
-            {grupos.map((g) => (
-              <div key={g}>
-                <p className="px-2 pb-0.5 pt-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t(g)}</p>
-                {filtradas.filter((a) => a.grupo === g).map((a) => (
-                  <button
-                    key={a.id}
-                    type="button"
-                    role="option"
-                    aria-selected={false}
-                    data-testid={`acao-${a.id}`}
-                    onMouseDown={(e) => { e.preventDefault(); inserir(a); }}
-                    className="block w-full rounded-md px-2 py-1.5 text-left hover:bg-muted"
-                  >
-                    {t(a.rotulo)}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        ) : null}
+        {menu ? <MenuDeAcoes funis={funis} onInserir={inserir} onFechar={() => setMenu(null)} t={t} /> : null}
       </div>
+      {acoes.length > 0 ? (
+        <div data-testid="acoes-do-texto" className="rounded-lg border bg-muted/30 p-2">
+          <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{t("Ações neste texto")} · {acoes.length}</p>
+          <ul className="flex flex-wrap gap-1.5">
+            {acoes.map((a, i) => (
+              <li key={`${a.inicio}-${i}`} className="inline-flex max-w-full items-center gap-1 rounded-full border bg-background py-0.5 pl-2.5 pr-1 text-xs">
+                <span className="truncate" title={a.linha}>⚙ {a.linha}</span>
+                <button type="button" aria-label={t("Tirar esta ação")} onClick={() => atualizar(aba, tirarAcao(partes[aba], a))} className="rounded-full px-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">×</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
