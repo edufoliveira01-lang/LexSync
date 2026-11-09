@@ -53,7 +53,7 @@ export function isValidTransition(from: LeadStage, to: LeadStage): boolean {
  */
 export function caminhoDeAvanco(from: LeadStage, to: LeadStage): LeadStage[] | null {
   if (to === 'lost') return isValidTransition(from, to) ? [to] : null;
-  const ordem = LEAD_STAGES.filter((e) => e !== 'lost');
+  const ordem: readonly LeadStage[] = LEAD_STAGES.filter((e) => e !== 'lost');
   const i = ordem.indexOf(from);
   const j = ordem.indexOf(to);
   if (i < 0 || j <= i) return null;
