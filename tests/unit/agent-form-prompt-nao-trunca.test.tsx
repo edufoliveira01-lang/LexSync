@@ -95,13 +95,13 @@ describe("editor de instruções do agente", () => {
     // O aviso que chega ANTES do erro: quem cola um texto grande vê na hora que
     // ele não cabe, em vez de descobrir no salvamento — ou nunca.
     const prompt = montar();
-    fireEvent.change(prompt, { target: { value: "a".repeat(20_500) } });
-    expect(screen.getByTestId("contador-do-prompt")).toHaveTextContent("20.500/20.000");
+    fireEvent.change(prompt, { target: { value: "a".repeat(40_500) } });
+    expect(screen.getByTestId("contador-do-prompt")).toHaveTextContent("40.500/40.000");
   });
 
   it("recusa o salvamento dizendo quanto passou", () => {
     const prompt = montar();
-    fireEvent.change(prompt, { target: { value: "a".repeat(20_500) } });
+    fireEvent.change(prompt, { target: { value: "a".repeat(40_500) } });
     fireEvent.click(screen.getByRole("button", { name: /salvar|criar/i }));
     expect(
       screen.getByText(/corte 500 para conseguir salvar/i),
@@ -110,12 +110,12 @@ describe("editor de instruções do agente", () => {
   });
 
   it("mede o texto como o servidor mede, sem contar espaço de sobra", () => {
-    // O servidor grava `z.string().trim().max(20000)` — o trim roda ANTES do
+    // O servidor grava `z.string().trim().max(40000)` — o trim roda ANTES do
     // max. Se a tela contasse os brancos, ela barraria texto que o servidor
     // aceita, e o autor ficaria preso sem entender o motivo.
     const prompt = montar();
-    fireEvent.change(prompt, { target: { value: "a".repeat(20_000) + "\n\n   " } });
-    expect(screen.getByTestId("contador-do-prompt")).toHaveTextContent("20.000/20.000");
+    fireEvent.change(prompt, { target: { value: "a".repeat(40_000) + "\n\n   " } });
+    expect(screen.getByTestId("contador-do-prompt")).toHaveTextContent("40.000/40.000");
     fireEvent.click(screen.getByRole("button", { name: /salvar|criar/i }));
     expect(screen.queryByText(/conseguir salvar/i)).not.toBeInTheDocument();
   });

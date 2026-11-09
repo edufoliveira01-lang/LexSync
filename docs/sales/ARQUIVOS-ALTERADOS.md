@@ -87,3 +87,4 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 - Aba "Aguardando docs" no Inbox (`InboxFilters.tsx`, `InboxLayout.tsx`): conversas abertas com a etiqueta "Contrato assinado"; sem contador (a rota de contagens não foi alterada).
 - `lib/sales/pos-assinatura.ts`: `levarAoGanhoAposAssinatura`; o card vai para "Aguardando documentos" quando o retorno pós-assinatura dispara (`followup-turn.ts`), e a rodada de 3 minutos ficou como rede de segurança.
 - `crm_registrar_dados_do_cliente`: novos campos opcionais `data_nascimento` e `nome_da_mae` (recomendados).
+- Limite das instruções do agente subiu de 20.000 para 40.000 caracteres (`lib/ai/agents/validation.ts`, `AgentForm.tsx`): o texto da Lígia com as regras novas passou de 20.000 e não salvava. Contador e teste atualizados.
