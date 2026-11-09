@@ -59,6 +59,7 @@ import { PainelDoOperador } from "./PainelDoOperador";
 import { PainelDeSeguranca } from "./PainelDeSeguranca";
 import { BasesDoAgente, type MaterialDoAcervo } from "./BasesDoAgente";
 import { SkillsDoAgente } from "./SkillsDoAgente";
+import { EditorDeInstrucoes } from "./EditorDeInstrucoes";
 import { Bloco, CabecalhoDaSecao, MenuDasSecoes, ProvedorDaSecao, RodapeDaSecao, ehSecaoValida, secaoDoCampo, type IdDaSecao, type ResumoDaSecao } from "./SecoesDoAgente";
 import type { SkillDisponivel } from "@/lib/ai/skills/skills-do-agente";
 import { FunisDoAgente, type CoberturaPorFunil } from "./FunisDoAgente";
@@ -1405,28 +1406,12 @@ export function AgentForm(props: Props) {
                 />
               </div>
             </div>
-            <Textarea
+            <EditorDeInstrucoes
               value={form.system_prompt}
-              onChange={(e) => patch({ system_prompt: e.target.value })}
+              onChange={(v) => patch({ system_prompt: v })}
               disabled={disabled}
-              rows={12}
-              /**
-               * SEM `maxLength`, e é o conserto — não um esquecimento.
-               *
-               * O navegador aplica o atributo na COLAGEM, sem evento e sem
-               * aviso: o que passa do limite não entra no campo. Cinco versões
-               * de um agente em produção foram salvas com exatamente 19.999
-               * caracteres, a última cortada no meio de uma frase, e o aviso
-               * logo acima — "passaram de 20.000" — era inalcançável, porque o
-               * estado nunca podia exceder o teto que o atributo já impunha.
-               *
-               * Sem ele o texto inteiro entra, a validação dispara e o autor lê
-               * quanto precisa cortar. Limite que recusa é honesto; limite que
-               * corta em silêncio faz o autor publicar o que não escreveu.
-               */
-              spellCheck={false}
-              className="font-mono text-xs"
-              aria-invalid={!!validation.system_prompt}
+              invalid={!!validation.system_prompt}
+              t={t}
             />
             {validation.system_prompt ? (
               <p className="text-xs text-destructive">{validation.system_prompt}</p>
