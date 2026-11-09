@@ -11,6 +11,7 @@
  * loop. We wrap that tool's execute to publish a one-shot signal via
  * `runtimeHandoffSignal`, which `runAgent` checks after each step.
  */
+import { frasesDaFerramenta, anotarMovimentoDoNegocio, anotarNaConversaDoContato } from "@/lib/inbox/acao-do-agente";
 import { tool, type Tool } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -546,6 +547,14 @@ function wrapMcpTool(
         anotarEfeito(motivoDoVazio === null ? "produziu_efeito" : "falhou");
         if (geracaoDaAgenda !== undefined && motivoDoVazio === null) {
           input.efeitos?.registrarRecibosDeAgendamento(geracaoDaAgenda, result);
+        }
+        // Anotação interna do chat (só a equipe vê): o que o agente acabou de fazer. Melhor-esforço, nunca atrasa nem derruba a ferramenta.
+        if (input.contatoDoTurno && def.category === "write" && motivoDoVazio === null) {
+          if (def.name === "crm_move_lead_stage") void anotarMovimentoDoNegocio(input.ctx.organizationId, input.contatoDoTurno);
+          else {
+            const frase = frasesDaFerramenta(def.name, argsRecord);
+            if (frase) void anotarNaConversaDoContato(input.ctx.organizationId, input.contatoDoTurno, frase);
+          }
         }
         return result;
       } catch (err) {

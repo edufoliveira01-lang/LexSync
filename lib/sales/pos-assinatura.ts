@@ -12,6 +12,7 @@ import { randomUUID } from "node:crypto";
 import { moveLeadHandler } from "@/app/api/v1/leads/_handler";
 import { resolveJanelaDeRetorno } from "@/lib/followup/janela";
 import { agendaRetornoNoCrm } from "@/lib/followup/retorno-crm";
+import { anotarMovimentoDoNegocio, QUEM_SISTEMA } from "@/lib/inbox/acao-do-agente";
 import { MARCA_DE_EVENTO } from "@/lib/inbox/evento-na-conversa-marca";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -81,6 +82,7 @@ export async function fecharEtapasPosAssinatura(agora = Date.now()): Promise<num
           const ganho = lista.find((e) => e.is_won && e.agent_stage_hint === "won") ?? lista.find((e) => e.is_won);
           if (!atual || !ganho || atual.is_won || !ETAPAS_QUE_PEDEM_AVANCO_APOS_ASSINATURA.includes(semAcento(atual.name))) continue;
           await moveLeadHandler(admin, { organization_id: orgId, actor: ATOR, requestId: randomUUID() }, n.id, { to_stage_id: ganho.id, reason: "Contrato assinado: aguardando os documentos do cliente" });
+          await anotarMovimentoDoNegocio(orgId, contactId, QUEM_SISTEMA);
           movidos += 1;
           break;
         }

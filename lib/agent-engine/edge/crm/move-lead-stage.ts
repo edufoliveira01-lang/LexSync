@@ -14,6 +14,7 @@
  * banco fora / escrita falha são incidente — os dois últimos abrem item no caller.
  */
 import { sincronizaEstagioDoAgente } from '@/lib/leads/agent-stage-sync';
+import { anotarMovimentoDoNegocio } from '@/lib/inbox/acao-do-agente';
 import { insertInboxItem, type InboxDedupe } from '../../db/repository';
 import type { Queryable } from '../../queue/queue';
 import type { CrmEdgeConfig } from './mcp-client';
@@ -338,7 +339,12 @@ export async function mirrorLeadStageToCrm(
       ...(input.pipelineIds !== undefined ? { escopoDeFunis: input.pipelineIds } : {}),
     });
 
-    if (r.moveu || r.motivo === 'ja_esta_la') return { ok: true };
+    if (r.moveu) {
+      // anotação interna do chat (só a equipe vê): o agente avançou o funil
+      void anotarMovimentoDoNegocio(input.tenantId, input.leadId);
+      return { ok: true };
+    }
+    if (r.motivo === 'ja_esta_la') return { ok: true };
 
     // Cada motivo vira o rótulo que DIZ A VERDADE sobre ele. Os três primeiros
     // são configuração/estado normal (warn-only, sem inbox); `conflito_humano`

@@ -8,6 +8,7 @@
 import { randomUUID } from "node:crypto";
 
 import { moveLeadHandler } from "@/app/api/v1/leads/_handler";
+import { anotarMovimentoDoNegocio, QUEM_SISTEMA } from "@/lib/inbox/acao-do-agente";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -41,6 +42,7 @@ export async function moverParaEtapaDoContrato(orgId: string, conversationId: st
       if (!alvo) continue;
       if (alvo.id === n.stage_id) return alvo.name;
       await moveLeadHandler(admin, { organization_id: orgId, actor: ATOR, requestId: randomUUID() }, n.id, { to_stage_id: alvo.id, reason: momento === "enviado" ? "Contrato enviado para assinatura" : "Contrato assinado" });
+      await anotarMovimentoDoNegocio(orgId, contactId, QUEM_SISTEMA);
       return alvo.name;
     }
   } catch (err) {

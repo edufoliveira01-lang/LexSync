@@ -22,6 +22,7 @@ import { z } from 'zod';
 import type pg from 'pg';
 
 import { duracaoLegivel, agendaRetorno } from '@/lib/followup/retorno';
+import { anotarNaConversaDoContato } from '@/lib/inbox/acao-do-agente';
 import { criaRetornoDbPg } from '@/lib/followup/retorno-pg';
 import { emitAgentActivityForContact } from '@/lib/leads/agent-activity';
 
@@ -197,6 +198,13 @@ export async function applyScheduleFollowup(
       prometido_para: resultado.retorno.prometidoPara,
     },
   });
+
+  // anotação interna do chat (só a equipe vê): o agente combinou voltar a falar com o cliente
+  void anotarNaConversaDoContato(
+    ids.tenantId,
+    ids.leadId,
+    `agendou um retorno com o cliente — ${duracaoLegivel(Math.max(0, new Date(resultado.retorno.quando).getTime() - agora.getTime()))} (${input.reason.slice(0, 120)})`,
+  );
 
   return {
     ok: true,
