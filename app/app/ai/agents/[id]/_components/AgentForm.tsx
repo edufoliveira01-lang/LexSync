@@ -59,6 +59,7 @@ import { PainelDoOperador } from "./PainelDoOperador";
 import { PainelDeSeguranca } from "./PainelDeSeguranca";
 import { BasesDoAgente, type MaterialDoAcervo } from "./BasesDoAgente";
 import { SkillsDoAgente } from "./SkillsDoAgente";
+import { Bloco, CabecalhoDaSecao, MenuDasSecoes, ProvedorDaSecao, RodapeDaSecao, ehSecaoValida, secaoDoCampo, type IdDaSecao, type ResumoDaSecao } from "./SecoesDoAgente";
 import type { SkillDisponivel } from "@/lib/ai/skills/skills-do-agente";
 import { FunisDoAgente, type CoberturaPorFunil } from "./FunisDoAgente";
 import { PublishConfirmDialog } from "./PublishConfirmDialog";
@@ -482,6 +483,16 @@ export function AgentForm(props: Props) {
    * que salvou um e não o outro.
    */
   const [papel, setPapel] = React.useState<"conversa" | "operacao" | "seguranca">("conversa");
+  // Seção aberta na tela do agente (menu lateral). Vem do endereço (#capacidades) depois de montar, para o servidor e o navegador desenharem o mesmo.
+  const [secao, setSecao] = React.useState<IdDaSecao>("identidade");
+  React.useEffect(() => {
+    const h = window.location.hash.replace(/^#/, "");
+    if (ehSecaoValida(h)) setSecao(h);
+  }, []);
+  const escolherSecao = React.useCallback((id: IdDaSecao) => {
+    setSecao(id);
+    try { window.history.replaceState(null, "", `#${id}`); } catch { /* sem histórico: só não grava o endereço */ }
+  }, []);
 
   /**
    * A pergunta é "salvar mudaria alguma coisa?", e não "os dois objetos são
@@ -635,6 +646,18 @@ export function AgentForm(props: Props) {
   }, [form, t]);
 
   const isValid = Object.keys(validation).length === 0;
+
+  // O que o menu lateral mostra embaixo de cada seção, e onde há algo a corrigir (ponto vermelho).
+  const resumosDasSecoes = React.useMemo((): Partial<Record<IdDaSecao, ResumoDaSecao>> => {
+    const r: Partial<Record<IdDaSecao, ResumoDaSecao>> = {};
+    for (const campo of Object.keys(validation)) r[secaoDoCampo(campo)] = { ...(r[secaoDoCampo(campo)] ?? {}), erro: true };
+    const com = (id: IdDaSecao, texto: string) => { r[id] = { ...(r[id] ?? {}), texto }; };
+    com("identidade", form.name.trim() || t("Dê um nome"));
+    com("instrucoes", `${form.system_prompt.trim().length.toLocaleString("pt-BR")} ${t("caracteres")}`);
+    com("capacidades", `${form.tool_ids.length} ${form.tool_ids.length === 1 ? t("ligada") : t("ligadas")}`);
+    if (form.model) com("modelo", form.model);
+    return r;
+  }, [validation, form.name, form.system_prompt, form.tool_ids, form.model, t]);
 
   /**
    * A dica do botão "Publicar" — uma frase, vinda de UM motivo.
@@ -839,14 +862,19 @@ export function AgentForm(props: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* Header: fica à vista ao rolar, com o aviso de alterações não salvas */}
+      <div className="sticky top-0 z-20 -mx-1 flex flex-wrap items-start justify-between gap-3 border-b bg-background/95 px-1 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold tracking-tight">
               {isEdit ? props.agent.name : t("Novo agente")}
             </h2>
             {statusBadge}
+            {dirty && isEdit ? (
+              <Badge variant="outline" data-testid="alteracoes-nao-salvas" className="border-amber-400 text-amber-700">
+                {t("Alterações não salvas")}
+              </Badge>
+            ) : null}
           </div>
           {isEdit && props.agent.description ? (
             <p className="text-xs text-muted-foreground">{props.agent.description}</p>
@@ -975,11 +1003,16 @@ export function AgentForm(props: Props) {
         />
       ) : null}
 
-      {/* Two-column grid */}
-      <div className={papel === "conversa" ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : "hidden"}>
+      {/* Menu de seções + uma seção por vez */}
+      <div className={papel === "conversa" ? "grid grid-cols-1 gap-5 lg:grid-cols-[250px_minmax(0,1fr)]" : "hidden"}>
+        <MenuDasSecoes ativa={secao} onEscolher={escolherSecao} resumos={resumosDasSecoes} t={t} />
+        <ProvedorDaSecao ativa={secao} escolher={escolherSecao}>
+        <div className="flex min-w-0 flex-col gap-4">
+        <CabecalhoDaSecao t={t} />
         {/* COLUMN 1 */}
-        <div className="space-y-4">
+        <div className="contents">
           {/* Identification */}
+          <Bloco secao="identidade">
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("Quem é este agente")}</h3>
             <div className="space-y-1">
@@ -1030,8 +1063,10 @@ export function AgentForm(props: Props) {
               </p>
             </div>
           </Card>
+          </Bloco>
 
           {/* Provider + credential + model */}
+          <Bloco secao="modelo">
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("A inteligência que ele usa")}</h3>
             <div className="space-y-1">
@@ -1101,8 +1136,10 @@ export function AgentForm(props: Props) {
               </p>
             ) : null}
           </Card>
+          </Bloco>
 
           {/* WhatsApp session */}
+          <Bloco secao="canais">
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("Por qual número ele atende")}</h3>
             {props.routerMembership && (
@@ -1178,8 +1215,10 @@ export function AgentForm(props: Props) {
               ) : null}
             </div>
           </Card>
+          </Bloco>
 
           {/* Limits */}
+          <Bloco secao="modelo">
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("Freios de segurança")}</h3>
             <div className="grid grid-cols-2 gap-3">
@@ -1323,11 +1362,13 @@ export function AgentForm(props: Props) {
               </div>
             </div>
           </Card>
+          </Bloco>
         </div>
 
         {/* COLUMN 2 */}
-        <div className="space-y-4">
+        <div className="contents">
           {/* Prompt */}
+          <Bloco secao="instrucoes">
           <Card className="space-y-2 p-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">{t("As instruções dele")}</h3>
@@ -1391,8 +1432,10 @@ export function AgentForm(props: Props) {
               <p className="text-xs text-destructive">{validation.system_prompt}</p>
             ) : null}
           </Card>
+          </Bloco>
 
           {/* Estilo de resposta (split de mensagens — Onda 4) */}
+          <Bloco secao="instrucoes">
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("Estilo de resposta")}</h3>
             <div className="flex items-center gap-2">
@@ -1431,8 +1474,10 @@ export function AgentForm(props: Props) {
               </div>
             ) : null}
           </Card>
+          </Bloco>
 
           {/* Voz (plano de voz, Fase 7) */}
+          <Bloco secao="instrucoes">
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("Responder falando")}</h3>
             <div className="flex items-center gap-2">
@@ -1473,8 +1518,10 @@ export function AgentForm(props: Props) {
               </div>
             ) : null}
           </Card>
+          </Bloco>
 
           {/* Capacidades */}
+          <Bloco secao="capacidades">
           <Card className="space-y-2 p-4">
             <h3 className="text-sm font-medium">{t("O que o agente pode fazer")}</h3>
             <p className="text-xs text-muted-foreground">
@@ -1491,24 +1538,30 @@ export function AgentForm(props: Props) {
               <p className="text-xs text-destructive">{validation.tool_ids}</p>
             ) : null}
           </Card>
+          </Bloco>
 
           {/* O acervo que este assistente consulta (0181) */}
+          <Bloco secao="conhecimento">
           <BasesDoAgente
             materiais={materiais}
             value={form.knowledge_source_ids}
             onChange={(ids) => patch({ knowledge_source_ids: ids })}
             disabled={disabled}
           />
+          </Bloco>
 
           {/* As skills que este assistente usa (9107) */}
+          <Bloco secao="conhecimento">
           <SkillsDoAgente
             skills={skills}
             value={form.skill_names}
             onChange={(nomes) => patch({ skill_names: nomes })}
             disabled={disabled}
           />
+          </Bloco>
 
           {/* Triggers */}
+          <Bloco secao="canais">
           <Card className="space-y-2 p-4">
             <h3 className="text-sm font-medium">{t("Quando ele entra em ação")}</h3>
             <TriggerEditor
@@ -1519,9 +1572,11 @@ export function AgentForm(props: Props) {
               funis={props.funis}
             />
           </Card>
+          </Bloco>
 
           {/* Ver as fotos que o cliente envia (9108). O custo vai escrito ao lado
               porque é ele que decide: cada foto descrita é uma chamada paga. */}
+          <Bloco secao="conhecimento">
           <Card className="space-y-2 p-4">
             <h3 className="text-sm font-medium">{t("Fotos que o cliente envia")}</h3>
             <div className="flex items-center gap-2">
@@ -1539,8 +1594,10 @@ export function AgentForm(props: Props) {
               )}
             </p>
           </Card>
+          </Bloco>
 
           {/* Handoff */}
+          <Bloco secao="equipe">
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("Passar para uma pessoa")}</h3>
             <div className="flex items-center gap-2">
@@ -1588,12 +1645,14 @@ export function AgentForm(props: Props) {
               disabled={disabled}
             />
           </Card>
+          </Bloco>
 
           {/* O OUTRO caminho para uma pessoa: o clima fechado
               (`ai.sentiment_alert`, em `workers/ai-sentiment-worker.ts`).
               Mesma chave que o worker já lia, agora com porta pública — issue
               #2209. Grava em `ai_agents.config.sentiment_threshold`, por isso
               só em edição, como o cartão dos comandos do celular. */}
+          <Bloco secao="equipe">
           {isEdit && (
             <LimiarDeSentimento
               agentId={props.agent.id}
@@ -1601,8 +1660,10 @@ export function AgentForm(props: Props) {
               disabled={disabled}
             />
           )}
+          </Bloco>
 
           {/* Casos humanos */}
+          <Bloco secao="equipe">
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("Pedir ajuda sem sair da conversa")}</h3>
             <div className="flex items-center gap-2">
@@ -1622,8 +1683,10 @@ export function AgentForm(props: Props) {
               )}
             </p>
           </Card>
+          </Bloco>
 
           {/* Propostas comerciais */}
+          <Bloco secao="equipe">
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("Propostas comerciais")}</h3>
             <div className="flex items-center gap-2">
@@ -1638,8 +1701,10 @@ export function AgentForm(props: Props) {
               </Label>
             </div>
           </Card>
+          </Bloco>
 
           {/* Follow-up */}
+          <Bloco secao="retornos">
           <Card className="space-y-3 p-4">
             <h3 className="text-sm font-medium">{t("Follow-up")}</h3>
             <p className="text-xs text-muted-foreground">
@@ -1698,9 +1763,11 @@ export function AgentForm(props: Props) {
               disabled={disabled}
             />
           </Card>
+          </Bloco>
 
           {/* Comandos pelo celular (`#on`/`#off`, C-076). Salva em
               `ai_agents.config.aceita_comandos_celular`. */}
+          <Bloco secao="avancado">
           {isEdit && (
             <ComandosDoCelular
               agentId={props.agent.id}
@@ -1708,6 +1775,7 @@ export function AgentForm(props: Props) {
               disabled={disabled}
             />
           )}
+          </Bloco>
 
           {/* Servidor MCP externo no atendimento (#2147). Só admin vê e
               grava; salva em `ai_agents.config.mcp_externo_no_atendimento`.
@@ -1715,6 +1783,7 @@ export function AgentForm(props: Props) {
               `tool_ids` da versão, pelo mesmo salvar do resto do formulário —
               por isso o cartão recebe o valor e o setter do formulário, como o
               `ToolPicker` acima. */}
+          <Bloco secao="avancado">
           {isEdit && !readOnly && (
             <ServidorExternoNoAtendimento
               agentId={props.agent.id}
@@ -1724,12 +1793,14 @@ export function AgentForm(props: Props) {
               disabled={disabled}
             />
           )}
+          </Bloco>
 
           {/* Servidores MCP DO AGENTE (migration 9095): N servidores, cada um
               com o seu modo de autenticação — inclusive OAuth em que cada
               cliente autoriza a própria conta. A escolha das ferramentas vai
               para o `tool_ids` da versão, pelo mesmo salvar do formulário.
               Módulo opcional desligado de fábrica (doc 252). */}
+          <Bloco secao="avancado">
           {isEdit && !readOnly && props.mcpPorAgente === true && (
             <ServidoresMcpDoAgente
               agentId={props.agent.id}
@@ -1738,7 +1809,11 @@ export function AgentForm(props: Props) {
               disabled={disabled}
             />
           )}
+          </Bloco>
         </div>
+        <RodapeDaSecao t={t} />
+        </div>
+        </ProvedorDaSecao>
       </div>
 
       {/* Publish dialog */}
