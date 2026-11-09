@@ -64,7 +64,7 @@ const TETO: Readonly<Record<string, { tokens: number; motivo: string }>> = {
   "crm_preparar_proposta": { tokens: 132, motivo: BASE },
   "crm_registrar_dados_do_cliente": { tokens: 349, motivo: "Fork Sales: 15 campos opcionais (nome, e-mail, CPF, RG, estado civil, endereço…) numa chamada só, para o agente gravar cada dado na hora e não perguntar de novo; o CEP completa rua, bairro, cidade e UF (+14)" },
   "crm_consultar_base_juridica": { tokens: 134, motivo: "Fork Sales: consulta a ficha jurídica curada do tema (requisitos, prazos, fonte) em vez de responder de memória" },
-  "crm_calcular_renda_per_capita": { tokens: 203, motivo: "Fork Sales: renda por pessoa contra 1/4 e 1/2 do salário mínimo vigente (BPC), para o agente não errar a conta" },
+  "crm_calcular_renda_per_capita": { tokens: 207, motivo: "Fork Sales: renda por pessoa contra 1/4 e 1/2 do salário mínimo vigente (BPC), para o agente não errar a conta" },
   "crm_enviar_contrato": { tokens: 800, motivo: "Fork Sales: os dados de qualificação (17 campos, 3 tipos de documento) entram numa chamada só, para o agente não pedir o contrato aos pedaços; a descrição também ensina que o sistema envia o link ao cliente (não reenviar)" },
   "crm_describe_external_data": { tokens: 300, motivo: BASE },
   "crm_query_external_data": { tokens: 641, motivo: BASE },
@@ -136,7 +136,7 @@ const TETO: Readonly<Record<string, { tokens: number; motivo: string }>> = {
   "schedule_followup (com negócio)": { tokens: 314, motivo: BASE },
 };
 
-const TETO_TOTAL = 31047; // Fork Sales: +792 de crm_enviar_contrato , +324 de crm_registrar_dados_do_cliente e +14 da dica do CEP
+const TETO_TOTAL = 31051; // Fork Sales: +792 de crm_enviar_contrato , +324 de crm_registrar_dados_do_cliente e +14 da dica do CEP
 
 const VARIANTE = "schedule_followup (com negócio)";
 

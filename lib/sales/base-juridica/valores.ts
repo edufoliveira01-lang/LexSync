@@ -35,9 +35,9 @@ export interface ResultadoRendaPerCapita {
   limite_meio: number;
   faixa: "ate_um_quarto" | "entre_um_quarto_e_meio" | "acima_de_meio";
   leitura: string;
-  /** Só quando houve gastos de saúde informados. */
-  renda_per_capita_descontados_gastos_de_saude?: number;
-  faixa_descontados_gastos_de_saude?: ResultadoRendaPerCapita["faixa"];
+  /** Só quando houve gastos de saúde informados: eles NÃO abatem a renda; pesam na ampliação do limite (até 1/2) e o advogado analisa. */
+  gastos_de_saude_por_pessoa?: number;
+  leitura_gastos_de_saude?: string;
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -56,9 +56,8 @@ export function calcularRendaPerCapita(rendaTotal: number, moradores: number, ga
     : "Acima de 1/2 salário mínimo por pessoa: o INSS tende a negar pela renda e a flexibilização é bem mais difícil. O advogado analisa.";
   const out: ResultadoRendaPerCapita = { salario_minimo: sm.valor, salario_minimo_fonte: sm.fonte, salario_minimo_confirmado: sm.confirmado, renda_per_capita: pc, limite_um_quarto: quarto, limite_meio: meio, faixa, leitura };
   if (gastosDeSaude > 0) {
-    const pc2 = r2(Math.max(0, rendaTotal - gastosDeSaude) / moradores);
-    out.renda_per_capita_descontados_gastos_de_saude = pc2;
-    out.faixa_descontados_gastos_de_saude = faixaDe(pc2, quarto, meio);
+    out.gastos_de_saude_por_pessoa = r2(gastosDeSaude / moradores);
+    out.leitura_gastos_de_saude = "Os gastos de saúde comprovados NÃO são descontados da renda; eles são um dos fatores que o INSS considera para ampliar o limite de 1/4 até 1/2 salário mínimo (art. 20-B da Lei 8.742/93). Guarde recibos, notas e receitas. O advogado analisa como entram no caso.";
   }
   return out;
 }

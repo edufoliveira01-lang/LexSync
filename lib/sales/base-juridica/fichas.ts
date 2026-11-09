@@ -45,7 +45,7 @@ export const FICHAS: readonly FichaJuridica[] = [
     ],
     teses_e_flexibilizacoes: [
       "A lei (Lei 8.742/93, alterada pela Lei 14.176/2021) permite considerar renda per capita de até 1/2 salário mínimo, avaliando o grau da deficiência, a dependência de terceiros para atividades básicas e os gastos com saúde, tratamentos, fraldas, alimentação especial e medicamentos não fornecidos pelo SUS, desde que comprovados.",
-      "Gastos de saúde comprovados podem ser considerados na análise da renda: guarde recibos, notas e receitas.",
+      "Gastos de saúde comprovados NÃO são descontados da renda: são um dos fatores que ampliam o limite de 1/4 até 1/2 salário mínimo (art. 20-B). Guarde recibos, notas e receitas; o advogado analisa como entram no caso.",
       "Quando o ponto da negativa é o laudo ou a perícia, discute-se a avaliação biopsicossocial (a perícia médica não é a única prova): laudos de especialistas, relatórios de terapias e escolares.",
     ],
     prazos: [

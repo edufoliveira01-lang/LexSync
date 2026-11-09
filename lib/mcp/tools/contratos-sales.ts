@@ -154,7 +154,7 @@ export const crmConsultarBaseJuridica: McpToolDefinition<typeof baseShape> = {
 const rendaShape = {
   renda_total_mensal: z.number().min(0).max(1_000_000).describe("Renda mensal total da família, em reais."),
   moradores: z.number().int().min(1).max(30).describe("Quantas pessoas moram na casa (a família para o cálculo)."),
-  gastos_saude_mensais: z.number().min(0).max(1_000_000).optional().describe("Gastos mensais de saúde comprovados (terapias, remédios, fraldas…), se houver."),
+  gastos_saude_mensais: z.number().min(0).max(1_000_000).optional().describe("Gastos mensais de saúde comprovados, se houver (não abatem a renda: pesam na ampliação do limite)."),
 };
 
 /** Aritmética do critério de renda do BPC com o salário mínimo VIGENTE: o modelo não calcula nem lembra o valor. */

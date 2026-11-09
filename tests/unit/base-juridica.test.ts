@@ -21,10 +21,12 @@ describe("renda per capita (BPC)", () => {
     expect(r.limite_meio).toBe(810.5);
     expect(r.faixa).toBe("entre_um_quarto_e_meio");
   });
-  it("gastos de saúde descontados podem levar a renda para dentro do limite", () => {
+  it("gastos de saúde NÃO abatem a renda: só viram uma leitura (ampliação do limite)", () => {
     const r = calcularRendaPerCapita(2200, 4, 900, new Date("2026-11-09"))!;
-    expect(r.renda_per_capita_descontados_gastos_de_saude).toBe(325);
-    expect(r.faixa_descontados_gastos_de_saude).toBe("ate_um_quarto");
+    expect(r.renda_per_capita).toBe(550);
+    expect(r.faixa).toBe("entre_um_quarto_e_meio");
+    expect(r.gastos_de_saude_por_pessoa).toBe(225);
+    expect(r.leitura_gastos_de_saude).toMatch(/NÃO são descontados/);
   });
   it("acima de meio salário", () => {
     expect(calcularRendaPerCapita(5000, 2, 0, new Date("2026-11-09"))!.faixa).toBe("acima_de_meio");
