@@ -56,6 +56,23 @@ export async function acordarAgenteAposAssinatura(orgId: string, conversationId:
   }
 }
 
+/** Leva o negócio aberto do contato de "Contrato assinado" (ou "Contrato enviado", se algo falhou no caminho) à etapa de ganho. Devolve o nome da etapa quando moveu. */
+export async function levarAoGanhoAposAssinatura(orgId: string, contactId: string): Promise<string | null> {
+  const admin = createAdminClient();
+  const { data: negocios } = await admin.from("crm_leads").select("id, stage_id, pipeline_id").eq("organization_id", orgId).eq("contact_id", contactId).eq("status", "open").order("created_at", { ascending: false }).limit(5);
+  for (const n of (negocios ?? []) as { id: string; stage_id: string; pipeline_id: string }[]) {
+    const { data: etapas } = await admin.from("crm_stages").select("id, name, is_won, agent_stage_hint").eq("organization_id", orgId).eq("pipeline_id", n.pipeline_id);
+    const lista = (etapas ?? []) as { id: string; name: string; is_won: boolean; agent_stage_hint: string | null }[];
+    const atual = lista.find((e) => e.id === n.stage_id);
+    const ganho = lista.find((e) => e.is_won && e.agent_stage_hint === "won") ?? lista.find((e) => e.is_won);
+    if (!atual || !ganho || atual.is_won || !ETAPAS_QUE_PEDEM_AVANCO_APOS_ASSINATURA.includes(semAcento(atual.name))) continue;
+    await moveLeadHandler(admin, { organization_id: orgId, actor: ATOR, requestId: randomUUID() }, n.id, { to_stage_id: ganho.id, reason: "Contrato assinado: aguardando os documentos do cliente" });
+    await anotarMovimentoDoNegocio(orgId, contactId, QUEM_SISTEMA);
+    return ganho.name;
+  }
+  return null;
+}
+
 const tentadas = new Set<string>();
 
 /** Uma rodada: leva a "Aguardando documentos" os negócios que assinaram há mais de alguns minutos e seguem em "Contrato assinado". Devolve quantos moveu. */
@@ -74,18 +91,7 @@ export async function fecharEtapasPosAssinatura(agora = Date.now()): Promise<num
         const { data: conv } = await admin.from("conversations").select("contact_id").eq("id", conversationId).eq("organization_id", orgId).maybeSingle();
         const contactId = (conv as { contact_id: string | null } | null)?.contact_id;
         if (!contactId) continue;
-        const { data: negocios } = await admin.from("crm_leads").select("id, stage_id, pipeline_id").eq("organization_id", orgId).eq("contact_id", contactId).eq("status", "open").order("created_at", { ascending: false }).limit(5);
-        for (const n of (negocios ?? []) as { id: string; stage_id: string; pipeline_id: string }[]) {
-          const { data: etapas } = await admin.from("crm_stages").select("id, name, is_won, agent_stage_hint").eq("organization_id", orgId).eq("pipeline_id", n.pipeline_id);
-          const lista = (etapas ?? []) as { id: string; name: string; is_won: boolean; agent_stage_hint: string | null }[];
-          const atual = lista.find((e) => e.id === n.stage_id);
-          const ganho = lista.find((e) => e.is_won && e.agent_stage_hint === "won") ?? lista.find((e) => e.is_won);
-          if (!atual || !ganho || atual.is_won || !ETAPAS_QUE_PEDEM_AVANCO_APOS_ASSINATURA.includes(semAcento(atual.name))) continue;
-          await moveLeadHandler(admin, { organization_id: orgId, actor: ATOR, requestId: randomUUID() }, n.id, { to_stage_id: ganho.id, reason: "Contrato assinado: aguardando os documentos do cliente" });
-          await anotarMovimentoDoNegocio(orgId, contactId, QUEM_SISTEMA);
-          movidos += 1;
-          break;
-        }
+        if (await levarAoGanhoAposAssinatura(orgId, contactId)) movidos += 1;
       } catch (err) {
         logger.warn("[sales.contrato] não consegui levar o negócio a 'aguardando documentos'", { conversation_id: conversationId, erro: err instanceof Error ? err.message : String(err) });
       }

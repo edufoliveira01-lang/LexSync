@@ -236,6 +236,8 @@ export function envolverFerramentasComTraco(
   tools: ToolSet,
   coletor: ColetorDeFerramentas | undefined,
   agora: () => number = () => Date.now(),
+  /** Avisa cada chamada concluída (para a anotação interna do chat). Melhor-esforço: o que lançar aqui nunca muda o resultado do turno. */
+  aoConcluir?: (e: { nome: string; estado: EstadoDaFerramenta; entrada: unknown }) => void,
 ): ToolSet {
   if (coletor === undefined) return tools;
 
@@ -260,6 +262,7 @@ export function envolverFerramentasComTraco(
           duracao_ms: agora() - inicio,
           ...marca,
         });
+        try { aoConcluir?.({ nome, estado, entrada: input }); } catch { /* anotação é melhor-esforço */ }
         return resultado;
       } catch (erro) {
         coletor.registrar({
@@ -269,6 +272,7 @@ export function envolverFerramentasComTraco(
           duracao_ms: agora() - inicio,
           ...marca,
         });
+        try { aoConcluir?.({ nome, estado: "falhou", entrada: input }); } catch { /* anotação é melhor-esforço */ }
         // Relança o MESMO erro: observar não pode engolir a falha do turno.
         throw erro;
       }

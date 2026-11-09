@@ -39,7 +39,7 @@ import { useDepoisDeMontar } from "@/hooks/ui/useDepoisDeMontar";
 import { roleAtLeast, type Role, type VisibilityMode } from "@/lib/auth/types";
 import { SeletorDeAtendente } from "@/components/inbox/SeletorDeAtendente";
 
-export type InboxTab = "unassigned" | "mine" | "all" | "closed" | "archived" | "ai";
+export type InboxTab = "unassigned" | "mine" | "all" | "closed" | "archived" | "ai" | "docs";
 
 /**
  * A faixa na ORDEM DO TRABALHO (#2498): primeiro o que o robô conduz, depois o
@@ -59,6 +59,8 @@ const INBOX_TABS: { value: InboxTab; label: string }[] = [
   // régua do motor) — e a posição sim: ela era a última fora do padrão.
   { value: "ai", label: "Automático" },
   { value: "unassigned", label: "Fila" },
+  // Fork Sales: quem assinou o contrato e está enviando os documentos (a IA segue conduzindo; a equipe acompanha e entra quando quiser).
+  { value: "docs", label: "Aguardando docs" },
   { value: "mine", label: "Minhas" },
   { value: "all", label: "Todas" },
   { value: "closed", label: "Fechadas" },
@@ -69,14 +71,15 @@ const INBOX_TABS: { value: InboxTab; label: string }[] = [
 ];
 
 /** Fork Sales: as visões de trabalho, na ordem em que o atendente as usa, com o texto e a explicação de cada uma. */
-const ABAS_DE_TRABALHO: InboxTab[] = ["mine", "unassigned", "ai", "all"];
+const ABAS_DE_TRABALHO: InboxTab[] = ["mine", "unassigned", "ai", "docs", "all"];
 const ROTULO_DA_ABA: Record<InboxTab, string> = {
-  mine: "Minhas", unassigned: "Fila", ai: "IA", all: "Todas", closed: "Fechadas", archived: "Arquivadas",
+  mine: "Minhas", unassigned: "Fila", ai: "IA", docs: "Docs", all: "Todas", closed: "Fechadas", archived: "Arquivadas",
 };
 const GUIA_DA_ABA: Record<InboxTab, string> = {
   mine: "Conversas que você assumiu e está atendendo.",
   unassigned: "Prontas para um atendente assumir (a IA passou para a equipe ou ninguém atende ainda).",
   ai: "A IA está ativa e conversando com o cliente.",
+  docs: "Clientes que já assinaram o contrato e estão enviando os documentos. A IA segue conduzindo; a equipe acompanha e entra quando quiser.",
   all: "Todas as conversas, de qualquer atendente.",
   closed: "Atendimentos encerrados.",
   archived: "Conversas guardadas fora da fila de trabalho.",

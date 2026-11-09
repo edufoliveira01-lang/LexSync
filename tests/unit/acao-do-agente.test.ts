@@ -21,3 +21,23 @@ describe("anotações internas do chat — o que o agente fez", () => {
     expect(frasesDaFerramenta("crm_add_case_note", {})).toBeNull();
   });
 });
+
+import { frasesDaFerramentaNativa } from "@/lib/inbox/acao-do-agente";
+
+describe("anotações internas — ferramentas nativas do motor", () => {
+  it("avanço do funil, passagem para a equipe, chamado e observação ganham frase", () => {
+    expect(frasesDaFerramentaNativa("update_lead_state", { stage: "negotiating" }, "ok")).toBe("marcou o atendimento como «negociação»");
+    expect(frasesDaFerramentaNativa("save_lead_note", { note: "segredo" }, "ok")).toBe("salvou uma observação sobre o cliente");
+    expect(frasesDaFerramentaNativa("request_human_handoff", { reason: "cliente pediu um advogado" }, "ok")).toBe("passou a conversa para a equipe — cliente pediu um advogado");
+    expect(frasesDaFerramentaNativa("open_human_case", { title: "Liberar acesso" }, "ok")).toBe("abriu um chamado para a equipe: Liberar acesso");
+  });
+  it("a observação não vaza o texto da nota, e o que não é ação do agente não anota", () => {
+    expect(frasesDaFerramentaNativa("save_lead_note", { note: "CPF 52998224725" }, "ok")).not.toMatch(/529/);
+    expect(frasesDaFerramentaNativa("send_message", { body: "oi" }, "ok")).toBeNull();
+    expect(frasesDaFerramentaNativa("get_lead_context", {}, "ok")).toBeNull();
+  });
+  it("chamada que falhou ou foi bloqueada vira 'tentou …, mas não foi concluído'", () => {
+    expect(frasesDaFerramentaNativa("update_lead_state", { stage: "won" }, "falhou")).toBe("tentou marcar o atendimento como «ganho», mas não foi concluído");
+    expect(frasesDaFerramentaNativa("request_human_handoff", { reason: "x" }, "bloqueada")).toMatch(/^tentou passar a conversa para a equipe/);
+  });
+});

@@ -99,11 +99,11 @@ describe("faixa da Inbox — quebra em vez de esconder aba (#2745)", () => {
     ).toContain("gap-x-1");
   });
 
-  it("as QUATRO abas de trabalho estão na faixa, com os rótulos inteiros", () => {
+  it("as CINCO abas de trabalho estão na faixa, com os rótulos inteiros", () => {
     render(<InboxFilters value={VALUE} onChange={() => {}} />);
     const abas = screen.getAllByRole("tab");
-    expect(abas).toHaveLength(4);
-    for (const rotulo of ["Minhas", "Fila", "IA", "Todas"]) {
+    expect(abas).toHaveLength(5);
+    for (const rotulo of ["Minhas", "Fila", "IA", "Docs", "Todas"]) {
       expect(screen.getByRole("tab", { name: new RegExp(rotulo) })).toBeInTheDocument();
     }
   });
@@ -116,11 +116,12 @@ describe("faixa da Inbox — quebra em vez de esconder aba (#2745)", () => {
 
   it("a ordem e os valores das abas de trabalho", () => {
     render(<InboxFilters value={VALUE} onChange={() => {}} />);
-    expect(visibleInboxTabs("manager", "all")).toHaveLength(6);
+    expect(visibleInboxTabs("manager", "all")).toHaveLength(7);
     expect(screen.getAllByRole("tab").map((a) => a.textContent?.replace(/\s+/g, ""))).toEqual([
       "Minhas8",
       "Fila47",
       "IA12",
+      "Docs",
       "Todas130",
     ]);
   });

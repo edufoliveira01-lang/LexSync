@@ -10,9 +10,9 @@ import { valorParaOCampo, type DadosDoCliente } from "@/lib/sales/campos-do-cont
 import { REGRAS, sem } from "@/lib/sales/sugerir-dados";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export interface DadosGravados extends DadosDoCliente { nome?: string; email?: string }
+export interface DadosGravados extends DadosDoCliente { nome?: string; email?: string; data_nascimento?: string; nome_da_mae?: string }
 
-const CAMPOS_DE_TEXTO = ["nome", "email", "cpf", "rg", "nacionalidade", "estado_civil", "profissao", "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "sexo"] as const;
+const CAMPOS_DE_TEXTO = ["nome", "email", "data_nascimento", "nome_da_mae", "cpf", "rg", "nacionalidade", "estado_civil", "profissao", "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "sexo"] as const;
 export type CampoDoCliente = (typeof CAMPOS_DE_TEXTO)[number];
 
 const vazio = (v: unknown) => v === undefined || v === null || String(v).trim() === "";
@@ -23,7 +23,7 @@ export const nomeCompleto = (nome: string | undefined | null): boolean => limpa(
 
 /**
  * O que falta para o contrato sair COMPLETO. Obrigatórios: o que qualifica a pessoa no contrato (nome completo, CPF, RG, nacionalidade, estado civil,
- * profissão) e o endereço (rua, número, bairro, cidade e UF). Recomendados: e-mail (a cópia vai por ele) e CEP. O agente só chama o contrato quando
+ * profissão) e o endereço (rua, número, bairro, cidade e UF). Recomendados: e-mail (a cópia vai por ele), CEP, data de nascimento e nome da mãe (comuns em procuração e petição). O agente só chama o contrato quando
  * nenhum obrigatório falta; se a pessoa realmente não tem um dado (ex.: sem RG), o agente passa a conversa à equipe em vez de gerar um contrato incompleto.
  */
 export function faltaParaOContrato(d: DadosGravados): { obrigatorios: string[]; recomendados: string[] } {
@@ -33,7 +33,7 @@ export function faltaParaOContrato(d: DadosGravados): { obrigatorios: string[]; 
   for (const [k, rotulo] of [["rg", "RG"], ["nacionalidade", "nacionalidade"], ["estado_civil", "estado civil"], ["profissao", "profissão"]] as const) if (vazio(d[k])) obrigatorios.push(rotulo);
   if (vazio(d.logradouro)) obrigatorios.push("endereço (rua ou avenida)");
   for (const [k, rotulo] of [["numero", "número da casa ou prédio"], ["bairro", "bairro"], ["cidade", "cidade"], ["uf", "UF"]] as const) if (vazio(d[k])) obrigatorios.push(rotulo);
-  const recomendados = ([["email", "e-mail"], ["cep", "CEP"]] as const).filter(([k]) => vazio(d[k])).map(([, rotulo]) => rotulo);
+  const recomendados = ([["email", "e-mail"], ["cep", "CEP"], ["data_nascimento", "data de nascimento"], ["nome_da_mae", "nome da mãe"]] as const).filter(([k]) => vazio(d[k])).map(([, rotulo]) => rotulo);
   return { obrigatorios, recomendados };
 }
 

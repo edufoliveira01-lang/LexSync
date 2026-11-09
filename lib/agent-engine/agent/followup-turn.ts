@@ -66,6 +66,8 @@ import {
   type LeadCheckpointRow,
 } from './inbound-turn';
 import { isLeadInHandoff } from './human-handoff';
+import { anotarNaConversaDoContato } from '@/lib/inbox/acao-do-agente';
+import { levarAoGanhoAposAssinatura } from '@/lib/sales/pos-assinatura';
 import { AgendaPuladoError, MOTIVO_DO_PULO, decidirNoEnvio } from '@/lib/agenda/escolha-no-envio';
 import { escolhaDoFluxoPg } from '@/lib/agenda/escolha-no-envio-leitura';
 import { protecaoAgendaPg } from '@/lib/agenda/protecao-followup';
@@ -370,6 +372,18 @@ export function createFollowupTurnHandler(deps: FollowupTurnDeps) {
       throw new Error('job followup_turn sem contact_id — o CHECK da fila deveria impedir');
     }
     const payload = followupTurnPayloadSchema.parse(job.payload);
+    // Retorno pós-assinatura (decisão do escritório: o agente segue conduzindo e pede os documentos): o card vai para "Aguardando documentos" NO MOMENTO em que o agente
+    // volta a falar, e a equipe vê a anotação. Melhor-esforço: nunca derruba o turno.
+    if (job.payload.source === 'contrato_assinado') {
+      void (async () => {
+        try {
+          await anotarNaConversaDoContato(tenantId, leadId, 'voltou a falar depois da assinatura do contrato (retorno automático)');
+          await levarAoGanhoAposAssinatura(tenantId, leadId);
+        } catch { /* a rodada de segurança do sistema cobre */ }
+      })();
+    } else if (payload.followup_enrollment_id === undefined) {
+      void anotarNaConversaDoContato(tenantId, leadId, 'voltou a falar por um retorno agendado');
+    }
 
     const boundary = parseServiceBoundary(job.payload.service_boundary);
     await requireCurrentServiceBoundary(pool, boundary);

@@ -70,9 +70,9 @@ afterEach(cleanup);
 describe("as seis abas, na ordem pedida pela #2498", () => {
   // Fork Sales: a faixa mostra só Minhas · Fila · IA · Todas. Fechadas e Arquivadas moram no menu de filtros e só entram na faixa
   // enquanto selecionadas. Os `value`s e as chaves de contagem continuam os do original.
-  it("Minhas, Fila, IA, Todas — nessa ordem (fork Sales)", () => {
+  it("Minhas, Fila, IA, Docs, Todas — nessa ordem (fork Sales)", () => {
     render(<InboxFilters value={VALUE} onChange={() => {}} />);
-    expect(abasRenderizadas()).toEqual(["Minhas", "Fila", "IA", "Todas"]);
+    expect(abasRenderizadas()).toEqual(["Minhas", "Fila", "IA", "Docs", "Todas"]);
   });
 
   it("Fechadas e Arquivadas continuam alcançáveis: estão no menu de filtros, em Situação", () => {
@@ -106,6 +106,7 @@ describe("as seis abas, na ordem pedida pela #2498", () => {
     expect(pares).toEqual([
       "ai=Automático",
       "unassigned=Fila",
+      "docs=Aguardando docs",
       "mine=Minhas",
       "all=Todas",
       "closed=Fechadas",
@@ -123,10 +124,11 @@ describe("as seis abas, na ordem pedida pela #2498", () => {
 });
 
 describe("só a ordem muda — as permissões continuam quem eram", () => {
-  it("manager vê as seis, com 'Todas' no meio", () => {
+  it("manager vê as sete, com 'Todas' no meio", () => {
     expect(visibleInboxTabs("manager", "all")).toEqual([
       "ai",
       "unassigned",
+      "docs",
       "mine",
       "all",
       "closed",
@@ -140,16 +142,18 @@ describe("só a ordem muda — as permissões continuam quem eram", () => {
     expect(visibleInboxTabs("agent", "own")).toEqual([
       "ai",
       "unassigned",
+      "docs",
       "mine",
       "closed",
       "archived",
     ]);
   });
 
-  it("agent com visibility 'all' tem as seis, 'Todas' na posição dela", () => {
+  it("agent com visibility 'all' tem as sete, 'Todas' na posição dela", () => {
     expect(visibleInboxTabs("agent", "all")).toEqual([
       "ai",
       "unassigned",
+      "docs",
       "mine",
       "all",
       "closed",

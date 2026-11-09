@@ -12,7 +12,7 @@ export const QUEM_AGENTE = "Agente de IA";
 export const QUEM_SISTEMA = "Sistema";
 
 const ROTULOS_DOS_DADOS: Record<string, string> = {
-  nome: "nome", email: "e-mail", cpf: "CPF", rg: "RG", nacionalidade: "nacionalidade", sexo: "sexo", estado_civil: "estado civil", profissao: "profissão",
+  nome: "nome", email: "e-mail", data_nascimento: "data de nascimento", nome_da_mae: "nome da mãe", cpf: "CPF", rg: "RG", nacionalidade: "nacionalidade", sexo: "sexo", estado_civil: "estado civil", profissao: "profissão",
   cep: "CEP", logradouro: "rua", numero: "número", complemento: "complemento", bairro: "bairro", cidade: "cidade", uf: "UF",
 };
 
@@ -53,15 +53,46 @@ export async function anotarNaConversaDoContato(orgId: string, contactId: string
   }
 }
 
-/** "moveu o negócio para «Etapa»": lê a etapa ATUAL do negócio aberto do contato (vale para o espelho do funil, a ferramenta e o sistema). */
+/** "moveu o negócio para «Etapa»": lê a etapa ATUAL do negócio aberto do contato (vale para o espelho do funil, a ferramenta e o sistema). Duas consultas simples (sem embutir tabela). */
 export async function anotarMovimentoDoNegocio(orgId: string, contactId: string, quem: string = QUEM_AGENTE, prefixo = "moveu o negócio para"): Promise<void> {
   try {
     const admin = createAdminClient();
-    const { data } = await admin.from("crm_leads").select("crm_stages(name)").eq("organization_id", orgId).eq("contact_id", contactId).order("updated_at", { ascending: false }).limit(1).maybeSingle();
-    const e = (data as { crm_stages?: { name?: string } | { name?: string }[] | null } | null)?.crm_stages;
-    const nome = (Array.isArray(e) ? e[0]?.name : e?.name)?.trim();
+    const { data: lead, error } = await admin.from("crm_leads").select("stage_id").eq("organization_id", orgId).eq("contact_id", contactId).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    if (error || !lead) { if (error) logger.warn("[inbox.acao-do-agente] não consegui ler o negócio", { contact_id: contactId, erro: error.message }); return; }
+    const { data: etapa, error: erroEtapa } = await admin.from("crm_stages").select("name").eq("id", (lead as { stage_id: string }).stage_id).maybeSingle();
+    if (erroEtapa) { logger.warn("[inbox.acao-do-agente] não consegui ler a etapa", { contact_id: contactId, erro: erroEtapa.message }); return; }
+    const nome = (etapa as { name?: string } | null)?.name?.trim();
     if (nome) await anotarNaConversaDoContato(orgId, contactId, `${prefixo} «${nome}»`, quem);
   } catch (err) {
-    logger.warn("[inbox.acao-do-agente] não consegui ler a etapa do negócio", { contact_id: contactId, erro: err instanceof Error ? err.message : String(err) });
+    logger.warn("[inbox.acao-do-agente] não consegui anotar o movimento do negócio", { contact_id: contactId, erro: err instanceof Error ? err.message : String(err) });
   }
+}
+
+const PASSOS_DO_AGENTE: Record<string, string> = { new: "novo contato", contacted: "primeiro contato", qualifying: "triagem", qualified: "caso qualificado", negotiating: "negociação", won: "ganho", lost: "perdido" };
+
+/** O que o agente fez com uma ferramenta NATIVA do motor (as do catálogo CRM já são anotadas em `wrapMcpTool`). `null` = não anota. */
+export function frasesDaFerramentaNativa(nome: string, entrada: Record<string, unknown>, estado: "ok" | "falhou" | "bloqueada"): string | null {
+  const curto = (v: unknown, n = 100) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+  const base = (() => {
+    switch (nome) {
+      case "update_lead_state": {
+        const passo = typeof entrada.stage === "string" ? (PASSOS_DO_AGENTE[entrada.stage] ?? entrada.stage) : null;
+        return passo ? `marcou o atendimento como «${passo}»` : "atualizou o estado do atendimento";
+      }
+      case "save_lead_note": return "salvou uma observação sobre o cliente";
+      case "request_human_handoff": return `passou a conversa para a equipe${curto(entrada.reason) ? ` — ${curto(entrada.reason)}` : ""}`;
+      case "open_human_case": return `abriu um chamado para a equipe${curto(entrada.title) ? `: ${curto(entrada.title)}` : ""}`;
+      case "provide_case_update": return "atualizou um chamado da equipe";
+      default: return null;
+    }
+  })();
+  if (base === null) return null;
+  return estado === "ok" ? base : `tentou ${base.replace(/^(marcou|atualizou|salvou|passou|abriu)\b/, (m) => ({ marcou: "marcar", atualizou: "atualizar", salvou: "salvar", passou: "passar", abriu: "abrir" } as Record<string, string>)[m] ?? m)}, mas não foi concluído`;
+}
+
+/** Anota (melhor-esforço) o que o agente fez com uma ferramenta nativa. */
+export async function anotarFerramentaNativa(orgId: string, contactId: string, e: { nome: string; estado: "ok" | "falhou" | "bloqueada"; entrada: unknown }): Promise<void> {
+  const entrada = (typeof e.entrada === "object" && e.entrada !== null ? e.entrada : {}) as Record<string, unknown>;
+  const frase = frasesDaFerramentaNativa(e.nome, entrada, e.estado);
+  if (frase) await anotarNaConversaDoContato(orgId, contactId, frase);
 }

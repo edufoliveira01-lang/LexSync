@@ -178,6 +178,9 @@ export function soltarFocoEscondido(lista: HTMLElement | null): void {
   if (getComputedStyle(lista).visibility === "hidden") ativo.blur();
 }
 
+/** A etiqueta que o sistema põe quando o contrato é assinado (a mesma de `lib/sales/acompanhar-contratos.ts`). */
+const ETIQUETA_DE_CONTRATO_ASSINADO = "Contrato assinado";
+
 /**
  * O QUE CADA ABA SIGNIFICA. Exportada porque é a definição em si — o defeito
  * que este mapa já teve (Minhas mostrando tudo que o atendente fechou) não
@@ -227,6 +230,9 @@ export function tabToFilter(
       // "automatico" nunca coexistem, então é um filtro que não casa com nada.
       if (automaticoDaOrg === false) return { comando: ["automatico"], status: "closed" };
       return { comando: ["automatico"] };
+    case "docs":
+      // Fork Sales: quem JÁ ASSINOU e está enviando documentos (etiqueta posta pelo sistema ao detectar a assinatura). Abertas, de qualquer atendente ou da IA.
+      return { exclude_finished: true, tag: ETIQUETA_DE_CONTRATO_ASSINADO };
     case "all":
       // Fork Sales: "Todas" = abertas e ativas, de qualquer atendente ou agente de IA.
       // Fechadas e arquivadas têm a sua própria visão (menu de filtros).
@@ -236,7 +242,7 @@ export function tabToFilter(
   }
 }
 
-const FILTER_TABS: InboxTab[] = ["unassigned", "mine", "all", "closed", "archived", "ai"];
+const FILTER_TABS: InboxTab[] = ["unassigned", "mine", "all", "closed", "archived", "ai", "docs"];
 
 /**
  * Lê ?filter= (G4-02, deep-link). ?filter=all é HONRADO mesmo para agent — a
@@ -473,7 +479,8 @@ export function InboxLayout({
         ? filterValue.search
         : undefined,
       channel_session_id: filterValue.channel_session_id,
-      tag: filterValue.tag,
+      // a aba "Aguardando docs" já traz a sua etiqueta; nas demais vale a escolhida no filtro
+      tag: tabToFilter(filterValue.tab, automaticoDaOrg).tag ?? filterValue.tag,
       tagMode: filterValue.tagMode,
       unread: filterValue.onlyUnread || undefined,
       is_group: filterValue.onlyGroups || undefined,

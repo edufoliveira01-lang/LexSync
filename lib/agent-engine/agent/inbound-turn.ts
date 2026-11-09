@@ -90,6 +90,7 @@ import type { ProviderRegistry } from '../edge/llm/providers';
 import { HANDOFF_REASON_ORCAMENTO } from '../edge/llm/orcamento';
 import { bindingOuNulo } from '../edge/llm/binding-do-ponto';
 import { abreAvisoDoEspelhoRecusado, mirrorLeadStageToCrm } from '../edge/crm/move-lead-stage';
+import { anotarFerramentaNativa } from '@/lib/inbox/acao-do-agente';
 import { insertInboxItem } from '../db/repository';
 import { criarConferidorDeAfirmacoes } from '@/lib/ai/decisao/afirmacao-de-fato';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -5818,6 +5819,9 @@ async function executarTurnoDoAgente(
       // breaker bloqueou também aparece na linha, marcada como `bloqueada` — é
       // justamente a que mais falta faz numa investigação (#2869).
       input.tracoDoTurno?.coletor,
+      undefined,
+      // anotação interna do chat (só a equipe vê): o que o agente fez com as ferramentas nativas. Nunca na prévia.
+      preview ? undefined : (e) => { if (leadId) void anotarFerramentaNativa(tenantId, leadId, e); },
     );
 
     // F3-11: stage-classifier auxiliar. Roda ANTES do turno (modelo BARATO pelo seam
