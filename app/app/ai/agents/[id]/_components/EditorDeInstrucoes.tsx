@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import type { FunilDaResposta } from "@/hooks/pipelines/usePipelines";
 import { cn } from "@/lib/utils";
 
+import { CABECALHO_DA_ACAO } from "./chips-do-roteiro";
+import { EditorComChips, type AlvoDoArroba, type ManejoDoEditor } from "./EditorComChips";
 import { linhaDaAcao, MenuDeAcoes, type TipoDeAcao } from "./MenuDeAcoes";
 
 export const MARCA_REGRAS = "=== REGRAS ===";
@@ -46,7 +48,7 @@ export function juntarPartes(p: PartesDoTexto): string {
 }
 
 /** O bloco que entra no roteiro quando se escolhe uma ação: manda executar uma vez e nunca mostrar ao cliente. */
-export const CABECALHO_DA_ACAO = "⚙ AÇÃO — execute uma única vez; nunca mostre isto ao cliente:";
+export { CABECALHO_DA_ACAO };
 export const blocoDaAcao = (tipo: TipoDeAcao, valor = ""): string => `\n${CABECALHO_DA_ACAO}\n${linhaDaAcao(tipo, valor)}\n`;
 
 export interface AcaoDoTexto { inicio: number; fim: number; linha: string }
@@ -101,8 +103,13 @@ export function EditorDeInstrucoes({
 }) {
   const partes = React.useMemo(() => separarPartes(value), [value]);
   const [aba, setAba] = React.useState<IdDaAba>("roteiro");
+  // Roteiro e Regras abrem como TEXTO COM ETIQUETAS (as ações aparecem como etiquetas coloridas); "Ver como texto" mostra o texto puro.
+  // Nos testes (jsdom não edita `contenteditable`), o campo abre em texto puro; o editor com etiquetas tem os próprios testes e a verificação no navegador.
+  const [modoTexto, setModoTexto] = React.useState(process.env.NODE_ENV === "test");
   const ref = React.useRef<HTMLTextAreaElement>(null);
-  const [menu, setMenu] = React.useState<{ inicio: number; consulta: string } | null>(null);
+  const editor = React.useRef<ManejoDoEditor>(null);
+  const [menu, setMenu] = React.useState<{ inicio: number; consulta: string; alvo?: AlvoDoArroba } | null>(null);
+  const visual = aba !== "faq" && !modoTexto;
 
   const atualizar = (parte: IdDaAba, texto: string) => onChange(juntarPartes({ ...partes, [parte]: texto }));
 
@@ -118,8 +125,13 @@ export function EditorDeInstrucoes({
   };
 
   const inserir = (tipo: TipoDeAcao, valor: string) => {
-    const el = ref.current;
     if (!menu) return;
+    if (visual) {
+      editor.current?.inserir(linhaDaAcao(tipo, valor), menu.alvo ?? null);
+      setMenu(null);
+      return;
+    }
+    const el = ref.current;
     const texto = partes[aba];
     const fim = el?.selectionStart ?? menu.inicio;
     const bloco = blocoDaAcao(tipo, valor);
@@ -133,8 +145,6 @@ export function EditorDeInstrucoes({
       el.setSelectionRange(pos, pos);
     });
   };
-
-  const acoes = React.useMemo(() => (aba === "faq" ? [] : acoesDoTexto(partes[aba])), [aba, partes]);
 
   const dica = ABAS.find((x) => x.id === aba)!.dica;
 
@@ -160,53 +170,64 @@ export function EditorDeInstrucoes({
         })}
       </div>
       {aba !== "faq" ? (
-        <button
-          type="button"
-          data-testid="inserir-acao"
-          disabled={disabled}
-          onClick={abrirNoCursor}
-          className="ml-2 rounded-full border px-3 py-1 text-sm font-medium hover:bg-muted disabled:opacity-50"
-        >
-          ＋ {t("Inserir ação")}
-        </button>
+        <>
+          <button
+            type="button"
+            data-testid="inserir-acao"
+            disabled={disabled}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={visual ? () => setMenu({ inicio: 0, consulta: "" }) : abrirNoCursor}
+            className="ml-2 rounded-full border px-3 py-1 text-sm font-medium hover:bg-muted disabled:opacity-50"
+          >
+            ＋ {t("Inserir ação")}
+          </button>
+          <button
+            type="button"
+            data-testid="instrucoes-modo-texto"
+            onClick={() => { setModoTexto((v) => !v); setMenu(null); }}
+            className="ml-2 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            {modoTexto ? t("Ver com etiquetas") : t("Ver como texto")}
+          </button>
+        </>
       ) : null}
       <p className="text-xs text-muted-foreground">{t(dica)} {aba !== "faq" ? t("Ou digite @.") : ""}</p>
 
       <div className="relative">
-        <Textarea
-          key={aba}
-          ref={ref}
-          value={partes[aba]}
-          onChange={(e) => { atualizar(aba, e.target.value); verArroba(e.target); }}
-          onKeyUp={(e) => { if (e.key !== "Escape") verArroba(e.currentTarget); }}
-          onClick={(e) => verArroba(e.currentTarget)}
-          onKeyDown={(e) => {
-            if (!menu) return;
-            if (e.key === "Escape") { e.preventDefault(); setMenu(null); }
-          }}
-          disabled={disabled}
-          rows={aba === "roteiro" ? 16 : 10}
-          /* SEM `maxLength`: o atributo corta a colagem em silêncio (ver o teste agent-form-prompt-nao-trunca). */
-          spellCheck={false}
-          placeholder={aba === "faq" ? "Pergunta: …\nResposta: …" : undefined}
-          className="font-mono text-xs"
-          aria-invalid={invalid || undefined}
-        />
+        {visual ? (
+          <EditorComChips
+            key={aba}
+            ref={editor}
+            value={partes[aba]}
+            onChange={(v) => atualizar(aba, v)}
+            onArroba={(alvo) => setMenu(alvo ? { inicio: alvo.inicio, consulta: alvo.consulta, alvo } : null)}
+            disabled={disabled}
+            invalid={invalid}
+            placeholder={t("Escreva aqui o que o agente deve fazer e dizer…")}
+          />
+        ) : (
+          <Textarea
+            key={aba}
+            ref={ref}
+            value={partes[aba]}
+            onChange={(e) => { atualizar(aba, e.target.value); verArroba(e.target); }}
+            onKeyUp={(e) => { if (e.key !== "Escape") verArroba(e.currentTarget); }}
+            onClick={(e) => verArroba(e.currentTarget)}
+            onKeyDown={(e) => {
+              if (!menu) return;
+              if (e.key === "Escape") { e.preventDefault(); setMenu(null); }
+            }}
+            disabled={disabled}
+            rows={aba === "roteiro" ? 16 : 10}
+            /* SEM `maxLength`: o atributo corta a colagem em silêncio (ver o teste agent-form-prompt-nao-trunca). */
+            spellCheck={false}
+            placeholder={aba === "faq" ? "Pergunta: …\nResposta: …" : undefined}
+            className="font-mono text-xs"
+            aria-invalid={invalid || undefined}
+          />
+        )}
         {menu ? <MenuDeAcoes funis={funis} onInserir={inserir} onFechar={() => setMenu(null)} t={t} /> : null}
       </div>
-      {acoes.length > 0 ? (
-        <div data-testid="acoes-do-texto" className="rounded-lg border bg-muted/30 p-2">
-          <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{t("Ações neste texto")} · {acoes.length}</p>
-          <ul className="flex flex-wrap gap-1.5">
-            {acoes.map((a, i) => (
-              <li key={`${a.inicio}-${i}`} className="inline-flex max-w-full items-center gap-1 rounded-full border bg-background py-0.5 pl-2.5 pr-1 text-xs">
-                <span className="truncate" title={a.linha}>⚙ {a.linha}</span>
-                <button type="button" aria-label={t("Tirar esta ação")} onClick={() => atualizar(aba, tirarAcao(partes[aba], a))} className="rounded-full px-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">×</button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </div>
   );
 }
