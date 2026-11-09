@@ -46,6 +46,20 @@ export function isValidTransition(from: LeadStage, to: LeadStage): boolean {
   return LEAD_STAGE_TRANSITIONS[from].includes(to);
 }
 
+/**
+ * Fork Sales — o caminho de avanços de `from` até `to`, passando pelos estágios do meio (ou `null` se `to` não está adiante).
+ * O agente precisa marcar o estágio certo NO MOMENTO certo (triagem, proposta, aceite) e não pode ser recusado por ter pulado
+ * "contato": o salto para a frente vira a sequência de avanços válidos, cada um no histórico. `lost` segue a regra original.
+ */
+export function caminhoDeAvanco(from: LeadStage, to: LeadStage): LeadStage[] | null {
+  if (to === 'lost') return isValidTransition(from, to) ? [to] : null;
+  const ordem = LEAD_STAGES.filter((e) => e !== 'lost');
+  const i = ordem.indexOf(from);
+  const j = ordem.indexOf(to);
+  if (i < 0 || j <= i) return null;
+  return ordem.slice(i + 1, j + 1);
+}
+
 /** Whitelist EXATA do que o modelo pode marcar — .strict() rejeita o resto. */
 export const updateLeadStateInputSchema = z.strictObject({
   stage: z.enum(LEAD_STAGES).optional(),
@@ -259,9 +273,11 @@ export async function applyLeadStateUpdate(
   const currentStage: LeadStage = current?.stage ?? 'new';
 
   let transition: { from: LeadStage; to: LeadStage; reason?: string } | null = null;
+  let caminho: LeadStage[] | null = null;
   let noop = false;
   if (input.stage !== undefined && input.stage !== currentStage) {
-    if (!isValidTransition(currentStage, input.stage)) {
+    caminho = caminhoDeAvanco(currentStage, input.stage);
+    if (caminho === null) {
       return teachInvalidTransition(currentStage, input.stage);
     }
     transition = { from: currentStage, to: input.stage, ...(input.reason !== undefined ? { reason: input.reason } : {}) };
@@ -305,14 +321,20 @@ export async function applyLeadStateUpdate(
 
   let state: LeadStateRow;
   if (transition !== null) {
+    // um avanço por linha do histórico (o salto vira a sequência de avanços válidos); o motivo vai na última linha
+    const de = transition.from;
+    const passos = (caminho ?? [transition.to]).map((para, i, todos) => ({ de: i === 0 ? de : todos[i - 1]!, para }));
+    const linhas = passos
+      .map((_, i) => '($1, $2, $7, $' + (9 + i * 2) + ', $' + (10 + i * 2) + ', ' + (i === passos.length - 1 ? '$8' : 'null') + ')')
+      .join(', ');
     const { rows } = await db.query<LeadStateRow>(
       `with up as (${upsert}),
        tr as (
          insert into lead_state_transitions (organization_id, contact_id, job_id, from_stage, to_stage, reason)
-         values ($1, $2, $7, $8, $3, $9)
+         values ${linhas}
        )
        select * from up`,
-      [...upsertParams, ids.jobId ?? null, transition.from, transition.reason ?? null],
+      [...upsertParams, ids.jobId ?? null, transition.reason ?? null, ...passos.flatMap((p) => [p.de, p.para])],
     );
     state = rows[0]!;
   } else {

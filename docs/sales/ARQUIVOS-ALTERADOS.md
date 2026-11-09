@@ -88,3 +88,4 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 - `lib/sales/pos-assinatura.ts`: `levarAoGanhoAposAssinatura`; o card vai para "Aguardando documentos" quando o retorno pós-assinatura dispara (`followup-turn.ts`), e a rodada de 3 minutos ficou como rede de segurança.
 - `crm_registrar_dados_do_cliente`: novos campos opcionais `data_nascimento` e `nome_da_mae` (recomendados).
 - Limite das instruções do agente subiu de 20.000 para 40.000 caracteres (`lib/ai/agents/validation.ts`, `AgentForm.tsx`): o texto da Lígia com as regras novas passou de 20.000 e não salvava. Contador e teste atualizados.
+- `lib/agent-engine/agent/lead-state.ts`: `caminhoDeAvanco` — o agente pode marcar um estágio adiante sem ser recusado; o salto vira a sequência de avanços válidos (cada um no histórico). Antes, pular "contato" recusava a marcação e o card andava atrasado.
