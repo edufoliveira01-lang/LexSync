@@ -55,6 +55,7 @@ import { rotuloParaAEquipe } from "@/lib/contacts/rotulo-do-contato";
 import { phoneForDisplay } from "@/lib/channels/phone-variants";
 import { AtalhosDoNegocio } from "@/components/kanban/AtalhosDoCard";
 import { CamposDoContato } from "./CamposDoContato";
+import { FichaDeCampos } from "./FichaDeCampos";
 import type { AtalhoDoCard } from "@/lib/leads/atalhos-do-card";
 
 interface Props {
@@ -710,6 +711,8 @@ function CamposDoFunil({
   // A RÉGUA do diff (issue #2132): o valor carregado quando o painel abriu.
   // Só o que a pessoa mudar daqui vai viajar — o merge é do servidor.
   const [camposCarregados, setCamposCarregados] = useState(valores);
+  // Na janela flutuante (`duasColunas`) a LEITURA vem primeiro, como ficha em duas colunas; o formulário abre em "Editar".
+  const [editando, setEditando] = useState(false);
 
   if (fieldDefs.length === 0) {
     return <p className="text-xs text-muted-foreground">{t("Este funil não tem campos extras.")}</p>;
@@ -722,6 +725,7 @@ function CamposDoFunil({
       // O que acabou de gravar vira a nova régua: o próximo salvamento não
       // reenvia este, e uma limpeza alheia no intervalo não é atropelada.
       setCamposCarregados({ ...customFields });
+      setEditando(false);
       toast.success(t("Campos atualizados"));
       onSalvo();
     } catch {
@@ -729,8 +733,39 @@ function CamposDoFunil({
     }
   }
 
+  if (duasColunas && !editando) {
+    return (
+      <div className="space-y-3" data-testid="campos-do-funil-leitura">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold">{t("Campos do negócio")}</p>
+          <button
+            type="button"
+            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            data-testid="campos-do-funil-editar"
+            onClick={() => setEditando(true)}
+          >
+            {t("Editar")}
+          </button>
+        </div>
+        <FichaDeCampos campos={fieldDefs} valores={customFields} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
+      {duasColunas && (
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold">{t("Campos do negócio")}</p>
+          <button
+            type="button"
+            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            onClick={() => { setCustomFields({ ...camposCarregados }); setEditando(false); }}
+          >
+            {t("Cancelar")}
+          </button>
+        </div>
+      )}
       <CustomFieldsEditor
         fields={fieldDefs}
         value={customFields}

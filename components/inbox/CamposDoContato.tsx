@@ -12,6 +12,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { CustomFieldsEditor } from "@/components/contacts/CustomFieldsEditor";
+import { FichaDeCampos } from "./FichaDeCampos";
 import { Button } from "@/components/ui/button";
 import { useContact } from "@/hooks/contacts/useContact";
 import { useUpdateContact } from "@/hooks/contacts/useUpdateContact";
@@ -33,6 +34,8 @@ export function CamposDoContato({ contactId, somenteLeitura, duasColunas = false
   const gravados = (contato.data?.data?.custom_fields ?? {}) as Record<string, unknown>;
   const [valores, setValores] = React.useState<Record<string, unknown>>({});
   const [carregados, setCarregados] = React.useState<Record<string, unknown>>({});
+  // Na janela flutuante (`duasColunas`) a LEITURA vem primeiro, como ficha; o formulário abre em "Editar".
+  const [editando, setEditando] = React.useState(false);
   // O que está gravado vira o ponto de partida quando chega (ou quando outro contato é aberto); o que a pessoa digita não é atropelado.
   const origem = React.useRef<string | null>(null);
   React.useEffect(() => {
@@ -55,31 +58,51 @@ export function CamposDoContato({ contactId, somenteLeitura, duasColunas = false
       {
         onSuccess: () => {
           setCarregados({ ...valores });
+          setEditando(false);
           toast.success(t("Campos do contato atualizados"));
         },
       },
     );
   }
 
+  const leitura = duasColunas && !editando;
   return (
     <div className="space-y-3 border-t border-border pt-4" data-testid="inbox-campos-do-contato">
-      <p className="text-xs font-semibold">{t("Campos do contato")}</p>
-      <CustomFieldsEditor
-        fields={defs}
-        value={valores}
-        onChange={setValores}
-        mode="contact"
-        disabled={somenteLeitura}
-        className={duasColunas ? "gap-4" : "gap-4 md:grid-cols-1"}
-      />
-      <Button
-        size="sm"
-        className="h-11 w-full text-xs lg:h-7"
-        disabled={somenteLeitura || salvar.isPending || !mudou}
-        onClick={gravar}
-      >
-        {salvar.isPending ? t("Salvando…") : t("Salvar")}
-      </Button>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold">{t("Campos do contato")}</p>
+        {duasColunas && !somenteLeitura ? (
+          <button
+            type="button"
+            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            data-testid="campos-do-contato-editar"
+            onClick={() => { if (editando) setValores({ ...carregados }); setEditando((v) => !v); }}
+          >
+            {editando ? t("Cancelar") : t("Editar")}
+          </button>
+        ) : null}
+      </div>
+      {leitura ? (
+        <FichaDeCampos campos={defs} valores={valores} />
+      ) : (
+        <>
+          <CustomFieldsEditor
+            fields={defs}
+            value={valores}
+            onChange={setValores}
+            mode="contact"
+            disabled={somenteLeitura}
+            className={duasColunas ? "gap-4" : "gap-4 md:grid-cols-1"}
+          />
+          <Button
+            size="sm"
+            className="h-11 w-full text-xs lg:h-7"
+            disabled={somenteLeitura || salvar.isPending || !mudou}
+            onClick={gravar}
+          >
+            {salvar.isPending ? t("Salvando…") : t("Salvar")}
+          </Button>
+        </>
+      )}
     </div>
   );
 }
