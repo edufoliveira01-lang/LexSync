@@ -295,6 +295,11 @@ interface InboxLayoutProps {
    * faria a lateral nascer completa e "pular" para a escolhida.
    */
   modulosDaLateral?: ModuloDaLateral[];
+  /**
+   * Fork Sales: os DETALHES DO CONTATO abrem numa JANELA LATERAL flutuante (por cima da tela, fecha ao clicar fora) em vez de uma terceira coluna fixa
+   * que espreme a lista e a conversa. Desligado (padrão do componente), a grade de três colunas de sempre.
+   */
+  painelFlutuante?: boolean;
 }
 
 export function InboxLayout({
@@ -302,6 +307,7 @@ export function InboxLayout({
   rascunho = null,
   painelRecolhidoInicial = false,
   modulosDaLateral,
+  painelFlutuante = false,
 }: InboxLayoutProps = {}) {
   const t = useT();
   const { activeOrg, user } = useAuth();
@@ -386,6 +392,8 @@ export function InboxLayout({
   const [helpOpen, setHelpOpen] = useState(false);
   /** A ficha do contato como painel deslizante — só existe abaixo do `xl`. */
   const [fichaAberta, setFichaAberta] = useState(false);
+  // A janela lateral flutuante dos detalhes do contato (fork Sales, `painelFlutuante`).
+  const [detalhesAbertos, setDetalhesAbertos] = useState(false);
   /**
    * O PAINEL DO CONTATO RECOLHIDO (issue #3004).
    *
@@ -757,11 +765,15 @@ export function InboxLayout({
   const fichaOcupaEspaco = faixa?.temFicha === true && !painelRecolhido;
 
   useEffect(() => {
-    const medir = () => setFaixa(faixaDaLargura(window.innerWidth));
+    const medir = () => {
+      const f = faixaDaLargura(window.innerWidth);
+      // Com a janela flutuante não existe a coluna da ficha: a grade é sempre lista + conversa.
+      setFaixa(f && painelFlutuante ? { ...f, temFicha: false } : f);
+    };
     medir();
     window.addEventListener("resize", medir);
     return () => window.removeEventListener("resize", medir);
-  }, []);
+  }, [painelFlutuante]);
 
   // Trocar de faixa (ou montar) retoma a largura SALVA DAQUELA faixa e já a
   // resolve contra a largura real da grade: a mesma chave `xl` cobre 1280–1535
@@ -921,9 +933,11 @@ export function InboxLayout({
         // botão de expandir e a conversa fica com o que era da ficha. Duas
         // listas em vez de uma classe com valor em variável: o Tailwind precisa
         // do literal para gerar o CSS.
-        painelRecolhido
-          ? "xl:grid-cols-[272px_1fr_2.75rem] 2xl:grid-cols-[300px_1fr_2.75rem]"
-          : "xl:grid-cols-[272px_1fr_296px] 2xl:grid-cols-[300px_1fr_320px]",
+        painelFlutuante
+          ? "xl:grid-cols-[272px_1fr] 2xl:grid-cols-[300px_1fr]"
+          : painelRecolhido
+            ? "xl:grid-cols-[272px_1fr_2.75rem] 2xl:grid-cols-[300px_1fr_2.75rem]"
+            : "xl:grid-cols-[272px_1fr_296px] 2xl:grid-cols-[300px_1fr_320px]",
       )}
       style={estiloDaGrade}
       /*
@@ -1077,7 +1091,7 @@ export function InboxLayout({
               key={selectedConversation.id}
               conversation={selectedConversation}
               onAbrirConversa={handleSelect}
-              onAbrirFicha={alternarPainelDoContato}
+              onAbrirFicha={painelFlutuante ? () => setDetalhesAbertos(true) : alternarPainelDoContato}
               onBuscar={() =>
                 buscaAberta
                   ? fecharBusca()
@@ -1205,14 +1219,26 @@ export function InboxLayout({
         )}
       </div>
 
-      <div className={cn("painel-do-contato hidden h-full min-h-0 min-w-0 xl:block", !selectedId && "xl:hidden")}>
-        <CRMSidePanel
-          conversation={selectedConversation}
-          recolhido={painelRecolhido}
-          onAlternarRecolhido={alternarPainelDoContato}
-          modulosIniciais={modulosDaLateral}
-        />
-      </div>
+      {painelFlutuante ? (
+        // A JANELA LATERAL dos detalhes do contato: por cima da tela (a lista e a conversa não são espremidas), fecha ao clicar fora ou com Esc.
+        selectedConversation ? (
+          <Sheet open={detalhesAbertos} onOpenChange={setDetalhesAbertos}>
+            <SheetContent side="right" className="w-[min(32rem,94vw)] overflow-y-auto p-0 sm:max-w-[32rem]" data-testid="janela-detalhes-do-contato">
+              <SheetTitle className="sr-only">{t("Detalhes do contato")}</SheetTitle>
+              <CRMSidePanel conversation={selectedConversation} modulosIniciais={modulosDaLateral} flutuante />
+            </SheetContent>
+          </Sheet>
+        ) : null
+      ) : (
+        <div className={cn("painel-do-contato hidden h-full min-h-0 min-w-0 xl:block", !selectedId && "xl:hidden")}>
+          <CRMSidePanel
+            conversation={selectedConversation}
+            recolhido={painelRecolhido}
+            onAlternarRecolhido={alternarPainelDoContato}
+            modulosIniciais={modulosDaLateral}
+          />
+        </div>
+      )}
 
       {/*
         AS DUAS DIVISÓRIAS (#2579) — só a partir do `md`, quando as colunas

@@ -219,6 +219,32 @@ const abrirDialogo = async () => {
 const interruptor = (dialogo: HTMLElement, id: string) =>
   within(within(dialogo).getByTestId(`modulo-${id}`)).getByRole("switch") as HTMLButtonElement;
 
+describe("fork Sales — o painel na JANELA LATERAL flutuante", () => {
+  it("flutuante: mais respiro, sem borda de coluna e com os mesmos módulos; sem a prop, o painel de sempre", () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { container, rerender } = render(
+      <QueryClientProvider client={qc}>
+        <CRMSidePanel conversation={conversa} modulosIniciais={h.gravado ?? undefined} flutuante />
+      </QueryClientProvider>,
+    );
+    const aside = container.querySelector("aside")!;
+    expect(aside).toHaveAttribute("data-flutuante");
+    expect(aside.className).toContain("gap-6");
+    expect(aside.className).not.toContain("border-l");
+    const modulosFlutuante = modulosNaTela();
+
+    rerender(
+      <QueryClientProvider client={qc}>
+        <CRMSidePanel conversation={conversa} modulosIniciais={h.gravado ?? undefined} />
+      </QueryClientProvider>,
+    );
+    const asideFixo = container.querySelector("aside")!;
+    expect(asideFixo).not.toHaveAttribute("data-flutuante");
+    expect(asideFixo.className).toContain("border-l");
+    expect(modulosNaTela()).toEqual(modulosFlutuante);
+  });
+});
+
 describe("#3008 — CONTROLE: usuário novo vê a lateral de hoje", () => {
   it("sem preferência gravada, todos os módulos aparecem e na ordem de hoje", async () => {
     montar();

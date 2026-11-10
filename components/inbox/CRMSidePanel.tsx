@@ -67,6 +67,11 @@ interface Props {
    */
   recolhido?: boolean;
   /**
+   * Fork Sales: o painel dentro da JANELA LATERAL flutuante (e não como coluna fixa que espreme a conversa). Mais respiro entre os blocos e sem a
+   * borda de coluna; o cabeçalho deixa espaço à direita para o botão de fechar da janela.
+   */
+  flutuante?: boolean;
+  /**
    * O clique do controle. Só existe na coluna do desktop: o painel do celular
    * abre dentro de um `Sheet`, que já tem o próprio gesto de fechar — por isso o
    * controle é OPCIONAL, como o `showCollapseControl` do menu da esquerda, e o
@@ -792,6 +797,7 @@ function BotaoDeRecolherDoPainel({
 export function CRMSidePanel({
   conversation,
   recolhido = false,
+  flutuante = false,
   onAlternarRecolhido,
   modulosIniciais,
 }: Props) {
@@ -1458,7 +1464,13 @@ export function CRMSidePanel({
   };
 
   return (
-    <aside className="flex h-full flex-col gap-4 overflow-y-auto border-l border-border bg-background p-4">
+    <aside
+      className={cn(
+        "flex h-full flex-col overflow-y-auto bg-background",
+        flutuante ? "gap-6 p-6" : "gap-4 border-l border-border p-4",
+      )}
+      data-flutuante={flutuante ? "" : undefined}
+    >
       {/* A FAIXA DO ALTO (#3004/#3008): o recolher do painel, no mesmo lugar do
           recolher do menu da esquerda, e o botão que abre a personalização da
           lateral. `sticky` para não rolar para fora com o conteúdo, e o
@@ -1470,7 +1482,10 @@ export function CRMSidePanel({
           celular chega à personalização. Sem o controle de recolher, o espaço
           dele fica com um vazio — o botão de módulos não muda de lugar. */}
       <div
-        className="sticky top-0 z-10 -mx-4 -mt-4 flex shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-4 py-1"
+        className={cn(
+          "sticky top-0 z-10 flex shrink-0 items-center justify-between gap-2 border-b border-border bg-background py-1",
+          flutuante ? "-mx-6 -mt-6 px-6 pr-14" : "-mx-4 -mt-4 px-4",
+        )}
         data-testid="inbox-cabecalho-do-painel"
       >
         <span className="titulo-do-painel">{t("Detalhes do contato")}</span>

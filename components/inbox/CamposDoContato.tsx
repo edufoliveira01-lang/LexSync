@@ -62,7 +62,7 @@ export function CamposDoContato({ contactId, somenteLeitura }: { contactId: stri
   }
 
   return (
-    <div className="space-y-2 border-t border-border pt-3" data-testid="inbox-campos-do-contato">
+    <div className="space-y-3 border-t border-border pt-4" data-testid="inbox-campos-do-contato">
       <p className="text-xs font-semibold">{t("Campos do contato")}</p>
       <CustomFieldsEditor
         fields={defs}
@@ -70,7 +70,7 @@ export function CamposDoContato({ contactId, somenteLeitura }: { contactId: stri
         onChange={setValores}
         mode="contact"
         disabled={somenteLeitura}
-        className="gap-3 md:grid-cols-1"
+        className="gap-4 md:grid-cols-1"
       />
       <Button
         size="sm"

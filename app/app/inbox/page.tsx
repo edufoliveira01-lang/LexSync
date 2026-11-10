@@ -77,6 +77,7 @@ export default async function InboxPage({
       initialSelectedId={id ?? null}
       rascunho={avisoDeRascunho}
       painelRecolhidoInicial={painelRecolhido}
+      painelFlutuante
       modulosDaLateral={modulosDaLateral}
     />
   );
