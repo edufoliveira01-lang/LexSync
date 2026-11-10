@@ -93,9 +93,10 @@ describe("gaveta do arquivo (#979)", () => {
     arquivar.mockReset();
   });
 
-  function tela(opts: { arquivados?: FunilDaLista[]; podeGerenciar?: boolean } = {}) {
+  function tela(opts: { arquivados?: FunilDaLista[]; podeGerenciar?: boolean; etapas?: Record<string, { id: string; name: string; is_won?: boolean; is_lost?: boolean }[]> } = {}) {
     return render(
       <FunisClient
+        etapas={opts.etapas}
         funis={[vivo]}
         arquivados={opts.arquivados ?? [arquivado]}
         podeGerenciar={opts.podeGerenciar ?? true}
@@ -103,6 +104,31 @@ describe("gaveta do arquivo (#979)", () => {
       />,
     );
   }
+
+  it("o funil é um CARTÃO: faixa das etapas (ganho/perda marcados) e botão Abrir quadro", () => {
+    tela({
+      etapas: {
+        [vivo.id]: [
+          { id: "e1", name: "Novo contato" },
+          { id: "e2", name: "Fechado", is_won: true },
+          { id: "e3", name: "Sem interesse", is_lost: true },
+        ],
+      },
+    });
+    const faixa = screen.getByTestId(`faixa-${vivo.id}`);
+    expect(faixa).toHaveTextContent("Novo contato");
+    expect(faixa).toHaveTextContent("Fechado");
+    expect(faixa).toHaveTextContent("Sem interesse");
+    expect(screen.getByTestId(`abrir-quadro-${vivo.id}`)).toHaveAttribute("href", `/app/pipelines/${vivo.id}`);
+    expect(screen.getByTestId(`configurar-${vivo.id}`)).toHaveAttribute("href", `/app/settings/tenant/pipelines#etapas-${vivo.id}`);
+  });
+
+  it("sem permissão de gerenciar, o cartão abre o quadro mas não oferece Ações nem configurar", () => {
+    tela({ podeGerenciar: false });
+    expect(screen.getByTestId(`abrir-quadro-${vivo.id}`)).toBeInTheDocument();
+    expect(screen.queryByTestId(`acoes-${vivo.id}`)).not.toBeInTheDocument();
+    expect(screen.queryByTestId(`configurar-${vivo.id}`)).not.toBeInTheDocument();
+  });
 
   it("começa FECHADA e, ao abrir, mostra as duas saídas do funil arquivado", async () => {
     const user = userEvent.setup();

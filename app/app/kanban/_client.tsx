@@ -35,6 +35,14 @@ import {
 } from "@/lib/ui/icons";
 import { useArquivarFunil, useCriarFunil, useEditarFunil } from "@/hooks/pipelines/usePipelines";
 
+/** Uma etapa na faixa do cartão do funil (só leitura). */
+export interface EtapaDaFaixa {
+  id: string;
+  name: string;
+  is_won?: boolean;
+  is_lost?: boolean;
+}
+
 export interface FunilDaLista {
   id: string;
   name: string;
@@ -91,7 +99,10 @@ export function FunisClient({
   arquivados: arquivadosDoServidor,
   podeGerenciar,
   podeImportar,
+  etapas = {},
 }: {
+  /** As etapas de cada funil por id (faixa do cartão). Opcional: sem elas o cartão só não mostra a faixa. */
+  etapas?: Record<string, EtapaDaFaixa[]>;
   funis: FunilDaLista[];
   /**
    * O que foi arquivado (#979) — SEPARADO dos vivos, nunca concatenado. É
@@ -528,14 +539,14 @@ export function FunisClient({
         </p>
       )}
 
-      <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
+      <ul className="grid gap-3 lg:grid-cols-2">
         {funis.map((funil, i) => {
           const renomeandoAqui = renomeando?.id === funil.id ? renomeando : null;
           const arquivandoAqui = arquivando?.id === funil.id ? arquivando : null;
           const erroDaLinha = erro?.id === funil.id ? erro.texto : null;
 
           return (
-            <li key={funil.id} className="flex flex-col gap-3 p-4" data-testid={`funil-${funil.id}`}>
+            <li key={funil.id} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4" data-testid={`funil-${funil.id}`}>
               {/* `sm:flex-wrap`: a linha do funil QUEBRA em vez de espremer a
                   coluna do nome. Em ~900px o grupo de ações (Renomear/Tornar
                   padrão/Funil de clientes/Arquivar) e o `shrink-0` que ele
@@ -546,41 +557,10 @@ export function FunisClient({
                   DENTRO do cartão; em janela cheia continuam ao lado, como
                   sempre. Vale em qualquer largura: não há breakpoint novo, só
                   a permissão de quebrar. */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                {podeGerenciar && (
-                  <div className="flex shrink-0 flex-wrap gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`${t("Subir")} «${funil.name}» ${t("na lista")}`}
-                      data-testid={`subir-${funil.id}`}
-                      disabled={ocupado || i === 0}
-                      onClick={() => aplicar(funil.id, { depois_de: vizinhoAoMover(funis, i, "subir") })}
-                    >
-                      <CaretUp size={16} aria-hidden />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`${t("Descer")} «${funil.name}» ${t("na lista")}`}
-                      data-testid={`descer-${funil.id}`}
-                      disabled={ocupado || i === funis.length - 1}
-                      onClick={() => aplicar(funil.id, { depois_de: vizinhoAoMover(funis, i, "descer") })}
-                    >
-                      <CaretDown size={16} aria-hidden />
-                    </Button>
-                  </div>
-                )}
-
-                {/* SEM `min-w-*`: o piso da coluna do nome é o PRÓPRIO conteúdo
-                    (min-width automático = palavra mais longa do nome + selos).
-                    Com `min-w-0` ela encolhia até 0 e o nome ia para baixo dos
-                    selos; um piso fixo (`min-w-40`, 160px) também não basta,
-                    porque «Padrão» + «Clientes» com os espaços já ocupam ~139px
-                    e «Predeterminado» (es) passa sozinho dos 160px. Com o piso
-                    no conteúdo, quando não cabe é a LINHA que quebra
-                    (`sm:flex-wrap` acima), não o selo que cruza o slug. */}
-                <div className="flex-1">
+              {/* Fork Sales — repaginação: cada funil é um CARTÃO. Título (abre o quadro), selos e slug em cima; a FAIXA das etapas no meio; o botão principal
+                  ("Abrir quadro") embaixo. Renomear, ordem, padrão, clientes e arquivar ficam agrupados em "Ações" (continuam no DOM e nos testes). */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
                   {renomeandoAqui ? (
                     <div className="flex gap-2">
                       <Input
@@ -608,13 +588,9 @@ export function FunisClient({
                       </Button>
                     </div>
                   ) : (
-                    <Link
-                      href={`/app/pipelines/${funil.id}`}
-                      className="group flex flex-col"
-                      data-testid={`abrir-${funil.id}`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="text-sm font-medium group-hover:underline">{funil.name}</span>
+                    <Link href={`/app/pipelines/${funil.id}`} className="group block" data-testid={`abrir-${funil.id}`}>
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-base font-semibold group-hover:underline">{funil.name}</span>
                         {funil.is_default && (
                           <Badge variant="secondary" className="text-[10px]">
                             {t("Padrão")}
@@ -627,81 +603,134 @@ export function FunisClient({
                         )}
                       </span>
                       {funil.description && (
-                        <span className="text-xs text-muted-foreground">{funil.description}</span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">{funil.description}</span>
                       )}
                     </Link>
                   )}
+                  <span className="mt-0.5 block text-[11px] text-muted-foreground">/{funil.slug}</span>
                 </div>
 
-                <span className="shrink-0 text-xs text-muted-foreground">/{funil.slug}</span>
-
-                {/*
-                  SEM `shrink-0`, que era a CAUSA: com ele o grupo exigia a
-                  largura de todos os botões numa linha só (~419px de um cartão
-                  de ~556px) e empurrava tudo para fora; a coluna do nome é que
-                  encolhia. Agora o grupo pode encolher e, se ainda faltar
-                  espaço na linha, a própria linha quebra (`sm:flex-wrap`) e ele
-                  desce inteiro, dentro do cartão.
-                */}
                 {podeGerenciar && !renomeandoAqui && (
-                  <div className="flex min-w-0 flex-wrap gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setRenomeando({ id: funil.id, nome: funil.name })}
-                      disabled={ocupado}
-                      data-testid={`renomear-${funil.id}`}
-                    >
-                      <PencilSimple size={16} className="mr-1" aria-hidden /> {t("Renomear")}
-                    </Button>
-                    {!funil.is_default && (
+                  <details className="relative shrink-0" data-testid={`acoes-${funil.id}`}>
+                    <summary className="cursor-pointer list-none rounded-md border border-border px-2.5 py-1 text-xs hover:bg-muted [&::-webkit-details-marker]:hidden">
+                      ⋯ {t("Ações")}
+                    </summary>
+                    <div className="absolute right-0 z-10 mt-1 flex w-60 flex-col gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-md">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => aplicar(funil.id, { is_default: true })}
+                        className="justify-start"
+                        onClick={() => setRenomeando({ id: funil.id, nome: funil.name })}
                         disabled={ocupado}
-                        data-testid={`padrao-${funil.id}`}
+                        data-testid={`renomear-${funil.id}`}
                       >
-                        <Check size={16} className="mr-1" aria-hidden /> {t("Tornar padrão")}
+                        <PencilSimple size={16} className="mr-2" aria-hidden /> {t("Renomear")}
                       </Button>
-                    )}
-                    {/*
-                      Ligar e desligar no MESMO lugar, ao contrário de "Tornar
-                      padrão", que só liga: toda organização precisa de um funil
-                      padrão, nenhuma precisa de um funil de clientes. Quem
-                      experimentou tem de conseguir desfazer sem pedir ajuda.
-                    */}
-                    {clientesLigado && (
+                      {!funil.is_default && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="justify-start"
+                          onClick={() => aplicar(funil.id, { is_default: true })}
+                          disabled={ocupado}
+                          data-testid={`padrao-${funil.id}`}
+                        >
+                          <Check size={16} className="mr-2" aria-hidden /> {t("Tornar padrão")}
+                        </Button>
+                      )}
+                      {/* Ligar e desligar no MESMO lugar: toda organização precisa de um funil padrão, nenhuma precisa de um funil de clientes. */}
+                      {clientesLigado && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="justify-start"
+                          onClick={() => aplicar(funil.id, { is_client_pipeline: !funil.is_client_pipeline })}
+                          disabled={ocupado}
+                          data-testid={`clientes-${funil.id}`}
+                        >
+                          <Check size={16} className="mr-2" aria-hidden />{" "}
+                          {funil.is_client_pipeline ? t("Deixar de ser funil de clientes") : t("Funil de clientes")}
+                        </Button>
+                      )}
+                      <div className="flex items-center gap-1 px-1 py-0.5">
+                        <span className="flex-1 pl-2 text-xs text-muted-foreground">{t("Ordem na lista")}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`${t("Subir")} «${funil.name}» ${t("na lista")}`}
+                          data-testid={`subir-${funil.id}`}
+                          disabled={ocupado || i === 0}
+                          onClick={() => aplicar(funil.id, { depois_de: vizinhoAoMover(funis, i, "subir") })}
+                        >
+                          <CaretUp size={16} aria-hidden />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`${t("Descer")} «${funil.name}» ${t("na lista")}`}
+                          data-testid={`descer-${funil.id}`}
+                          disabled={ocupado || i === funis.length - 1}
+                          onClick={() => aplicar(funil.id, { depois_de: vizinhoAoMover(funis, i, "descer") })}
+                        >
+                          <CaretDown size={16} aria-hidden />
+                        </Button>
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() =>
-                          aplicar(funil.id, { is_client_pipeline: !funil.is_client_pipeline })
-                        }
+                        className="justify-start text-red-600 hover:text-red-700"
+                        onClick={() => {
+                          setErro(null);
+                          setArquivando({ id: funil.id, erro: null });
+                        }}
                         disabled={ocupado}
-                        data-testid={`clientes-${funil.id}`}
+                        data-testid={`arquivar-${funil.id}`}
                       >
-                        <Check size={16} className="mr-1" aria-hidden />{" "}
-                        {funil.is_client_pipeline
-                          ? t("Deixar de ser funil de clientes")
-                          : t("Funil de clientes")}
+                        <Archive size={16} className="mr-2" aria-hidden /> {t("Arquivar")}
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setErro(null);
-                        setArquivando({ id: funil.id, erro: null });
-                      }}
-                      disabled={ocupado}
-                      data-testid={`arquivar-${funil.id}`}
-                    >
-                      <Archive size={16} className="mr-1" aria-hidden /> {t("Arquivar")}
-                    </Button>
-                  </div>
+                    </div>
+                  </details>
                 )}
               </div>
+
+              {/* A FAIXA do funil: as etapas em sequência (só leitura). Ganho em verde, perda em vermelho. */}
+              {(etapas[funil.id]?.length ?? 0) > 0 && (
+                <ol className="flex flex-wrap items-center gap-1" aria-label={t("Etapas do funil")} data-testid={`faixa-${funil.id}`}>
+                  {etapas[funil.id]!.map((e, k) => (
+                    <li key={e.id} className="flex items-center gap-1">
+                      {k > 0 ? <span aria-hidden className="text-muted-foreground">›</span> : null}
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[11px] ${
+                          e.is_won
+                            ? "border-green-600/40 bg-green-500/10 text-green-700 dark:text-green-400"
+                            : e.is_lost
+                              ? "border-red-600/40 bg-red-500/10 text-red-700 dark:text-red-400"
+                              : "bg-muted/50"
+                        }`}
+                      >
+                        {e.name}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+
+              {!renomeandoAqui && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <Button asChild size="sm">
+                    <Link href={`/app/pipelines/${funil.id}`} data-testid={`abrir-quadro-${funil.id}`}>
+                      {t("Abrir quadro")}
+                    </Link>
+                  </Button>
+                  {podeGerenciar && (
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={`/app/settings/tenant/pipelines#etapas-${funil.id}`} data-testid={`configurar-${funil.id}`}>
+                        {t("Etapas e campos")}
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {erroDaLinha && (
                 <p className="text-sm leading-relaxed text-destructive" data-testid={`erro-${funil.id}`}>

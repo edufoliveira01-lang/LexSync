@@ -6,7 +6,7 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
 import { traduzir } from "@/lib/i18n/dicionario";
-import { FunisClient, type FunilDaLista } from "./_client";
+import { FunisClient, type EtapaDaFaixa, type FunilDaLista } from "./_client";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Funis" };
@@ -53,6 +53,17 @@ export default async function KanbanPickerPage() {
 
   const todos = (data ?? []) as Array<FunilDaLista & { is_archived: boolean }>;
   const funis = todos.filter((f) => !f.is_archived);
+  // A faixa de etapas de cada cartão (só leitura): as etapas não arquivadas, na ordem do funil.
+  const { data: etapasDoBanco } = await supabase
+    .from("crm_stages")
+    .select("id, pipeline_id, name, is_won, is_lost")
+    .eq("organization_id", activeOrg.orgId)
+    .eq("is_archived", false)
+    .order("position", { ascending: true });
+  const etapas: Record<string, EtapaDaFaixa[]> = {};
+  for (const e of (etapasDoBanco ?? []) as Array<EtapaDaFaixa & { pipeline_id: string }>) {
+    (etapas[e.pipeline_id] ??= []).push({ id: e.id, name: e.name, is_won: e.is_won, is_lost: e.is_lost });
+  }
   const podeGerenciar = ROLE_RANK[activeOrg.role] >= ROLE_RANK.manager;
   // O arquivo só vai para quem pode mexer nele: tirar do arquivo e excluir são
   // `requireRole("manager")` nas rotas, e mostrar a gaveta a quem receberia 403
@@ -83,6 +94,7 @@ export default async function KanbanPickerPage() {
         arquivados={arquivados}
         podeGerenciar={podeGerenciar}
         podeImportar={podeImportar}
+        etapas={etapas}
       />
     </div>
   );
