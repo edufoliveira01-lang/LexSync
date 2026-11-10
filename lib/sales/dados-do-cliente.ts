@@ -6,7 +6,7 @@
  * O alvo é SEMPRE o contato do turno e o negócio aberto dele — a ferramenta não recebe id nenhum.
  */
 import { aplicarMascara } from "@/lib/campos/mascaras";
-import { camposDoFunil } from "@/lib/leads/campos-do-funil";
+import { camposDoFunil, camposPorEscopo, settingsDoEmbed } from "@/lib/leads/campos-do-funil";
 import { consultarCep } from "@/lib/sales/consulta-cep";
 import { isValidCpf } from "@/lib/legal/perfil-do-pais";
 import { valorParaOCampo, type DadosDoCliente } from "@/lib/sales/campos-do-contrato";
@@ -139,5 +139,39 @@ export async function gravarDadosDoCliente(orgId: string, contactId: string, nov
     }
     if (Object.keys(novosCampos).length) await admin.from("crm_leads").update({ custom_fields: { ...(n.custom_fields ?? {}), ...novosCampos } }).eq("id", n.id).eq("organization_id", orgId);
   }
-  return lerDadosGravados(orgId, contactId);
+  const todos = await lerDadosGravados(orgId, contactId);
+  await espelharNosCamposDoContato(orgId, contactId, todos, recebidos);
+  return todos;
+}
+
+/**
+ * Os campos do funil marcados "pertence ao contato" moram em `contacts.custom_fields[chave]` e é de lá que o painel da conversa os lê. O agente gravava
+ * só nos campos do NEGÓCIO e no cadastro, então o painel do contato ficava vazio. Aqui o mesmo dado também vai para esses campos, reconhecidos pelo rótulo.
+ * Um campo que já tem valor só é trocado se o cliente acabou de informar um dado novo para ele; o que a equipe digitou não é atropelado por dado antigo.
+ * Melhor-esforço: nunca derruba a gravação principal.
+ */
+async function espelharNosCamposDoContato(orgId: string, contactId: string, todos: DadosGravados, recebidos: Record<string, string>): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    const configs: Array<Record<string, unknown> | null> = [];
+    const { data: padrao } = await admin.from("crm_pipelines").select("settings").eq("organization_id", orgId).eq("is_default", true).eq("is_archived", false).maybeSingle();
+    configs.push(settingsDoEmbed(padrao));
+    for (const n of await negociosAbertos(orgId, contactId)) configs.push(settingsDoEmbed(n.crm_pipelines));
+    const defs = new Map<string, ReturnType<typeof camposDoFunil>[number]>();
+    for (const cfg of configs) for (const d of camposPorEscopo(camposDoFunil(cfg), "contato")) if (!defs.has(d.key)) defs.set(d.key, d);
+    if (defs.size === 0) return;
+
+    const { data: atual } = await admin.from("contacts").select("custom_fields").eq("id", contactId).eq("organization_id", orgId).maybeSingle();
+    const cf = ((atual as { custom_fields: Record<string, unknown> | null } | null)?.custom_fields ?? {}) as Record<string, unknown>;
+    const novos: Record<string, string> = {};
+    for (const def of defs.values()) {
+      const v = valorParaOCampo(def.label, todos);
+      if (v === null) continue;
+      const doCampo = valorParaOCampo(def.label, recebidos as DadosDoCliente);
+      if (!vazio(cf[def.key]) && doCampo === null) continue;
+      novos[def.key] = def.mascara ? aplicarMascara(v, def.mascara) : v;
+    }
+    if (Object.keys(novos).length === 0) return;
+    await admin.from("contacts").update({ custom_fields: { ...cf, ...novos } }).eq("id", contactId).eq("organization_id", orgId);
+  } catch { /* só reflexo do cadastro: a gravação principal já foi feita */ }
 }
