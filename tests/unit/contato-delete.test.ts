@@ -49,6 +49,8 @@ interface OpcoesFake {
   rpcErro?: { code?: string; message: string };
   /** A função devolve false: a ficha não estava acessível para quem chamou. */
   rpcFalse?: boolean;
+  /** Ids dos negócios ABERTOS do contato (fork Sales: saem junto com ele). */
+  negociosAbertos?: string[];
 }
 
 function clienteFalso(opts?: OpcoesFake): unknown {
@@ -56,6 +58,7 @@ function clienteFalso(opts?: OpcoesFake): unknown {
     from: (tabela: string) => {
       const del = {
         eq: () => del,
+        in: () => del,
         select: () => del,
         maybeSingle: async () => ({
           data: opts?.missing ? null : { id: CONTATO, organization_id: ORG },
@@ -66,6 +69,14 @@ function clienteFalso(opts?: OpcoesFake): unknown {
       return {
         // `select("id", {count, head})` é a pré-checagem de vínculo: só conta.
         select: (_colunas?: string, opcoes?: { count?: string; head?: boolean }) => {
+          // Os negócios abertos do contato, lidos antes da exclusão (fork Sales).
+          if (tabela === "crm_leads") {
+            const lista: { eq: () => unknown; then: (r: (v: unknown) => unknown) => unknown } = {
+              eq: () => lista,
+              then: (r) => r({ data: (opts?.negociosAbertos ?? []).map((id) => ({ id })), error: null }),
+            };
+            return lista;
+          }
           if (opcoes?.count) {
             const filtros: Array<[string, unknown]> = [];
             const cadeia: CadeiaContagem = {
@@ -129,6 +140,26 @@ describe("deleteContactHandler", () => {
     rpcs.length = 0;
     ordem.length = 0;
     revogarAcessosSpy.mockClear();
+  });
+
+  it("os negócios ABERTOS do contato saem junto, DEPOIS da exclusão — o card não fica órfão nem duplica quando a pessoa volta", async () => {
+    const { deleteContactHandler } = await import("@/app/api/v1/contacts/_handler");
+    const NEGOCIO = "c05e7a00-0000-4000-8000-0000000000d1";
+    await deleteContactHandler(clienteFalso({ negociosAbertos: [NEGOCIO] }) as never, ctxFalso(), CONTATO);
+    expect(chamadas).toEqual([{ tabela: "crm_leads", op: "delete" }]);
+    expect(ultimaAuditoria()?.metadata).toMatchObject({ negocios_abertos_removidos: 1 });
+  });
+
+  it("se a exclusão do contato FALHA, nenhum negócio é apagado", async () => {
+    const { deleteContactHandler } = await import("@/app/api/v1/contacts/_handler");
+    await expect(
+      deleteContactHandler(
+        clienteFalso({ negociosAbertos: ["c05e7a00-0000-4000-8000-0000000000d1"], rpcErro: { message: "falhou" } }) as never,
+        ctxFalso(),
+        CONTATO,
+      ),
+    ).rejects.toBeDefined();
+    expect(chamadas).toEqual([]);
   });
 
   it("apaga a ficha inteira com UMA chamada de função — nenhuma tabela apagada pela rota", async () => {

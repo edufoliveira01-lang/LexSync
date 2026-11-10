@@ -1210,6 +1210,20 @@ export async function deleteContactHandler(
   // terceiro (RFC 7009) — então revoga primeiro. A tabela é server-side only
   // (service role), filtrada pela organização do ctx. Melhor esforço: falha
   // do terceiro não barra a exclusão.
+  // OS NEGÓCIOS ABERTOS DA PESSOA SAEM COM ELA (fork Sales).
+  //
+  // `crm_leads.contact_id` é `ON DELETE SET NULL`: apagar o contato só SOLTAVA o vínculo, e o card ficava no quadro, sem dono. Quando a pessoa
+  // escrevia de novo, nascia um contato NOVO e um card NOVO — e o funil mostrava os dois, duplicado. Os ids dos abertos são lidos ANTES (depois da
+  // exclusão o vínculo já foi solto e não há mais como achá-los) e só são apagados DEPOIS que a exclusão do contato deu certo: se ela falhar,
+  // nenhum card é tocado. Os negócios já GANHOS ou PERDIDOS ficam: são histórico (e, no ganho, contrato e financeiro).
+  const { data: negociosAbertos } = await supabase
+    .from("crm_leads")
+    .select("id")
+    .eq("organization_id", ctx.organization_id)
+    .eq("contact_id", contactId)
+    .eq("status", "open");
+  const idsDosNegociosAbertos = (negociosAbertos ?? []).map((l) => l.id as string);
+
   await revogarAcessosDoContato(createAdminClient(), ctx.organization_id, contactId).catch((err: unknown) => {
     logger.warn("revogacao dos acessos MCP do contato falhou antes da exclusao", {
       organization_id: ctx.organization_id,
@@ -1255,6 +1269,25 @@ export async function deleteContactHandler(
     );
   }
 
+  let negociosRemovidos = 0;
+  if (idsDosNegociosAbertos.length > 0) {
+    const { error: delErr } = await supabase
+      .from("crm_leads")
+      .delete()
+      .in("id", idsDosNegociosAbertos)
+      .eq("organization_id", ctx.organization_id);
+    if (delErr) {
+      // O contato já saiu; o card que sobrou é o mesmo defeito de antes, mas agora com rastro no log em vez de silêncio.
+      logger.warn("contact.delete: negócios abertos não foram removidos junto com o contato", {
+        organization_id: ctx.organization_id,
+        contact_id: contactId,
+        error: delErr.message,
+      });
+    } else {
+      negociosRemovidos = idsDosNegociosAbertos.length;
+    }
+  }
+
   await supabase
     .rpc("emit_event", {
       p_event_type: "contact.deleted",
@@ -1275,7 +1308,7 @@ export async function deleteContactHandler(
     resourceType: "contact",
     resourceId: contactId,
     requestId: ctx.requestId,
-    metadata: a.metadataActor,
+    metadata: { ...a.metadataActor, negocios_abertos_removidos: negociosRemovidos },
   });
 
   return { id: contactId };
