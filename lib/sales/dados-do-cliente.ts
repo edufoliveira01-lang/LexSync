@@ -5,6 +5,7 @@
  * o cadastro (contato: nome, e-mail, endereço; negócio: CPF, RG, estado civil… nos campos do funil), e o contrato sai desses dados: o agente só confirma.
  * O alvo é SEMPRE o contato do turno e o negócio aberto dele — a ferramenta não recebe id nenhum.
  */
+import { aplicarMascara } from "@/lib/campos/mascaras";
 import { camposDoFunil } from "@/lib/leads/campos-do-funil";
 import { consultarCep } from "@/lib/sales/consulta-cep";
 import { isValidCpf } from "@/lib/legal/perfil-do-pais";
@@ -133,7 +134,8 @@ export async function gravarDadosDoCliente(orgId: string, contactId: string, nov
     const novosCampos: Record<string, string> = {};
     for (const def of defsDoNegocio(n)) {
       const v = valorParaOCampo(def.label, recebidos as DadosDoCliente);
-      if (v !== null) novosCampos[def.key] = v;
+      // com máscara no campo, o valor vai gravado como a pessoa o vê (CPF 225.188.548-00)
+      if (v !== null) novosCampos[def.key] = def.mascara ? aplicarMascara(v, def.mascara) : v;
     }
     if (Object.keys(novosCampos).length) await admin.from("crm_leads").update({ custom_fields: { ...(n.custom_fields ?? {}), ...novosCampos } }).eq("id", n.id).eq("organization_id", orgId);
   }

@@ -8,6 +8,7 @@
 import { z } from "zod";
 
 import { carregarBase } from "@/lib/sales/base-juridica/armazem";
+import { formatoPadraoDoContrato } from "@/lib/campos/mascaras";
 import { acharFicha, temasDaBase } from "@/lib/sales/base-juridica/fichas";
 import { calcularRendaPerCapita } from "@/lib/sales/base-juridica/valores";
 import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
@@ -73,7 +74,9 @@ export const crmEnviarContrato: McpToolDefinition<typeof inputShape> = {
     const falta = faltaParaOContrato(dados);
     if (falta.obrigatorios.length > 0) return { ok: false, erro: `Faltam dados obrigatórios: ${falta.obrigatorios.join(", ")}.`, proximo_passo: "Pergunte ao cliente SÓ o que falta, grave com crm_registrar_dados_do_cliente, confirme e chame de novo." };
     try {
-      const { contrato, mensagem } = await criarContratoNaConversa({ orgId: ctx.organizationId, conversationId, slug, userId: null, nomeDeQuemPediu: "Assistente virtual", dados });
+      // CPF e CEP saem no formato de todo mundo (225.188.548-00, 11705-000), qualquer que seja a forma como o cliente digitou
+      const dadosFormatados = { ...dados, ...(dados.cpf ? { cpf: formatoPadraoDoContrato("cpf", dados.cpf) } : {}), ...(dados.cep ? { cep: formatoPadraoDoContrato("cep", dados.cep) } : {}) };
+      const { contrato, mensagem } = await criarContratoNaConversa({ orgId: ctx.organizationId, conversationId, slug, userId: null, nomeDeQuemPediu: "Assistente virtual", dados: dadosFormatados });
       // O link NÃO depende de o modelo lembrar de mandá-lo: o sistema envia a mensagem na hora, pelo mesmo caminho do atendimento.
       // Só se o envio falhar a mensagem volta para o agente mandar (como antes).
       const enviado = await enviarTexto(ctx.organizationId, conversationId, mensagem);

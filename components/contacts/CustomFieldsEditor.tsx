@@ -14,6 +14,7 @@ import { useEffect, useId, useState } from "react";
 import { useActiveOrg } from "@/hooks/auth/AuthProvider";
 import { exemploDoCampoDeMoeda, lerCampoDeMoeda, semAMoeda, valorDoCampoDeMoeda } from "@/lib/leads/campo-de-moeda";
 import { MOEDA_PADRAO } from "@/lib/money";
+import { aplicarMascara, mascaraEhNumerica, padraoDaMascara, validarComMascara } from "@/lib/campos/mascaras";
 import { Input } from "@/components/ui/input";
 import { perfilDoPais } from "@/lib/legal/perfil-do-pais";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,6 +55,8 @@ export interface CustomFieldDef {
   label: string;
   type: CustomFieldType;
   required?: boolean;
+  /** Máscara do campo de texto (fork Sales): `cpf`, `cep`… ou `padrao:<padrão>`. Ver `lib/campos/mascaras.ts`. */
+  mascara?: string;
   options?: Array<{ value: string; label: string; aliases?: string[] }>;
   /**
    * A condição de exibição (issue #2728) — `lib/schemas/mostrar-quando.ts`.
@@ -597,19 +600,29 @@ export function CustomFieldsEditor({ fields, value, onChange, mode, disabled, cl
               </div>
             );
           case "text":
-          default:
+          default: {
+            // MÁSCARA do campo (fork Sales): a pessoa digita e o campo formata (CPF, CEP…); valor antigo sem formato abre formatado.
+            const mascara = f.mascara;
+            const padrao = padraoDaMascara(mascara);
+            const texto = typeof v === "string" ? v : "";
+            const erroDaMascara = mascara && texto ? validarComMascara(texto, mascara) : null;
             return (
               <div key={f.key} className="space-y-2">
                 {labelEl}
                 <Input
                   id={id}
                   type="text"
-                  value={typeof v === "string" ? v : ""}
-                  onChange={(e) => set(f.key, e.target.value)}
+                  inputMode={mascaraEhNumerica(mascara) ? "numeric" : undefined}
+                  value={mascara ? aplicarMascara(texto, mascara) : texto}
+                  onChange={(e) => set(f.key, mascara ? aplicarMascara(e.target.value, mascara) : e.target.value)}
+                  placeholder={padrao ?? undefined}
+                  aria-invalid={erroDaMascara ? true : undefined}
                   disabled={disabled}
                 />
+                {erroDaMascara && texto.length >= (padrao?.length ?? 0) ? <p role="alert" className="text-sm text-error-fg">{t(erroDaMascara)}</p> : null}
               </div>
             );
+          }
         }
       })}
     </div>

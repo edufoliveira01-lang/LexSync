@@ -298,6 +298,11 @@ export const customFieldSchema = z.object({
    * schema e a API conhecem, e o modo é uma propriedade dele.
    */
   multiple: z.boolean().optional(),
+  /**
+   * MÁSCARA do campo de texto (fork Sales): `cpf`, `cnpj`, `cep`, `telefone`, `data`, `cnj` ou `padrao:<padrão>` (0 = dígito, A = letra, * = qualquer).
+   * A ausência é "sem máscara" — todo campo que já existe segue igual. Ver `lib/campos/mascaras.ts`.
+   */
+  mascara: z.string().max(60).optional(),
 });
 export type CustomFieldDef = z.infer<typeof customFieldSchema>;
 

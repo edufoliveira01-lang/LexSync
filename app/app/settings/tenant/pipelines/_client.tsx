@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { updatePipelineConfig } from "@/app/actions/settings/updatePipelineConfig";
 import type { PipelineConfigPatch } from "@/lib/schemas/settings";
+import { ehMascaraPronta, MASCARAS_PRONTAS, mascaraPersonalizada, padraoDaMascara, PREFIXO_PERSONALIZADA } from "@/lib/campos/mascaras";
 import { camposDoFunil, escopoDoCampo } from "@/lib/leads/campos-do-funil";
 import {
   DIAS_MAXIMO_DO_RECORTE,
@@ -1543,6 +1544,51 @@ function PipelineEditor({
                     <SelectItem value="contato">{t("Contato")}</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+            {/* MÁSCARA (fork Sales): como o valor aparece e é gravado. Só para campo de texto curto. */}
+            {f.type === "text" && (
+              <div className="flex flex-wrap items-center gap-3 lg:col-span-4">
+                <span className="text-xs font-medium">{t("Máscara:")}</span>
+                <Select
+                  value={!f.mascara ? "nenhuma" : ehMascaraPronta(f.mascara) ? f.mascara : "personalizada"}
+                  onValueChange={(m) => {
+                    const next = [...fields];
+                    const copia = { ...next[i] } as CustomFieldDef;
+                    if (m === "nenhuma") delete (copia as { mascara?: unknown }).mascara;
+                    else if (m === "personalizada") copia.mascara = mascaraPersonalizada(padraoDaMascara(f.mascara) ?? "00000");
+                    else copia.mascara = m;
+                    next[i] = copia;
+                    setFields(next);
+                  }}
+                >
+                  <SelectTrigger aria-label={`${t("Máscara do campo")} ${i + 1}`} className="h-8 w-56 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nenhuma">{t("Sem máscara")}</SelectItem>
+                    {Object.entries(MASCARAS_PRONTAS).map(([id, m]) => (
+                      <SelectItem key={id} value={id}>{`${m.rotulo} · ${m.padrao}`}</SelectItem>
+                    ))}
+                    <SelectItem value="personalizada">{t("Personalizada…")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                {f.mascara?.startsWith(PREFIXO_PERSONALIZADA) && (
+                  <Input
+                    aria-label={`${t("Padrão da máscara")} ${i + 1}`}
+                    className="h-8 w-48 font-mono text-xs"
+                    value={padraoDaMascara(f.mascara) ?? ""}
+                    placeholder="AA-0000"
+                    onChange={(e) => {
+                      const next = [...fields];
+                      next[i] = { ...next[i], mascara: mascaraPersonalizada(e.target.value) } as CustomFieldDef;
+                      setFields(next);
+                    }}
+                  />
+                )}
+                {f.mascara?.startsWith(PREFIXO_PERSONALIZADA) && (
+                  <span className="text-xs text-muted-foreground">{t("0 = número · A = letra · * = qualquer · o resto aparece como está")}</span>
+                )}
               </div>
             )}
           </div>
