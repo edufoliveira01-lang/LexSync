@@ -147,6 +147,28 @@ export function atualizarAvisos(raiz: HTMLElement, aviso: (linha: string) => str
   });
 }
 
+// ───────────────────────── copiar e colar (as ações viajam junto) ─────────────────────────
+
+/**
+ * O trecho selecionado, no mesmo texto que fica gravado (`[[Etapa: …]]`, **negrito**, itens). É o que vai para a área de transferência ao copiar:
+ * as ações voltam a ser etiquetas ao colar (aqui, em outro agente, ou no "Ver como texto"), em vez de virar só o texto visível da etiqueta.
+ */
+export function textoDaSelecao(range: Range): string {
+  const caixa = range.startContainer.ownerDocument!.createElement("div");
+  caixa.appendChild(range.cloneContents());
+  return serializarEditor(caixa);
+}
+
+/** O texto no formato gravado, pronto para entrar na tela como etiquetas, negrito e itens. Uma linha só entra no meio da frase, sem quebrar. */
+export function fragmentoDoTexto(doc: Document, texto: string, removivel: boolean, aviso?: (linha: string) => string | null): DocumentFragment {
+  const caixa = doc.createElement("div");
+  desenharNoEditor(caixa, texto.replace(/\r\n?/g, "\n"), removivel, aviso);
+  const frag = doc.createDocumentFragment();
+  const unica = caixa.children.length === 1 && caixa.firstElementChild?.tagName === "DIV" ? caixa.firstElementChild : null;
+  frag.append(...Array.from((unica ?? caixa).childNodes));
+  return frag;
+}
+
 export const EditorComChips = React.forwardRef<
   ManejoDoEditor,
   {
@@ -213,6 +235,39 @@ export const EditorComChips = React.forwardRef<
     onArroba({ no: no as Text, inicio: sel.anchorOffset - (m[2]?.length ?? 0) - 1, fim: sel.anchorOffset, consulta: m[2] ?? "" });
   };
 
+  const copiar = (e: React.ClipboardEvent, cortar: boolean) => {
+    const sel = window.getSelection();
+    const el = raiz.current;
+    if (!el || !sel || sel.rangeCount === 0 || sel.isCollapsed || !el.contains(sel.anchorNode)) return;
+    e.preventDefault();
+    e.clipboardData.setData("text/plain", textoDaSelecao(sel.getRangeAt(0)));
+    if (cortar && !disabled) { sel.deleteFromDocument(); emitir(); }
+  };
+
+  const colar = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const el = raiz.current;
+    if (!el || disabled) return;
+    const texto = e.clipboardData.getData("text/plain");
+    if (!texto) return;
+    const sel = window.getSelection();
+    const range = sel && sel.rangeCount > 0 && el.contains(sel.anchorNode) ? sel.getRangeAt(0) : document.createRange();
+    if (!(sel && sel.rangeCount > 0 && el.contains(sel.anchorNode))) { range.selectNodeContents(el); range.collapse(false); }
+    range.deleteContents();
+    const frag = fragmentoDoTexto(document, texto, true, avisoRef.current);
+    const ultimo = frag.lastChild;
+    range.insertNode(frag);
+    if (ultimo && sel) {
+      const fim = document.createRange();
+      fim.setStartAfter(ultimo);
+      fim.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(fim);
+    }
+    guardarSelecao();
+    emitir();
+  };
+
   const comando = (nome: "bold" | "italic" | "insertUnorderedList") => {
     raiz.current?.focus();
     document.execCommand(nome, false);
@@ -276,10 +331,9 @@ export const EditorComChips = React.forwardRef<
         onKeyUp={() => { guardarSelecao(); }}
         onMouseUp={guardarSelecao}
         onBlur={guardarSelecao}
-        onPaste={(e) => {
-          e.preventDefault();
-          document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
-        }}
+        onCopy={(e) => copiar(e, false)}
+        onCut={(e) => copiar(e, true)}
+        onPaste={colar}
         onClick={(e) => {
           const alvo = (e.target as HTMLElement).closest("[data-remover]");
           if (!alvo || disabled) return;

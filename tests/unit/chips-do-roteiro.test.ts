@@ -85,3 +85,41 @@ describe("o editor formatado (DOM)", () => {
     expect(r.querySelector("[data-remover]")).toBeNull();
   });
 });
+
+import { fragmentoDoTexto, textoDaSelecao } from "@/app/app/ai/agents/[id]/_components/EditorComChips";
+
+describe("copiar e colar o roteiro com as ações", () => {
+  const tela = (texto: string) => { const r = document.createElement("div"); document.body.appendChild(r); desenharNoEditor(r, texto, true); return r; };
+
+  it("copiar devolve o texto gravado, com as ações como [[…]] (não o texto visível da etiqueta)", () => {
+    const texto = "Passo 1. [[Etapa: FUNIL JUS › Triagem]] Depois **importante** e:\n- item [[Etiqueta: NOVA DEMANDA]]\n- outro";
+    const r = tela(texto);
+    const range = document.createRange();
+    range.selectNodeContents(r);
+    expect(textoDaSelecao(range)).toBe(texto);
+  });
+
+  it("colar transforma o texto gravado de volta em etiquetas, negrito e itens", () => {
+    const texto = "Faça A. [[Etapa: FUNIL JUS › Triagem]] Fim **forte**\n- um\n- dois [[Chamar equipe]]";
+    const caixa = document.createElement("div");
+    caixa.appendChild(fragmentoDoTexto(document, texto, true));
+    expect(caixa.querySelectorAll("[data-acao]")).toHaveLength(2);
+    expect(caixa.querySelectorAll("b")).toHaveLength(1);
+    expect(caixa.querySelectorAll("li")).toHaveLength(2);
+    expect(serializarEditor(caixa)).toBe(texto);
+  });
+
+  it("uma linha só entra no meio da frase, sem criar linha nova", () => {
+    const frag = fragmentoDoTexto(document, "[[Chamar equipe]]", true);
+    expect(Array.from(frag.childNodes).some((n) => (n as HTMLElement).tagName === "DIV")).toBe(false);
+    expect((frag as DocumentFragment).querySelector("[data-acao]")?.getAttribute("data-linha")).toBe("Chamar equipe");
+  });
+
+  it("copiar de um trecho no meio também leva as ações daquele trecho", () => {
+    const r = tela("Antes [[Etapa: A › B]] depois");
+    const range = document.createRange();
+    range.setStart(r.firstChild!.firstChild!, 0);
+    range.setEnd(r.lastChild!.lastChild!, (r.lastChild!.lastChild!.textContent ?? "").length);
+    expect(textoDaSelecao(range)).toContain("[[Etapa: A › B]]");
+  });
+});
