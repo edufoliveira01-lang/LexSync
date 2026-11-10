@@ -43,14 +43,15 @@ Ainda sem repaginar (ordem combinada): **Início do CRM** (hub, `components/shel
 
 - **Lígia** atende **casos novos** (funil "Atendimento jurídico"). Quem **já é cliente** é atendido por **outro agente**, num **funil de clientes** (ex.: "Clientes — acompanhamento"), marcado como "Funil de clientes" em Funis > Ações.
 - O sistema já tem: automação com gatilho `lead.won` + ação `create_or_move_lead`, que **cria um card novo** no funil de destino (com os dados do original) e **deixa o ganho intacto** (`lib/automation/actions/create-or-move-lead.ts`, ramo `lead.won`, #2769). Também existem as regras "Clientes pela agenda" e "Quem já comprou volta pelo funil de clientes" (Configurações > Atendimento) e o **roteador de intenção** (`ai_routers`, membros com agente + funil/etapa de destino, #2155).
-- **PENDENTE (decisão do dono):** (a) trocar a etapa de **ganho** de "Aguardando documentos" para **"Contrato assinado"**, passando a coleta de documentos para o funil de clientes (recomendado por mim; muda quando a venda conta nos relatórios); (b) etapas do funil de clientes. Sugestão inicial: Aguardando documentos › Documentos recebidos › Processo em andamento › Aguardando retorno do cliente › Concluído.
+- **DECIDIDO (dono aprovou em 10/11/2026):** (a) a etapa de **ganho** do funil "Atendimento jurídico" passa de "Aguardando documentos" para **"Contrato assinado"**, e a coleta de documentos passa para o funil de clientes (muda o momento em que a venda conta nos relatórios). (b) Etapas do funil de clientes: **Aguardando documentos › Documentos recebidos › Processo em andamento › Aguardando retorno do cliente › Concluído**.
+- **⚠️ NÃO trocar a etapa de ganho na tela de Etapas antes da Fase 3.** O fluxo pós-assinatura atual (Sales e Deskcomm: o sistema leva o card a "Contrato assinado" e depois à etapa de ganho "Aguardando documentos", e o agente segue pedindo documentos) depende da etapa de ganho atual. A troca precisa vir **junto** com a mudança de código desse fluxo e com a automação `lead.won`, e ser testada de ponta a ponta. **VERIFICAR** no início da Fase 3: onde o código move o card para a etapa de ganho após a assinatura (cron pós-assinatura / `crm_enviar_contrato` / ZapSign webhook) e o que o agente faz depois.
 - **VERIFICAR:** o agente trabalha no **negócio aberto mais recente** da pessoa (`lib/leads/active-lead.ts`). Ao criar o card aberto no funil de clientes, a atividade do agente passa a cair nele. Conferir o impacto na coleta de documentos pós-assinatura (decisão B anterior: o agente segue pedindo documentos). Conferir se o roteador decide a cada mensagem ou só no início da conversa.
 
 ### 3.2 Segundo agente (agente de clientes) — DECIDIDO
 
 - Criar **depois**, quando o funil de clientes existir. Regras próprias, **inclusive de como salvar documentos e em qual pasta**.
 - **Passagem entre agentes pelo menu `@` do roteiro**: nova ação "Passar para o agente [nome]" (com funil/etapa de destino opcionais), cor própria. Quem recebe envia uma **mensagem inicial** (campo por agente: "ao receber uma conversa de outro agente, abrir com esta mensagem"). A passagem funciona **nos dois sentidos** (cliente → agente de clientes; CPF não encontrado → volta para a Lígia).
-- Primeira pergunta ("você já é nosso cliente?"): sugestão da Lígia fazer essa única pergunta no começo e passar a conversa. **PENDENTE** confirmar.
+- Primeira pergunta ("você já é nosso cliente?"): **DECIDIDO** — a **Lígia** faz essa única pergunta no começo (para número novo) e passa a conversa ao agente de clientes.
 - **Regra de entrada** (DECIDIDO):
   - Número **já ligado a um cliente** (contrato assinado): o agente de clientes cumprimenta pelo nome e começa. **Sem CPF.**
   - Número conhecido só como **lead** (nunca assinou): segue com a Lígia.
@@ -81,7 +82,7 @@ Ainda sem repaginar (ordem combinada): **Início do CRM** (hub, `components/shel
 | CONTRATOS E PROCURAÇÕES | o que vem assinado pelo ZapSign |
 | A CLASSIFICAR | o que o sistema não conseguir identificar (avisar a equipe) |
 
-(O dono aprovou a tabela e pediu "etc."; **PENDENTE** pedir a lista final de TIPOs.)
+(**DECIDIDO** em 10/11/2026: o dono aprovou esta lista final de pastas. Novas pastas entram como configuração, sem mudar o código.)
 
 **Nome do arquivo:** `AAAA-MM-DD - Tipo do documento.ext` (ordena cronologicamente no Dropbox; sem ambiguidade de dia/mês; nunca sobrescreve).
 
@@ -112,11 +113,10 @@ Cada fase termina com: testes verdes, `tsc` limpo, push, build, `atualizar.sh N`
 
 ## 5. Perguntas em aberto para o dono
 
-- Aprovar trocar a etapa de **ganho** para "Contrato assinado"? (3.1a)
-- Etapas do funil de clientes (3.1b).
-- Lista final de **TIPOs** de pasta (3.4).
-- Quem faz a pergunta "já é cliente?" — Lígia (sugerido) ou o roteador (3.2).
-- Ajustes que ele citou no bloco **Campos do contato** do painel da conversa.
+Respondidas em 10/11/2026 ("tudo aprovado"): etapa de ganho → "Contrato assinado" (3.1a), etapas do funil de clientes (3.1b), lista final de pastas (3.4), quem pergunta "já é cliente?" → Lígia (3.2).
+
+Ainda em aberto:
+- A **lista dos ajustes** do bloco **Campos do contato** do painel da conversa (o dono disse "há alguns ajustes, faremos depois" e ainda não os descreveu; "tudo aprovado" não os especificou).
 - Feedback visual do **"Mostrar no card"** (quais campos usa) e do **painel do negócio em abas** (build 69).
 
 ## 6. Outros pendentes do projeto (não relacionados a esta atualização)
