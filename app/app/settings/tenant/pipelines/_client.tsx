@@ -768,6 +768,8 @@ function PipelineEditor({
   const atalhosIniciais = atalhosDoFunil(pipeline.settings);
   const [atalhos, setAtalhos] = useState<AtalhoDoCard[]>(atalhosIniciais);
   const [isPending, startTransition] = useTransition();
+  // Fork Sales — repaginação: o editor é dividido em partes (uma por vez), cada uma com cartões.
+  const [parte, setParte] = useState<"nomes" | "regras" | "atalhos" | "campos">("nomes");
 
   function handleSave() {
     const ok: CustomFieldDef[] = [];
@@ -939,12 +941,35 @@ function PipelineEditor({
 
   return (
     <div className="space-y-4" data-testid={`editor-${pipeline.id}`}>
-      <h3 className="text-sm font-semibold">{t("Vocabulário e campos")}</h3>
+      <div role="tablist" aria-label={t("Partes do editor do funil")} className="flex flex-wrap gap-1 border-b border-border">
+        {([
+          ["nomes", t("Nomes e motivos")],
+          ["regras", t("Regras do funil")],
+          ["atalhos", t("Atalhos do card")],
+          ["campos", `${t("Campos")} (${fields.length})`],
+        ] as const).map(([id, rotulo]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={parte === id}
+            data-testid={`parte-${id}-${pipeline.id}`}
+            onClick={() => setParte(id)}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm transition-colors ${parte === id ? "border-foreground font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            {rotulo}
+          </button>
+        ))}
+      </div>
+
+      <div className={`space-y-3 [&>div]:rounded-xl [&>div]:border [&>div]:border-border [&>div]:bg-card [&>div]:p-4 ${parte === "nomes" ? "" : "hidden"}`}>
+      <div className="space-y-3">
+      <h3 className="text-sm font-semibold">{t("Como este funil chama as coisas")}</h3>
       <p className="text-xs text-muted-foreground">
         {t("Como este funil chama o card nas telas (o Negócio). Ex.: numa loja, o Negócio pode se chamar Pedido.")}
       </p>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="!border-0 !p-0 grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="space-y-1">
           <Label className="text-xs">{t("Contato")}</Label>
           <Input value={lead} onChange={(e) => setLead(e.target.value)} />
@@ -961,6 +986,7 @@ function PipelineEditor({
           <Label className="text-xs">{t("Perdido")}</Label>
           <Input value={lost} onChange={(e) => setLost(e.target.value)} />
         </div>
+      </div>
       </div>
 
       <div className="space-y-1">
@@ -1029,6 +1055,9 @@ function PipelineEditor({
         </label>
       </div>
 
+      </div>
+
+      <div className={`space-y-3 [&>div]:rounded-xl [&>div]:border [&>div]:border-border [&>div]:bg-card [&>div]:p-4 ${parte === "regras" ? "" : "hidden"}`}>
       <div className="space-y-1">
         <label className="flex items-center gap-2 text-xs">
           <input
@@ -1188,6 +1217,9 @@ function PipelineEditor({
         </div>
       )}
 
+      </div>
+
+      <div className={`space-y-3 [&>div]:rounded-xl [&>div]:border [&>div]:border-border [&>div]:bg-card [&>div]:p-4 ${parte === "atalhos" ? "" : "hidden"}`}>
       {/* ─── OS ATALHOS DO CARD (#3487) ───────────────────────────────
           Botões que abrem outro sistema com o dado do cliente: `tel:` para o
           softphone do PABX (o caso que o telefone como texto não resolve), e
@@ -1196,8 +1228,9 @@ function PipelineEditor({
           nada de tabela nova. O esquema é validado ao salvar (`refine` no
           `pipelineConfigPatchSchema`) e de novo ao renderizar no card. */}
       <EditorDeAtalhos valor={atalhos} onChange={setAtalhos} />
+      </div>
 
-      <div className="space-y-2">
+      <div className={`space-y-2 ${parte === "campos" ? "" : "hidden"}`}>
         <Label className="text-xs">{t("Campos do lead neste funil")}</Label>
         <p className="text-xs text-muted-foreground">
           {t("Aparecem no dossiê do negócio. No follow-up, você escolhe em qual campo gravar a resposta.")}
@@ -1628,7 +1661,7 @@ function PipelineEditor({
         )}
       </div>
 
-      <div className="flex sm:justify-end">
+      <div className="sticky bottom-0 -mx-1 flex border-t border-border bg-card/95 px-1 py-3 backdrop-blur sm:justify-end">
         <Button onClick={handleSave} disabled={isPending} className="w-full sm:w-auto">
           {isPending ? t("Salvando…") : t("Salvar vocabulário e campos")}
         </Button>

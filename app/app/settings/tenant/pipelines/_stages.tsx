@@ -538,7 +538,7 @@ export function StagesSection({
                   {i + 1}
                 </span>
 
-                <div className="min-w-[10rem] flex-1">
+                <div className="w-56 shrink-0 sm:w-64">
                   <span className="sr-only">{t(ROTULO.nome)}</span>
                   <NomeDaEtapa
                     etapa={etapa}
