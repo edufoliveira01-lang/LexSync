@@ -170,6 +170,40 @@ describe("a ordem das seções do dossiê (#3181)", () => {
   });
 });
 
+describe("o dossiê em ABAS (fork Sales)", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("abre no Resumo; as outras partes ficam escondidas mas montadas (nada digitado se perde ao trocar)", () => {
+    montarDossie();
+    expect(screen.getByTestId("dossie-painel-resumo")).not.toHaveClass("hidden");
+    for (const id of ["dados", "tarefas", "historico"]) {
+      expect(screen.getByTestId(`dossie-painel-${id}`)).toHaveClass("hidden");
+    }
+    expect(screen.getByTestId("dossie-aba-resumo")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("clicar numa aba mostra só aquele painel", async () => {
+    const user = userEvent.setup();
+    montarDossie();
+    await user.click(screen.getByTestId("dossie-aba-historico"));
+    expect(screen.getByTestId("dossie-painel-historico")).not.toHaveClass("hidden");
+    expect(screen.getByTestId("dossie-painel-resumo")).toHaveClass("hidden");
+    await user.click(screen.getByTestId("dossie-aba-dados"));
+    expect(screen.getByTestId("dossie-painel-dados")).not.toHaveClass("hidden");
+    expect(screen.getByTestId("dossie-painel-historico")).toHaveClass("hidden");
+  });
+
+  it("«Editar campos» do cabeçalho leva direto à aba Dados", async () => {
+    const user = userEvent.setup();
+    montarDossie();
+    await user.click(screen.getByRole("button", { name: /Editar campos/i }));
+    expect(screen.getByTestId("dossie-painel-dados")).not.toHaveClass("hidden");
+    expect(screen.getByTestId("dossie-aba-dados")).toHaveAttribute("aria-selected", "true");
+  });
+});
+
 describe("a linha do tempo recolhida (#3181)", () => {
   beforeEach(() => {
     window.localStorage.clear();

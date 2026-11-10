@@ -121,6 +121,9 @@ export function LeadDossier({
   const formulario = useRef<ControleDosCamposDoNegocio | null>(null);
   const timeline = useLeadTimeline(open ? lead.id : null, lead.contact_id);
   const { fechadas, alternar, abrir } = useSecoesRecolhidas();
+  // Fork Sales — repaginação: o dossiê vira ABAS (uma coisa por vez) em vez de uma parede de rolagem. Todas as abas ficam montadas (só escondidas
+  // pela classe), então nada que foi digitado se perde ao trocar de aba.
+  const [aba, setAba] = useState<"resumo" | "dados" | "tarefas" | "historico">("resumo");
   const timelineRecolhida = fechadas.has("linha-do-tempo");
   // As três MAIS RECENTES: a rota devolve `performed_at` decrescente, então o
   // corte é no início da lista, não no fim.
@@ -179,7 +182,7 @@ export function LeadDossier({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-md"
+        className="flex w-full flex-col gap-0 overflow-y-auto sm:max-w-2xl"
         // Observável pelo mesmo motivo do board: "a assinatura morreu" e "nada
         // aconteceu" têm a mesma aparência, que é silêncio.
         data-realtime-status={timeline.realtimeStatus.toLowerCase()}
@@ -189,11 +192,11 @@ export function LeadDossier({
         data-refetch-divergencias={timeline.seguranca.divergencias}
       >
         <SheetHeader className="pb-3">
-          <SheetTitle className="text-base leading-6">{lead.title}</SheetTitle>
+          <SheetTitle className="text-lg font-semibold leading-6">{lead.title}</SheetTitle>
         </SheetHeader>
 
         {/* ① cabeçalho vivo */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border pb-3 text-xs">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-xs">
           <span className="font-medium tabular-nums text-text">
             {formatValor(lead.value_cents, lead.currency)}
           </span>
@@ -233,6 +236,7 @@ export function LeadDossier({
               // Se os campos estiverem recolhidos, o clique também os abre:
               // rolar até um título fechado entregaria um destino vazio.
               abrir("dados-do-negocio");
+              setAba("dados");
               setPedidoDeRolagem((n) => n + 1);
             }}
             className="ml-auto text-text-muted underline-offset-2 hover:text-text hover:underline"
@@ -263,6 +267,36 @@ export function LeadDossier({
           contactId={lead.contact_id}
         />
 
+        {/* As ABAS: Resumo (conversa, contato, propostas) · Dados (campos do funil) · Tarefas · Histórico (linha do tempo). */}
+        <div
+          role="tablist"
+          aria-label={t("Partes do negócio")}
+          className="sticky -top-6 z-10 -mx-6 mt-3 flex gap-1 border-b border-border bg-background px-6"
+        >
+          {(
+            [
+              ["resumo", t("Resumo")],
+              ["dados", t("Dados")],
+              ["tarefas", t("Tarefas")],
+              ["historico", timeline.itens.length > 0 ? `${t("Histórico")} (${timeline.itens.length})` : t("Histórico")],
+            ] as const
+          ).map(([id, rotulo]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={aba === id}
+              data-testid={`dossie-aba-${id}`}
+              onClick={() => setAba(id)}
+              className={`-mb-px border-b-2 px-3 py-2 text-sm transition-colors ${aba === id ? "border-foreground font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            >
+              {rotulo}
+            </button>
+          ))}
+        </div>
+
+        {/* ── RESUMO ── */}
+        <div role="tabpanel" className={aba === "resumo" ? "" : "hidden"} data-testid="dossie-painel-resumo">
         <ConversaNoDossie
           conversa={lead.conversa}
           contactId={lead.contact_id}
@@ -284,6 +318,17 @@ export function LeadDossier({
             leadId={lead.id}
           />
         </SecaoDoDossie>
+
+        {/* N1 — seção "Propostas". Some sozinha (null) quando a capacidade está desligada — ver PropostasDoNegocio. */}
+        <PropostasDoNegocio
+          leadId={lead.id}
+          pipelineId={pipelineId}
+          podeCriar={podeCriarProposta}
+        />
+        </div>
+
+        {/* ── DADOS ── */}
+        <div role="tabpanel" className={aba === "dados" ? "" : "hidden"} data-testid="dossie-painel-dados">
 
         {/* ② Dados do negócio — o que se PREENCHE, agora ANTES da linha do
             tempo (#3181). */}
@@ -308,6 +353,10 @@ export function LeadDossier({
           </div>
         </SecaoDoDossie>
 
+        </div>
+
+        {/* ── TAREFAS ── */}
+        <div role="tabpanel" className={aba === "tarefas" ? "" : "hidden"} data-testid="dossie-painel-tarefas">
         {/* As tarefas SEGUEM antes da linha do tempo: a timeline conta o que já
             aconteceu, a tarefa é o que ainda falta fazer — e quem abre o card
             para agir procura o próximo passo primeiro. Não entram no
@@ -319,6 +368,10 @@ export function LeadDossier({
           podeEditar={podeEditarTarefas}
           aberto={open}
         />
+        </div>
+
+        {/* ── HISTÓRICO ── */}
+        <div role="tabpanel" className={aba === "historico" ? "" : "hidden"} data-testid="dossie-painel-historico">
 
         {/* ③ Linha do tempo — a CONSULTA, por último. Recolhida, mostra as três
             entradas mais recentes e o "ver tudo" (pedido do autor): a seção
@@ -350,13 +403,7 @@ export function LeadDossier({
           <LeadTimeline {...propsDaLinhaDoTempo} />
         </SecaoDoDossie>
 
-        {/* N1 — seção "Propostas", depois da linha do tempo. Some sozinha
-            (null) quando a capacidade está desligada — ver PropostasDoNegocio. */}
-        <PropostasDoNegocio
-          leadId={lead.id}
-          pipelineId={pipelineId}
-          podeCriar={podeCriarProposta}
-        />
+        </div>
       </SheetContent>
     </Sheet>
   );
