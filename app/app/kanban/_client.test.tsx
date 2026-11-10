@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -121,6 +121,31 @@ describe("gaveta do arquivo (#979)", () => {
     expect(faixa).toHaveTextContent("Sem interesse");
     expect(screen.getByTestId(`abrir-quadro-${vivo.id}`)).toHaveAttribute("href", `/app/pipelines/${vivo.id}`);
     expect(screen.getByTestId(`configurar-${vivo.id}`)).toHaveAttribute("href", `/app/settings/tenant/pipelines#etapas-${vivo.id}`);
+  });
+
+  it("o menu Ações fecha ao clicar FORA, com Esc e depois de escolher uma ação", () => {
+    tela();
+    const menu = screen.getByTestId(`acoes-${vivo.id}`) as HTMLDetailsElement;
+    const abrir = () =>
+      act(() => {
+        menu.open = true;
+        menu.dispatchEvent(new Event("toggle"));
+      });
+    abrir();
+    expect(menu.open).toBe(true);
+    fireEvent.mouseDown(document.body);
+    expect(menu.open).toBe(false);
+
+    abrir();
+    expect(menu.open).toBe(true);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(menu.open).toBe(false);
+
+    abrir();
+    fireEvent.mouseDown(screen.getByTestId(`arquivar-${vivo.id}`));
+    expect(menu.open).toBe(true); // clicar DENTRO não fecha antes da ação
+    fireEvent.click(screen.getByTestId(`arquivar-${vivo.id}`));
+    expect(menu.open).toBe(false);
   });
 
   it("sem permissão de gerenciar, o cartão abre o quadro mas não oferece Ações nem configurar", () => {

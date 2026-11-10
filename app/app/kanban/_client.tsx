@@ -1,6 +1,6 @@
 "use client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { useActiveOrg } from "@/hooks/auth/AuthProvider";
@@ -160,6 +160,24 @@ export function FunisClient({
   const arquivar = useArquivarFunil();
 
   const [novo, setNovo] = useState<string | null>(null);
+  // O menu "Ações" de um cartão: um aberto por vez; fecha ao clicar fora, ao apertar Esc e depois de escolher uma ação.
+  const [menuAberto, setMenuAberto] = useState<string | null>(null);
+  useEffect(() => {
+    if (!menuAberto) return;
+    const fora = (e: MouseEvent) => {
+      const alvo = e.target as Element | null;
+      if (!alvo?.closest?.(`[data-menu-acoes="${menuAberto}"]`)) setMenuAberto(null);
+    };
+    const tecla = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuAberto(null);
+    };
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", tecla);
+    return () => {
+      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("keydown", tecla);
+    };
+  }, [menuAberto]);
   const [renomeando, setRenomeando] = useState<{ id: string; nome: string } | null>(null);
   const [arquivando, setArquivando] = useState<{ id: string; erro: string | null } | null>(null);
   const [excluindo, setExcluindo] = useState<{ id: string; erro: string | null } | null>(null);
@@ -611,11 +629,23 @@ export function FunisClient({
                 </div>
 
                 {podeGerenciar && !renomeandoAqui && (
-                  <details className="relative shrink-0" data-testid={`acoes-${funil.id}`}>
+                  <details
+                    className="relative shrink-0"
+                    data-testid={`acoes-${funil.id}`}
+                    data-menu-acoes={funil.id}
+                    open={menuAberto === funil.id}
+                    onToggle={(e) => {
+                      const aberto = (e.currentTarget as HTMLDetailsElement).open;
+                      setMenuAberto((atual) => (aberto ? funil.id : atual === funil.id ? null : atual));
+                    }}
+                  >
                     <summary className="cursor-pointer list-none rounded-md border border-border px-2.5 py-1 text-xs hover:bg-muted [&::-webkit-details-marker]:hidden">
                       ⋯ {t("Ações")}
                     </summary>
-                    <div className="absolute right-0 z-10 mt-1 flex w-60 flex-col gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-md">
+                    <div
+                      className="absolute right-0 z-10 mt-1 flex w-60 flex-col gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-md"
+                      onClick={() => setMenuAberto(null)}
+                    >
                       <Button
                         variant="ghost"
                         size="sm"
