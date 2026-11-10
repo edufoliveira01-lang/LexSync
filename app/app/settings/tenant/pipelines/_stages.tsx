@@ -488,10 +488,7 @@ export function StagesSection({
       <div className="space-y-0.5">
         <h3 className="text-sm font-semibold">{t("Etapas deste funil")}</h3>
         <p className="max-w-3xl text-xs leading-relaxed text-text-muted">
-          {t("Estas são as colunas do seu quadro, na ordem em que o cliente avança. Você pode renomear, criar, reordenar e arquivar.")}{" "}
-          {t("Duas colunas têm papel especial: a")} <strong>{t("de fechamento")}</strong>{" "}
-          {t("é onde o negócio vira venda, e a")} <strong>{t("de perda")}</strong>{" "}
-          {t("é onde ele se perde. Cada funil precisa de uma de cada — por isso a marcação se muda de lugar, não se apaga.")}
+          {t("As colunas do seu quadro, na ordem em que o cliente avança. Renomeie, reordene, crie ou arquive. Cada funil precisa de uma coluna de")} <strong>{t("fechamento")}</strong> {t("(vira venda) e uma de")} <strong>{t("perda")}</strong>.
         </p>
       </div>
 
@@ -568,37 +565,6 @@ export function StagesSection({
                     desabilitado={ocupado}
                     aoConfirmar={(valor) => aplicar(etapa.id, { win_probability: valor })}
                   />
-                  {/* Ganho e perda valem 100 e 0 NA REGRA, então não há
-                      calibração a sugerir ali — a contagem também não diria
-                      nada que a própria coluna já não diga. */}
-                  {corpoDasTaxas && taxa && !etapa.is_won && !etapa.is_lost ? (
-                    <SugestaoDeTaxa
-                      taxa={taxa}
-                      inicio={corpoDasTaxas.inicio}
-                      fim={corpoDasTaxas.fim}
-                      truncado={corpoDasTaxas.truncado}
-                      desabilitado={ocupado}
-                      aoAceitar={(valor) => aplicar(etapa.id, { win_probability: valor })}
-                    />
-                  ) : null}
-                  {/* #2032 — a etapa ATUAL, ao lado da taxa histórica (#1753),
-                      que é de OUTRA população: aquela mede quem passou na
-                      janela, esta quem está aqui agora. Ganho e perda ficam de
-                      fora porque lá a coluna não segura trabalho em curso — o
-                      tempo dela é tempo desde o desfecho, não espera. */}
-                  {!etapa.is_won && !etapa.is_lost && fraseDeTempo ? (
-                    <p
-                      className="text-xs leading-snug text-text-muted"
-                      data-testid={`tempo-etapa-${etapa.id}`}
-                    >
-                      {fraseDeTempo}
-                      {/* Este bloco não tem período: o corte é na leitura dos
-                          negócios abertos, e a frase diz isso — não a da taxa. */}
-                      {corpoDasTaxas?.tempo_na_etapa?.truncado
-                        ? ` ${t("Amostra limitada: este número cobre só parte dos negócios abertos do funil.")}`
-                        : ""}
-                    </p>
-                  ) : null}
                 </div>
 
                 {/* No empilhado o rótulo vai EM CIMA, como os outros dois: ao
@@ -695,6 +661,39 @@ export function StagesSection({
                   {etapa.expected_duration_hours ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">⏱ {etapa.expected_duration_hours} h</span> : null}
                 </summary>
                 <div className="mt-2 space-y-2 border-l pl-4">
+                  <div className="space-y-1" data-testid={`estatisticas-${etapa.id}`}>
+                    {/* Ganho e perda valem 100 e 0 NA REGRA, então não há
+                        calibração a sugerir ali — a contagem também não diria
+                        nada que a própria coluna já não diga. */}
+                    {corpoDasTaxas && taxa && !etapa.is_won && !etapa.is_lost ? (
+                      <SugestaoDeTaxa
+                        taxa={taxa}
+                        inicio={corpoDasTaxas.inicio}
+                        fim={corpoDasTaxas.fim}
+                        truncado={corpoDasTaxas.truncado}
+                        desabilitado={ocupado}
+                        aoAceitar={(valor) => aplicar(etapa.id, { win_probability: valor })}
+                      />
+                    ) : null}
+                    {/* #2032 — a etapa ATUAL, ao lado da taxa histórica (#1753),
+                        que é de OUTRA população: aquela mede quem passou na
+                        janela, esta quem está aqui agora. Ganho e perda ficam de
+                        fora porque lá a coluna não segura trabalho em curso — o
+                        tempo dela é tempo desde o desfecho, não espera. */}
+                    {!etapa.is_won && !etapa.is_lost && fraseDeTempo ? (
+                      <p
+                        className="text-xs leading-snug text-text-muted"
+                        data-testid={`tempo-etapa-${etapa.id}`}
+                      >
+                        {fraseDeTempo}
+                        {/* Este bloco não tem período: o corte é na leitura dos
+                            negócios abertos, e a frase diz isso — não a da taxa. */}
+                        {corpoDasTaxas?.tempo_na_etapa?.truncado
+                          ? ` ${t("Amostra limitada: este número cobre só parte dos negócios abertos do funil.")}`
+                          : ""}
+                      </p>
+                    ) : null}
+                  </div>
               {/* #1532: a janela de "esfriando" é configuração da etapa, não
                   coluna do quadro — ela mora aqui, na segunda linha, com
                   rótulo próprio. Ganhar uma coluna no cabeçalho exigiria
