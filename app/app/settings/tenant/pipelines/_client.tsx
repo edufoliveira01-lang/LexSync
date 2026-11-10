@@ -2,7 +2,7 @@
 
 import { useT } from "@/hooks/i18n/useT";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -686,6 +686,31 @@ export function OpcoesDaLista({
   );
 }
 
+/** Uma linha da lista de regras de um campo: título e ajuda curta à esquerda, controle à direita. */
+function LinhaDeRegra({ titulo, ajuda, children }: { titulo: string; ajuda?: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-2 p-3 sm:grid-cols-[11rem_1fr] sm:items-start">
+      <div className="space-y-0.5">
+        <p className="text-xs font-medium text-foreground">{titulo}</p>
+        {ajuda ? <p className="text-[11px] leading-snug text-muted-foreground">{ajuda}</p> : null}
+      </div>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+/** Botão de marcar em forma de pílula; por baixo continua uma caixa de seleção (acessível e testável). */
+function ChipDeRegra({ rotulo, ariaLabel, marcado, aoMudar }: { rotulo: string; ariaLabel: string; marcado: boolean; aoMudar: (ligado: boolean) => void }) {
+  return (
+    <label className="cursor-pointer">
+      <input type="checkbox" className="peer sr-only" aria-label={ariaLabel} checked={marcado} onChange={(ev) => aoMudar(ev.target.checked)} />
+      <span className="inline-block rounded-full border border-border bg-background px-2.5 py-1 text-xs transition-colors hover:bg-muted peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+        {rotulo}
+      </span>
+    </label>
+  );
+}
+
 function PipelineEditor({
   pipeline,
   etapas,
@@ -1366,83 +1391,64 @@ function PipelineEditor({
                 {escopoDoCampo(f) === "contato" ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("Do contato")}</span> : null}
                 {f.mascara ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("Máscara")}: {ehMascaraPronta(f.mascara) ? MASCARAS_PRONTAS[f.mascara].rotulo : padraoDaMascara(f.mascara)}</span> : null}
               </summary>
-              <div className="mt-2 grid grid-cols-1 gap-3 border-l pl-4 lg:grid-cols-4">
+              <div className="mt-2 divide-y divide-border rounded-lg border border-border bg-muted/30 text-xs">
             {/* ── QUANDO ESTE CAMPO OBRIGA (issue #1536) ────────────────────
                 O `obrigatorio_em` nasceu no schema sem nenhuma tela: quem
                 operava não conseguia ligar a régua principal do PR. As três
                 marcas são as que `campoExigidoNoDestino` lê — etapas de
                 entrada, `ao_ganhar` e `ao_perder` — e nada mais, para a tela
                 não prometer gatilho que o servidor não pergunta. */}
-            <div className="space-y-1 lg:col-span-4">
-              <p className="text-xs font-medium">{t("Exigir o preenchimento:")}</p>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+            <LinhaDeRegra
+              titulo={t("Obrigatório em")}
+              ajuda={t("Sem marca, nunca é exigido. Marcado, precisa estar preenchido para o negócio entrar nessa etapa ou ser fechado.")}
+            >
+              <div className="flex flex-wrap items-center gap-1.5">
                 {etapas.map((e) => (
-                  <label key={e.id} className="flex items-center gap-1">
-                    <input
-                      type="checkbox"
-                      aria-label={`${t("Exigir em")} ${e.name} — ${f.label || i + 1}`}
-                      checked={f.obrigatorio_em?.etapas?.includes(e.id) ?? false}
-                      onChange={(ev) => {
-                        const next = [...fields];
-                        next[i] = {
-                          ...f,
-                          obrigatorio_em: comEtapa(f.obrigatorio_em, e.id, ev.target.checked),
-                        };
-                        setFields(next);
-                      }}
-                    />
-                    {e.name}
-                    {e.is_archived ? ` (${t("arquivada")})` : ""}
-                  </label>
+                  <ChipDeRegra
+                    key={e.id}
+                    rotulo={`${e.name}${e.is_archived ? ` (${t("arquivada")})` : ""}`}
+                    ariaLabel={`${t("Exigir em")} ${e.name} — ${f.label || i + 1}`}
+                    marcado={f.obrigatorio_em?.etapas?.includes(e.id) ?? false}
+                    aoMudar={(ligado) => {
+                      const next = [...fields];
+                      next[i] = { ...f, obrigatorio_em: comEtapa(f.obrigatorio_em, e.id, ligado) };
+                      setFields(next);
+                    }}
+                  />
                 ))}
-                <label className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    aria-label={`${t("Ao ganhar")} — ${f.label || i + 1}`}
-                    checked={f.obrigatorio_em?.ao_ganhar === true}
-                    onChange={(ev) => {
-                      const next = [...fields];
-                      next[i] = {
-                        ...f,
-                        obrigatorio_em: comGatilho(f.obrigatorio_em, "ao_ganhar", ev.target.checked),
-                      };
-                      setFields(next);
-                    }}
-                  />
-                  {t("Ao ganhar")}
-                </label>
-                <label className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    aria-label={`${t("Ao perder")} — ${f.label || i + 1}`}
-                    checked={f.obrigatorio_em?.ao_perder === true}
-                    onChange={(ev) => {
-                      const next = [...fields];
-                      next[i] = {
-                        ...f,
-                        obrigatorio_em: comGatilho(f.obrigatorio_em, "ao_perder", ev.target.checked),
-                      };
-                      setFields(next);
-                    }}
-                  />
-                  {t("Ao perder")}
-                </label>
+                <ChipDeRegra
+                  rotulo={t("Ao ganhar")}
+                  ariaLabel={`${t("Ao ganhar")} — ${f.label || i + 1}`}
+                  marcado={f.obrigatorio_em?.ao_ganhar === true}
+                  aoMudar={(ligado) => {
+                    const next = [...fields];
+                    next[i] = { ...f, obrigatorio_em: comGatilho(f.obrigatorio_em, "ao_ganhar", ligado) };
+                    setFields(next);
+                  }}
+                />
+                <ChipDeRegra
+                  rotulo={t("Ao perder")}
+                  ariaLabel={`${t("Ao perder")} — ${f.label || i + 1}`}
+                  marcado={f.obrigatorio_em?.ao_perder === true}
+                  aoMudar={(ligado) => {
+                    const next = [...fields];
+                    next[i] = { ...f, obrigatorio_em: comGatilho(f.obrigatorio_em, "ao_perder", ligado) };
+                    setFields(next);
+                  }}
+                />
               </div>
-              <p className="text-xs text-muted-foreground">
-                {t(
-                  "Sem marca nenhuma este campo nunca é exigido — é o comportamento de sempre. Marcado, ele precisa estar preenchido para o negócio entrar na etapa escolhida ou ser fechado como ganho/perdido.",
-                )}
-              </p>
-            </div>
+            </LinhaDeRegra>
             {/* ── QUANDO ESTE CAMPO APARECE (issue #2728) ──────────────────
                 A condição que a ficha do contato, o dossiê e o painel do inbox
                 leem para ESCONDER o campo. Campo + operador + valor, e os
                 operadores são exatamente os três que `campoVisivel` aplica —
                 a tela não promete nenhum outro. Meio montada, a condição não
                 grava (ver `normalizaMostrarQuando`), como `obrigatorio_em`. */}
-            <div className="space-y-1 lg:col-span-4">
-              <p className="text-xs font-medium">{t("Mostrar só quando:")}</p>
-              <div className="flex flex-wrap items-center gap-2 text-xs">
+            <LinhaDeRegra
+              titulo={t("Mostrar só quando")}
+              ajuda={t("Escondido, o campo não aparece nem é exigido; o valor já gravado continua no registro.")}
+            >
+              <div className="flex flex-wrap items-center gap-2">
                 <Select
                   value={f.mostrar_quando?.campo || SEM_CONDICAO}
                   onValueChange={(campo) => {
@@ -1552,12 +1558,7 @@ function PipelineEditor({
                   </>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {t(
-                  "Escondido, o campo não aparece no formulário nem é validado como obrigatório, e o valor já gravado continua no registro.",
-                )}
-              </p>
-            </div>
+            </LinhaDeRegra>
             {/* ── A QUE PERTENCE O CAMPO (issue #2791) ──────────────────────
                 `negocio` (padrão) é o campo como ele sempre foi: aparece no
                 card e no dossiê do negócio, gravado em `crm_leads.custom_fields`.
@@ -1568,8 +1569,7 @@ function PipelineEditor({
             {/* Fora do funil padrão o seletor só aparece para DESFAZER uma marca
                 "Contato" que já exista (gravada quando este era o padrão). */}
             {(ehFunilPadrao || escopoDoCampo(f) === "contato") && (
-              <div className="flex flex-wrap items-center gap-3 lg:col-span-4">
-                <span className="text-xs font-medium">{t("Este campo pertence a:")}</span>
+              <LinhaDeRegra titulo={t("Este campo pertence a:")} ajuda={t("Negócio aparece no card; Contato, na ficha do contato.")}>
                 <Select
                   value={escopoDoCampo(f)}
                   onValueChange={(escopo) => {
@@ -1592,12 +1592,12 @@ function PipelineEditor({
                     <SelectItem value="contato">{t("Contato")}</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </LinhaDeRegra>
             )}
             {/* MÁSCARA (fork Sales): como o valor aparece e é gravado. Só para campo de texto curto. */}
             {f.type === "text" && (
-              <div className="flex flex-wrap items-center gap-3 lg:col-span-4">
-                <span className="text-xs font-medium">{t("Máscara:")}</span>
+              <LinhaDeRegra titulo={t("Máscara")} ajuda={t("Como o valor aparece e é gravado.")}>
+                <div className="flex flex-wrap items-center gap-2">
                 <Select
                   value={!f.mascara ? "nenhuma" : ehMascaraPronta(f.mascara) ? f.mascara : "personalizada"}
                   onValueChange={(m) => {
@@ -1637,7 +1637,8 @@ function PipelineEditor({
                 {f.mascara?.startsWith(PREFIXO_PERSONALIZADA) && (
                   <span className="text-xs text-muted-foreground">{t("0 = número · A = letra · * = qualquer · o resto aparece como está")}</span>
                 )}
-              </div>
+                </div>
+              </LinhaDeRegra>
             )}
               </div>
             </details>
