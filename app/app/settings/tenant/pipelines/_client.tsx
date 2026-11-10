@@ -1319,6 +1319,18 @@ function PipelineEditor({
                 </label>
               </div>
             )}
+            {/* Fork Sales — tela compacta: as regras finas do campo (obrigatoriedade por etapa, condição de exibição, a quem pertence, máscara) ficam
+                recolhidas, com um resumo do que está ligado. O conteúdo continua no DOM (e nos testes). */}
+            <details className="group lg:col-span-4" data-testid={`regras-do-campo-${i}`}>
+              <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 text-xs text-text-muted hover:text-foreground [&::-webkit-details-marker]:hidden">
+                <span aria-hidden className="inline-block transition-transform group-open:rotate-90">›</span>
+                <span>{t("Regras do campo")}</span>
+                {(f.obrigatorio_em && ((f.obrigatorio_em.etapas?.length ?? 0) + (f.obrigatorio_em.ao_ganhar ? 1 : 0) + (f.obrigatorio_em.ao_perder ? 1 : 0)) > 0) ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("Obrigatório em")} {(f.obrigatorio_em.etapas?.length ?? 0) + (f.obrigatorio_em.ao_ganhar ? 1 : 0) + (f.obrigatorio_em.ao_perder ? 1 : 0)}</span> : null}
+                {f.mostrar_quando ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("Condicional")}</span> : null}
+                {escopoDoCampo(f) === "contato" ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("Do contato")}</span> : null}
+                {f.mascara ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("Máscara")}: {ehMascaraPronta(f.mascara) ? MASCARAS_PRONTAS[f.mascara].rotulo : padraoDaMascara(f.mascara)}</span> : null}
+              </summary>
+              <div className="mt-2 grid grid-cols-1 gap-3 border-l pl-4 lg:grid-cols-4">
             {/* ── QUANDO ESTE CAMPO OBRIGA (issue #1536) ────────────────────
                 O `obrigatorio_em` nasceu no schema sem nenhuma tela: quem
                 operava não conseguia ligar a régua principal do PR. As três
@@ -1591,6 +1603,8 @@ function PipelineEditor({
                 )}
               </div>
             )}
+              </div>
+            </details>
           </div>
         ))}
         {/* A cota é do NEGÓCIO (issue #3111): o campo do contato não esconde o botão. */}

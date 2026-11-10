@@ -485,19 +485,13 @@ export function StagesSection({
 
   return (
     <div className="space-y-4" id={ancoraDasEtapas(pipelineId)} data-testid={`etapas-${pipelineId}`}>
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         <h3 className="text-sm font-semibold">{t("Etapas deste funil")}</h3>
-        <p className="max-w-3xl text-sm leading-relaxed text-text-muted">
-          {t(
-            "Estas são as colunas do seu quadro, na ordem em que o cliente avança. Você pode renomear, criar, reordenar e arquivar.",
-          )}
-        </p>
-        <p className="max-w-3xl text-sm leading-relaxed text-text-muted">
+        <p className="max-w-3xl text-xs leading-relaxed text-text-muted">
+          {t("Estas são as colunas do seu quadro, na ordem em que o cliente avança. Você pode renomear, criar, reordenar e arquivar.")}{" "}
           {t("Duas colunas têm papel especial: a")} <strong>{t("de fechamento")}</strong>{" "}
           {t("é onde o negócio vira venda, e a")} <strong>{t("de perda")}</strong>{" "}
-          {t(
-            "é onde ele se perde. Cada funil precisa de uma de cada — por isso a marcação se muda de lugar, não se apaga.",
-          )}
+          {t("é onde ele se perde. Cada funil precisa de uma de cada — por isso a marcação se muda de lugar, não se apaga.")}
         </p>
       </div>
 
@@ -540,7 +534,7 @@ export function StagesSection({
           return (
             <li
               key={`${etapa.id}:${etapa.name}`}
-              className="flex flex-col gap-3 p-4"
+              className="flex flex-col gap-2 px-3 py-2.5"
               data-testid={`etapa-${etapa.id}`}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -686,6 +680,21 @@ export function StagesSection({
                 </Button>
               </div>
 
+              {/* Fork Sales — tela compacta: o que é configuração fina da etapa (janela de "esfriando", aviso na Central, de onde veio a coluna, fluxos
+                  armados) fica recolhido em "Mais opções", com um resumo do que está ligado. O conteúdo continua no DOM (e nos testes). */}
+              <details className="group" data-testid={`mais-opcoes-${etapa.id}`}>
+                <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 text-xs text-text-muted hover:text-foreground [&::-webkit-details-marker]:hidden">
+                  <span aria-hidden className="inline-block transition-transform group-open:rotate-90">›</span>
+                  <span>{t("Mais opções")}</span>
+                  {passo ? (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]" title={t("O assistente usa esta etapa para")}>
+                      🤖 {t(ROTULO_DO_PASSO[passo])}
+                    </span>
+                  ) : null}
+                  {etapa.avisar_na_central === true ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">🔔 {t("Avisa a Central")}</span> : null}
+                  {etapa.expected_duration_hours ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">⏱ {etapa.expected_duration_hours} h</span> : null}
+                </summary>
+                <div className="mt-2 space-y-2 border-l pl-4">
               {/* #1532: a janela de "esfriando" é configuração da etapa, não
                   coluna do quadro — ela mora aqui, na segunda linha, com
                   rótulo próprio. Ganhar uma coluna no cabeçalho exigiria
@@ -748,6 +757,9 @@ export function StagesSection({
                   </a>
                 </p>
               )}
+
+                </div>
+              </details>
 
               {confirmandoAqui && (
                 <Card
