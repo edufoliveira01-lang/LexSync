@@ -57,6 +57,22 @@ export type ResultadoDoEscopo =
     };
 
 /**
+ * Tira da lista os funis que não existem mais nesta organização (apagados depois de marcados).
+ *
+ * Quem marcou um funil e depois o apagou não tem como "marcar de novo": o id velho continua na versão do agente, invisível na tela, e a cada
+ * salvamento o escopo era recusado ("um dos funis marcados não existe mais"), travando qualquer edição do roteiro. Funil apagado não pode valer
+ * mesmo, então sai da lista em silêncio. Id de OUTRA organização também sai (mesma resposta), nunca entra. Só vale para funis; materiais, skills,
+ * credencial e canal continuam sendo recusados, porque o dono escolheu e precisa saber.
+ */
+export async function soFunisQueExistem(supabase: SupabaseClient, organizationId: string, ids: string[] | undefined | null): Promise<string[] | undefined> {
+  if (!ids) return undefined;
+  if (ids.length === 0) return ids;
+  const { data } = await supabase.from("crm_pipelines").select("id").eq("organization_id", organizationId).in("id", ids);
+  const achados = new Set(((data ?? []) as Array<{ id: string }>).map((r) => r.id));
+  return ids.filter((id) => achados.has(id));
+}
+
+/**
  * Confere que todo id do escopo existe NESTA organização.
  *
  * Recebe o client do CHAMADOR de propósito: com o client do usuário a RLS já

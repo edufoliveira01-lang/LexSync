@@ -17,7 +17,7 @@ import { resolveAuthDual, tetoDeEscritaDoToken } from "@/lib/api/auth-dual";
 import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { codigoDoEscopo, mensagemDoEscopo, validarEscopoDaVersao } from "@/lib/ai/agents/escopo";
+import { codigoDoEscopo, mensagemDoEscopo, soFunisQueExistem, validarEscopoDaVersao } from "@/lib/ai/agents/escopo";
 import { versionCreateSchema } from "@/lib/ai/agents/validation";
 import { lerAmbiente } from "@/lib/instalacao/ambiente";
 import { traduzir } from "@/lib/i18n/dicionario";
@@ -146,9 +146,10 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
     // conferência, um id de outra organização (ou de um material apagado) entra
     // no array, a versão é publicada, e o assistente não acha nada — sem erro,
     // com a tela mostrando a marcação como se estivesse valendo.
+    const funisValidos = await soFunisQueExistem(admin, organizationId, v.pipeline_ids);
     const escopo = await validarEscopoDaVersao(admin, organizationId, {
       provider: v.provider,
-      pipeline_ids: v.pipeline_ids,
+      pipeline_ids: funisValidos,
       knowledge_source_ids: v.knowledge_source_ids,
       skill_names: v.skill_names,
       credential_id: v.credential_id,
@@ -197,7 +198,7 @@ export async function POST(req: NextRequest, ctx: Ctx): Promise<Response> {
         operator_enabled: v.operator_enabled,
         operator_model: v.operator_model,
         operator_tool_ids: v.operator_tool_ids,
-        pipeline_ids: v.pipeline_ids,
+        pipeline_ids: funisValidos ?? v.pipeline_ids,
         knowledge_source_ids: v.knowledge_source_ids,
         skill_names: v.skill_names,
         status: "draft",

@@ -13,7 +13,7 @@ import { ok, fail } from "@/lib/api/wrappers";
 import { audit } from "@/lib/audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { versionPatchSchema } from "@/lib/ai/agents/validation";
-import { codigoDoEscopo, mensagemDoEscopo, validarEscopoDaVersao } from "@/lib/ai/agents/escopo";
+import { codigoDoEscopo, mensagemDoEscopo, soFunisQueExistem, validarEscopoDaVersao } from "@/lib/ai/agents/escopo";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const dynamic = "force-dynamic";
@@ -116,11 +116,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx): Promise<Response> {
     });
   }
 
+  const funisValidos = await soFunisQueExistem(admin, organizationId, patch.pipeline_ids);
   const escopo = await validarEscopoDaVersao(admin, organizationId, {
     provider: patch.provider,
     credential_id: patch.credential_id,
     channel_session_id: patch.channel_session_id,
-    pipeline_ids: patch.pipeline_ids,
+    pipeline_ids: funisValidos,
     knowledge_source_ids: patch.knowledge_source_ids,
     skill_names: patch.skill_names,
   });
@@ -163,7 +164,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx): Promise<Response> {
   // `saveAgentDraftAction`, que já gravava.
   // Criar uma versão nova gravava (`lib/ai/agents/create-draft.ts`); editar,
   // não.
-  if (patch.pipeline_ids !== undefined) update.pipeline_ids = patch.pipeline_ids;
+  if (patch.pipeline_ids !== undefined) update.pipeline_ids = funisValidos ?? patch.pipeline_ids;
   if (patch.knowledge_source_ids !== undefined)
     update.knowledge_source_ids = patch.knowledge_source_ids;
   if (patch.skill_names !== undefined) update.skill_names = patch.skill_names;
