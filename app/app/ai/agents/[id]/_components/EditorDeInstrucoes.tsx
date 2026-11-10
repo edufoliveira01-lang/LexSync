@@ -1,13 +1,14 @@
 "use client";
 /**
- * Fork Sales — o campo de instruções do agente em TRÊS partes e com AÇÕES no meio do texto.
+ * Fork Sales — o campo de instruções do agente em TRÊS partes, com texto formatado e AÇÕES coloridas no meio do texto.
  *
- *   Roteiro: o que o agente faz e fala, do começo ao fim, com as ações (etiqueta, etapa do funil, chamar a equipe…).
+ *   Roteiro: o que o agente faz e fala, do começo ao fim, com as ações (etapa do funil, etiqueta, consultas, contrato, equipe…).
  *   Regras:  limites e comportamento (o que nunca faz, tom, exceções).
  *   FAQ:     perguntas frequentes, com as respostas aprovadas pelo escritório.
  *
- * Nada muda no que é gravado: continua UM texto (`system_prompt`). As partes são separadas por duas linhas-marca (`=== REGRAS ===`, `=== FAQ ===`);
- * um texto antigo, sem marcas, abre inteiro no Roteiro. Digitar `@` abre a lista de ações, que entram no texto como um bloco claro para o modelo executar.
+ * Nada muda no que é gravado: continua UM texto (`system_prompt`). As partes são separadas por linhas-marca (`=== REGRAS ===`, `=== FAQ … ===`); um texto
+ * antigo, sem marcas, abre inteiro no Roteiro. Entre Regras e FAQ o campo mantém sozinho a LEGENDA das ações usadas (como o agente executa cada uma): ninguém
+ * precisa escrevê-la.
  */
 import * as React from "react";
 
@@ -15,23 +16,24 @@ import { Textarea } from "@/components/ui/textarea";
 import type { FunilDaResposta } from "@/hooks/pipelines/usePipelines";
 import { cn } from "@/lib/utils";
 
-import { CABECALHO_DA_ACAO } from "./chips-do-roteiro";
+import { defDaAcao, legendaDasAcoes, linhaDaAcao, tipoDaLinha } from "./chips-do-roteiro";
 import { EditorComChips, type AlvoDoArroba, type ManejoDoEditor } from "./EditorComChips";
-import { linhaDaAcao, MenuDeAcoes, type TipoDeAcao } from "./MenuDeAcoes";
+import { MenuDeAcoes, type TipoDeAcao } from "./MenuDeAcoes";
 
 export const MARCA_REGRAS = "=== REGRAS ===";
+export const MARCA_LEGENDA = "=== COMO EXECUTAR AS AÇÕES (automático) ===";
 export const MARCA_FAQ = "=== FAQ (respostas aprovadas) ===";
 
 export interface PartesDoTexto { roteiro: string; regras: string; faq: string }
 
-/** Separa o texto gravado nas três partes. Sem marcas, tudo é Roteiro. */
+/** Separa o texto gravado nas três partes. Sem marcas, tudo é Roteiro. A legenda automática não é uma parte: é refeita a cada gravação. */
 export function separarPartes(texto: string): PartesDoTexto {
-  const linhas = texto.split("\n");
-  const partes: Record<keyof PartesDoTexto, string[]> = { roteiro: [], regras: [], faq: [] };
-  let atual: keyof PartesDoTexto = "roteiro";
-  for (const l of linhas) {
+  const partes: Record<keyof PartesDoTexto | "legenda", string[]> = { roteiro: [], regras: [], faq: [], legenda: [] };
+  let atual: keyof typeof partes = "roteiro";
+  for (const l of texto.split("\n")) {
     const t = l.trim();
     if (t === MARCA_REGRAS) { atual = "regras"; continue; }
+    if (t === MARCA_LEGENDA) { atual = "legenda"; continue; }
     if (t === MARCA_FAQ) { atual = "faq"; continue; }
     partes[atual].push(l);
   }
@@ -39,35 +41,17 @@ export function separarPartes(texto: string): PartesDoTexto {
   return { roteiro: lim(partes.roteiro), regras: lim(partes.regras), faq: lim(partes.faq) };
 }
 
-/** Junta as três partes no texto único que o agente recebe. Parte vazia não deixa marca. */
+/** Junta as partes no texto único que o agente recebe, com a legenda das ações usadas entre as Regras e a FAQ. Parte vazia não deixa marca. */
 export function juntarPartes(p: PartesDoTexto): string {
   const blocos = [p.roteiro.replace(/\n+$/g, "")];
   if (p.regras.trim()) blocos.push(`${MARCA_REGRAS}\n${p.regras.replace(/\n+$/g, "")}`);
+  const legenda = legendaDasAcoes(`${p.roteiro}\n${p.regras}`);
+  if (legenda) blocos.push(`${MARCA_LEGENDA}\n${legenda}`);
   if (p.faq.trim()) blocos.push(`${MARCA_FAQ}\n${p.faq.replace(/\n+$/g, "")}`);
   return blocos.join("\n\n");
 }
 
-/** O bloco que entra no roteiro quando se escolhe uma ação: manda executar uma vez e nunca mostrar ao cliente. */
-export { CABECALHO_DA_ACAO };
-export const blocoDaAcao = (tipo: TipoDeAcao, valor = ""): string => `\n${CABECALHO_DA_ACAO}\n${linhaDaAcao(tipo, valor)}\n`;
-
-export interface AcaoDoTexto { inicio: number; fim: number; linha: string }
-
-/** As ações que já estão no texto (para mostrar como etiquetas clicáveis e poder tirar). */
-export function acoesDoTexto(texto: string): AcaoDoTexto[] {
-  const out: AcaoDoTexto[] = [];
-  const rx = new RegExp(`\\n?${CABECALHO_DA_ACAO.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\n([^\\n]*)\\n?`, "g");
-  let m: RegExpExecArray | null;
-  while ((m = rx.exec(texto)) !== null) out.push({ inicio: m.index, fim: m.index + m[0].length, linha: (m[1] ?? "").trim() });
-  return out;
-}
-
-/** Tira uma ação do texto, sem deixar linha vazia sobrando. */
-export function tirarAcao(texto: string, a: AcaoDoTexto): string {
-  return (texto.slice(0, a.inicio) + (texto[a.inicio - 1] === "\n" || a.inicio === 0 ? "" : "\n") + texto.slice(a.fim)).replace(/\n{3,}/g, "\n\n");
-}
-
-/** Há um `@` aberto logo antes do cursor? Devolve onde começa e o que já foi digitado depois dele. */
+/** Há um `@` aberto logo antes do cursor? Devolve onde começa e o que já foi digitado depois dele (usado no modo "texto puro"). */
 export function arrobaAberta(texto: string, cursor: number): { inicio: number; consulta: string } | null {
   const ate = texto.slice(0, cursor);
   const i = ate.lastIndexOf("@");
@@ -80,7 +64,7 @@ export function arrobaAberta(texto: string, cursor: number): { inicio: number; c
 }
 
 const ABAS = [
-  { id: "roteiro", rotulo: "Roteiro", dica: "O que o agente faz e fala, do começo ao fim. Digite @ para inserir uma ação no meio do texto." },
+  { id: "roteiro", rotulo: "Roteiro", dica: "O que o agente faz e fala, do começo ao fim. Use ＋ Inserir ação (ou digite @) para colocar uma ação no meio do texto." },
   { id: "regras", rotulo: "Regras", dica: "Limites e comportamento: o que ele nunca faz, o tom, as exceções." },
   { id: "faq", rotulo: "FAQ", dica: "Perguntas frequentes com as respostas aprovadas pelo escritório. Escreva “Pergunta:” e “Resposta:”." },
 ] as const;
@@ -92,6 +76,7 @@ export function EditorDeInstrucoes({
   disabled,
   invalid,
   funis = [],
+  toolIds,
   t,
 }: {
   value: string;
@@ -99,44 +84,52 @@ export function EditorDeInstrucoes({
   disabled?: boolean;
   invalid?: boolean;
   funis?: readonly FunilDaResposta[];
+  /** As ferramentas ligadas em "O que ele faz": ação que depende de ferramenta desligada ganha um aviso na etiqueta. */
+  toolIds?: readonly string[];
   t: (s: string) => string;
 }) {
   const partes = React.useMemo(() => separarPartes(value), [value]);
   const [aba, setAba] = React.useState<IdDaAba>("roteiro");
-  // Roteiro e Regras abrem como TEXTO COM ETIQUETAS (as ações aparecem como etiquetas coloridas); "Ver como texto" mostra o texto puro.
-  // Nos testes (jsdom não edita `contenteditable`), o campo abre em texto puro; o editor com etiquetas tem os próprios testes e a verificação no navegador.
+  // Nos testes (jsdom não edita `contenteditable`), o campo abre em texto puro; o editor formatado tem os próprios testes e a verificação no navegador.
   const [modoTexto, setModoTexto] = React.useState(process.env.NODE_ENV === "test");
   const ref = React.useRef<HTMLTextAreaElement>(null);
   const editor = React.useRef<ManejoDoEditor>(null);
+  const caixa = React.useRef<HTMLDivElement>(null);
   const [menu, setMenu] = React.useState<{ inicio: number; consulta: string; alvo?: AlvoDoArroba } | null>(null);
-  const visual = aba !== "faq" && !modoTexto;
+  const visual = !modoTexto;
+  const comAcoes = aba !== "faq";
 
   const atualizar = (parte: IdDaAba, texto: string) => onChange(juntarPartes({ ...partes, [parte]: texto }));
+  const fechar = React.useCallback(() => setMenu(null), []);
+
+  const aviso = React.useMemo(() => {
+    if (!toolIds) return undefined;
+    return (linha: string): string | null => {
+      const tipo = tipoDaLinha(linha);
+      if (!tipo) return null;
+      const faltam = defDaAcao(tipo).ferramentas.filter((f) => !toolIds.includes(f));
+      return faltam.length ? `${t("Esta ação precisa de uma ferramenta que está desligada. Ligue em “O que ele faz”:")} ${faltam.join(", ")}` : null;
+    };
+  }, [toolIds, t]);
 
   const verArroba = (el: HTMLTextAreaElement) => {
-    if (aba === "faq") { setMenu(null); return; }
+    if (!comAcoes) { setMenu(null); return; }
     setMenu(arrobaAberta(el.value, el.selectionStart ?? el.value.length));
-  };
-
-  const abrirNoCursor = () => {
-    const el = ref.current;
-    const pos = el?.selectionStart ?? partes[aba].length;
-    setMenu({ inicio: pos, consulta: "" });
   };
 
   const inserir = (tipo: TipoDeAcao, valor: string) => {
     if (!menu) return;
+    const linha = linhaDaAcao(tipo, valor);
     if (visual) {
-      editor.current?.inserir(linhaDaAcao(tipo, valor), menu.alvo ?? null);
+      editor.current?.inserir(linha, menu.alvo ?? null);
       setMenu(null);
       return;
     }
     const el = ref.current;
     const texto = partes[aba];
     const fim = el?.selectionStart ?? menu.inicio;
-    const bloco = blocoDaAcao(tipo, valor);
-    const novo = texto.slice(0, menu.inicio) + bloco + texto.slice(Math.max(fim, menu.inicio));
-    atualizar(aba, novo);
+    const bloco = `[[${linha}]]`;
+    atualizar(aba, texto.slice(0, menu.inicio) + bloco + texto.slice(Math.max(fim, menu.inicio)));
     setMenu(null);
     requestAnimationFrame(() => {
       if (!el) return;
@@ -147,63 +140,65 @@ export function EditorDeInstrucoes({
   };
 
   const dica = ABAS.find((x) => x.id === aba)!.dica;
+  const legenda = legendaDasAcoes(`${partes.roteiro}\n${partes.regras}`);
 
   return (
     <div className="space-y-2">
-      <div role="tablist" aria-label={t("Partes das instruções")} className="inline-flex gap-1 rounded-lg bg-muted p-1">
-        {ABAS.map((a) => {
-          const cheia = a.id === "roteiro" ? partes.roteiro.trim().length > 0 : a.id === "regras" ? partes.regras.trim().length > 0 : partes.faq.trim().length > 0;
-          return (
-            <button
-              key={a.id}
-              type="button"
-              role="tab"
-              aria-selected={aba === a.id}
-              data-testid={`instrucoes-${a.id}`}
-              onClick={() => { setAba(a.id); setMenu(null); }}
-              className={cn("rounded-md px-3 py-1 text-sm transition-colors", aba === a.id ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}
-            >
-              {t(a.rotulo)}
-              {cheia && aba !== a.id ? <span aria-hidden className="ml-1 text-[10px] text-muted-foreground">●</span> : null}
-            </button>
-          );
-        })}
-      </div>
-      {aba !== "faq" ? (
-        <>
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="tablist" aria-label={t("Partes das instruções")} className="inline-flex gap-1 rounded-lg bg-muted p-1">
+          {ABAS.map((a) => {
+            const cheia = a.id === "roteiro" ? partes.roteiro.trim().length > 0 : a.id === "regras" ? partes.regras.trim().length > 0 : partes.faq.trim().length > 0;
+            return (
+              <button
+                key={a.id}
+                type="button"
+                role="tab"
+                aria-selected={aba === a.id}
+                data-testid={`instrucoes-${a.id}`}
+                onClick={() => { setAba(a.id); setMenu(null); }}
+                className={cn("rounded-md px-3 py-1 text-sm transition-colors", aba === a.id ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              >
+                {t(a.rotulo)}
+                {cheia && aba !== a.id ? <span aria-hidden className="ml-1 text-[10px] text-muted-foreground">●</span> : null}
+              </button>
+            );
+          })}
+        </div>
+        {comAcoes ? (
           <button
             type="button"
             data-testid="inserir-acao"
             disabled={disabled}
             onMouseDown={(e) => e.preventDefault()}
-            onClick={visual ? () => setMenu({ inicio: 0, consulta: "" }) : abrirNoCursor}
-            className="ml-2 rounded-full border px-3 py-1 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            onClick={() => (menu ? setMenu(null) : setMenu({ inicio: ref.current?.selectionStart ?? 0, consulta: "" }))}
+            className="rounded-full border px-3 py-1 text-sm font-medium hover:bg-muted disabled:opacity-50"
           >
             ＋ {t("Inserir ação")}
           </button>
-          <button
-            type="button"
-            data-testid="instrucoes-modo-texto"
-            onClick={() => { setModoTexto((v) => !v); setMenu(null); }}
-            className="ml-2 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-          >
-            {modoTexto ? t("Ver com etiquetas") : t("Ver como texto")}
-          </button>
-        </>
-      ) : null}
-      <p className="text-xs text-muted-foreground">{t(dica)} {aba !== "faq" ? t("Ou digite @.") : ""}</p>
+        ) : null}
+        <button
+          type="button"
+          data-testid="instrucoes-modo-texto"
+          onClick={() => { setModoTexto((v) => !v); setMenu(null); }}
+          className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          {modoTexto ? t("Ver formatado") : t("Ver como texto")}
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground">{t(dica)}</p>
 
-      <div className="relative">
+      <div className="relative" ref={caixa}>
         {visual ? (
           <EditorComChips
             key={aba}
             ref={editor}
             value={partes[aba]}
             onChange={(v) => atualizar(aba, v)}
-            onArroba={(alvo) => setMenu(alvo ? { inicio: alvo.inicio, consulta: alvo.consulta, alvo } : null)}
+            onArroba={comAcoes ? (alvo) => setMenu(alvo ? { inicio: alvo.inicio, consulta: alvo.consulta, alvo } : null) : undefined}
+            aviso={aviso}
             disabled={disabled}
             invalid={invalid}
-            placeholder={t("Escreva aqui o que o agente deve fazer e dizer…")}
+            placeholder={aba === "faq" ? t("Pergunta: …  Resposta: …") : t("Escreva aqui o que o agente deve fazer e dizer…")}
           />
         ) : (
           <Textarea
@@ -213,10 +208,6 @@ export function EditorDeInstrucoes({
             onChange={(e) => { atualizar(aba, e.target.value); verArroba(e.target); }}
             onKeyUp={(e) => { if (e.key !== "Escape") verArroba(e.currentTarget); }}
             onClick={(e) => verArroba(e.currentTarget)}
-            onKeyDown={(e) => {
-              if (!menu) return;
-              if (e.key === "Escape") { e.preventDefault(); setMenu(null); }
-            }}
             disabled={disabled}
             rows={aba === "roteiro" ? 16 : 10}
             /* SEM `maxLength`: o atributo corta a colagem em silêncio (ver o teste agent-form-prompt-nao-trunca). */
@@ -226,8 +217,14 @@ export function EditorDeInstrucoes({
             aria-invalid={invalid || undefined}
           />
         )}
-        {menu ? <MenuDeAcoes funis={funis} onInserir={inserir} onFechar={() => setMenu(null)} t={t} /> : null}
+        {menu && comAcoes ? <MenuDeAcoes funis={funis} onInserir={inserir} onFechar={fechar} ancora={caixa} t={t} /> : null}
       </div>
+      {legenda ? (
+        <details className="rounded-lg border bg-muted/30 px-3 py-2 text-xs text-muted-foreground" data-testid="legenda-das-acoes">
+          <summary className="cursor-pointer select-none">{t("A legenda das ações é mantida automaticamente no texto do agente (só das ações que você usou). Ver")}</summary>
+          <pre className="mt-2 whitespace-pre-wrap font-sans">{legenda}</pre>
+        </details>
+      ) : null}
     </div>
   );
 }

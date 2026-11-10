@@ -1412,6 +1412,7 @@ export function AgentForm(props: Props) {
               disabled={disabled}
               invalid={!!validation.system_prompt}
               funis={funis}
+              toolIds={form.tool_ids}
               t={t}
             />
             {validation.system_prompt ? (

@@ -12,43 +12,11 @@ import { useAgentMapping } from "@/hooks/pipelines/useAgentMapping";
 import type { FunilDaResposta } from "@/hooks/pipelines/usePipelines";
 import { apiClient } from "@/lib/api/client";
 import { FICHAS } from "@/lib/sales/base-juridica/fichas";
-import { ChatsCircle, ClipboardText, Clock, Gauge, Kanban, ListChecks, Robot, Users } from "@/lib/ui/icons";
 import { cn } from "@/lib/utils";
 
-export type TipoDeAcao = "mensagem" | "chamar_equipe" | "retorno" | "etiqueta_add" | "etiqueta_rem" | "etapa" | "responsavel" | "notificar" | "dados" | "contrato" | "base";
+import { ACOES, GRUPOS, type DefDaAcao, type TipoDeAcao } from "./chips-do-roteiro";
 
-interface DefDaAcao { id: TipoDeAcao; grupo: string; rotulo: string; dica: string; icone: React.ComponentType<{ className?: string }>; escolhe: boolean }
-
-export const DEFS: readonly DefDaAcao[] = [
-  { id: "mensagem", grupo: "Mensagem e conversa", rotulo: "Enviar uma mensagem pronta", dica: "Um texto exato para o cliente", icone: ChatsCircle, escolhe: true },
-  { id: "chamar_equipe", grupo: "Mensagem e conversa", rotulo: "Chamar a equipe", dica: "Passa a conversa para uma pessoa", icone: Users, escolhe: false },
-  { id: "retorno", grupo: "Mensagem e conversa", rotulo: "Agendar um retorno", dica: "Voltar a falar depois", icone: Clock, escolhe: true },
-  { id: "etiqueta_add", grupo: "Ações no CRM", rotulo: "Adicionar etiqueta", dica: "Marca o contato", icone: ListChecks, escolhe: true },
-  { id: "etiqueta_rem", grupo: "Ações no CRM", rotulo: "Remover etiqueta", dica: "Tira uma marca", icone: ListChecks, escolhe: true },
-  { id: "etapa", grupo: "Ações no CRM", rotulo: "Mudar etapa no funil", dica: "Move o negócio de coluna", icone: Kanban, escolhe: true },
-  { id: "responsavel", grupo: "Ações no CRM", rotulo: "Transferir para uma pessoa", dica: "Define o responsável", icone: Users, escolhe: true },
-  { id: "notificar", grupo: "Ações no CRM", rotulo: "Avisar a equipe", dica: "Manda um aviso interno", icone: Robot, escolhe: true },
-  { id: "dados", grupo: "Ações no CRM", rotulo: "Gravar dados do cliente", dica: "Nome, CPF, endereço…", icone: ClipboardText, escolhe: false },
-  { id: "contrato", grupo: "Ações no CRM", rotulo: "Enviar o contrato", dica: "Link de assinatura", icone: ClipboardText, escolhe: false },
-  { id: "base", grupo: "Consulta", rotulo: "Consultar a base jurídica", dica: "Responder com a ficha do tema", icone: Gauge, escolhe: true },
-];
-
-/** A linha de texto que cada ação deixa no roteiro (com o que a pessoa escolheu). */
-export function linhaDaAcao(tipo: TipoDeAcao, valor = ""): string {
-  switch (tipo) {
-    case "mensagem": return `Envie ao cliente, exatamente assim: “${valor}”`;
-    case "chamar_equipe": return "Passe a conversa para a equipe, com um resumo curto do que já foi dito. Só diga ao cliente que encaminhou depois da confirmação.";
-    case "retorno": return `Agende um retorno ${valor || "para amanhã"} e retome o assunto com gentileza.`;
-    case "etiqueta_add": return `Etiqueta: ${valor}`;
-    case "etiqueta_rem": return `Remover etiqueta: ${valor}`;
-    case "etapa": return `Etapa: ${valor}`;
-    case "responsavel": return `Responsável: ${valor}`;
-    case "notificar": return `Notificar equipe: ${valor}`;
-    case "dados": return "Grave no cadastro o que o cliente informou (nome, CPF, endereço…).";
-    case "contrato": return "Envie o contrato para assinatura (somente depois da confirmação dos dados pelo cliente).";
-    case "base": return `Consulte a base jurídica sobre ${valor} e responda com base na ficha.`;
-  }
-}
+export type { TipoDeAcao };
 
 const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -89,27 +57,26 @@ function EtapasDoFunil({ funil, onEscolher, t }: { funil: FunilDaResposta; onEsc
 }
 
 const RETORNOS: readonly [string, string][] = [
-  ["Em 1 hora", "em 1 hora"], ["Hoje à tarde", "para hoje à tarde"], ["Amanhã", "para amanhã"], ["Em 3 dias", "em 3 dias"], ["Em 1 semana", "em 1 semana"],
+  ["Em 1 hora", "em 1 hora"], ["Hoje à tarde", "hoje à tarde"], ["Amanhã", "amanhã"], ["Em 3 dias", "em 3 dias"], ["Em 1 semana", "em 1 semana"],
 ];
 
 /** A coluna da direita: as opções da ação escolhida. */
-function Opcoes({ tipo, funis, onEscolher, t }: { tipo: TipoDeAcao; funis: readonly FunilDaResposta[]; onEscolher: (v: string) => void; t: (s: string) => string }) {
+function Opcoes({ def, funis, onEscolher, t }: { def: DefDaAcao; funis: readonly FunilDaResposta[]; onEscolher: (v: string) => void; t: (s: string) => string }) {
   const [busca, setBusca] = React.useState("");
   const [funil, setFunil] = React.useState<FunilDaResposta | null>(null);
   const [texto, setTexto] = React.useState("");
-  React.useEffect(() => { setBusca(""); setFunil(null); setTexto(""); }, [tipo]);
+  React.useEffect(() => { setBusca(""); setFunil(null); setTexto(""); }, [def.tipo]);
 
-  const ehEtiqueta = tipo === "etiqueta_add" || tipo === "etiqueta_rem";
   const etiquetas = useQuery({
     queryKey: ["agente", "editor", "etiquetas"],
     queryFn: async () => ((await apiClient.get<{ data: { tag: string }[] }>("/api/v1/tags/vocabulario")).data ?? []).map((x) => x.tag),
-    enabled: ehEtiqueta,
+    enabled: def.escolhe === "etiqueta",
     staleTime: 60_000,
   });
-  const pessoas = useAssignableMembers(tipo === "responsavel");
+  const pessoas = useAssignableMembers(def.escolhe === "pessoa");
   const q = norm(busca);
 
-  if (tipo === "etapa") {
+  if (def.escolhe === "etapa") {
     if (funil) {
       return (
         <div>
@@ -127,7 +94,7 @@ function Opcoes({ tipo, funis, onEscolher, t }: { tipo: TipoDeAcao; funis: reado
       </div>
     );
   }
-  if (ehEtiqueta) {
+  if (def.escolhe === "etiqueta") {
     const lista = (etiquetas.data ?? []).filter((x) => !q || norm(x).includes(q));
     return (
       <div>
@@ -136,7 +103,7 @@ function Opcoes({ tipo, funis, onEscolher, t }: { tipo: TipoDeAcao; funis: reado
       </div>
     );
   }
-  if (tipo === "responsavel") {
+  if (def.escolhe === "pessoa") {
     const lista = (pessoas.data ?? []).filter((m) => !q || norm(m.full_name ?? "").includes(q));
     return (
       <div>
@@ -145,8 +112,8 @@ function Opcoes({ tipo, funis, onEscolher, t }: { tipo: TipoDeAcao; funis: reado
       </div>
     );
   }
-  if (tipo === "retorno") return <div>{RETORNOS.map(([r, v]) => <Linha key={v} titulo={t(r)} onClick={() => onEscolher(v)} />)}</div>;
-  if (tipo === "base") {
+  if (def.escolhe === "retorno") return <div>{RETORNOS.map(([r, v]) => <Linha key={v} titulo={t(r)} onClick={() => onEscolher(v)} />)}</div>;
+  if (def.escolhe === "tema") {
     const lista = FICHAS.filter((f) => !q || norm(f.titulo).includes(q));
     return (
       <div>
@@ -155,7 +122,7 @@ function Opcoes({ tipo, funis, onEscolher, t }: { tipo: TipoDeAcao; funis: reado
       </div>
     );
   }
-  if (tipo === "mensagem" || tipo === "notificar") {
+  if (def.escolhe === "texto") {
     return (
       <div className="space-y-2 p-1">
         <textarea
@@ -163,7 +130,7 @@ function Opcoes({ tipo, funis, onEscolher, t }: { tipo: TipoDeAcao; funis: reado
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           rows={4}
-          placeholder={tipo === "mensagem" ? t("Escreva a mensagem que o agente vai enviar…") : t("Escreva o aviso para a equipe…")}
+          placeholder={def.tipo === "mensagem" ? t("Escreva a mensagem que o agente vai enviar…") : t("Escreva o aviso para a equipe…")}
           className="w-full rounded-lg border bg-background p-2 text-sm outline-none focus:ring-2 focus:ring-ring"
         />
         <button type="button" disabled={!texto.trim()} onMouseDown={(e) => e.preventDefault()} onClick={() => onEscolher(texto.trim())} className="w-full rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50">
@@ -175,51 +142,84 @@ function Opcoes({ tipo, funis, onEscolher, t }: { tipo: TipoDeAcao; funis: reado
   return null;
 }
 
-/** O menu inteiro. `onInserir` recebe a ação e o valor escolhido; `onFechar` é Esc ou clique fora. */
-export function MenuDeAcoes({ funis, onInserir, onFechar, t }: { funis: readonly FunilDaResposta[]; onInserir: (tipo: TipoDeAcao, valor: string) => void; onFechar: () => void; t: (s: string) => string }) {
+/**
+ * O menu inteiro. `onInserir` recebe a ação e o valor escolhido. Fecha com o botão "Cancelar", com Esc e com um clique fora dele (`ancora`: o campo de texto,
+ * que não conta como "fora"). Ações que não precisam de escolha entram direto.
+ */
+export function MenuDeAcoes({
+  funis,
+  onInserir,
+  onFechar,
+  ancora,
+  t,
+}: {
+  funis: readonly FunilDaResposta[];
+  onInserir: (tipo: TipoDeAcao, valor: string) => void;
+  onFechar: () => void;
+  ancora?: React.RefObject<HTMLElement | null>;
+  t: (s: string) => string;
+}) {
   const [busca, setBusca] = React.useState("");
-  const [ativa, setAtiva] = React.useState<TipoDeAcao | null>(null);
+  const [ativa, setAtiva] = React.useState<DefDaAcao | null>(null);
+  const raiz = React.useRef<HTMLDivElement>(null);
   const q = norm(busca);
-  const lista = DEFS.filter((d) => !q || norm(d.rotulo).includes(q) || norm(d.grupo).includes(q));
-  const grupos = [...new Set(lista.map((d) => d.grupo))];
-  const escolher = (d: DefDaAcao) => { if (d.escolhe) setAtiva(d.id); else onInserir(d.id, ""); };
+  const lista = ACOES.filter((d) => !q || norm(d.rotulo).includes(q) || norm(d.grupo).includes(q) || norm(d.dica).includes(q));
+
+  React.useEffect(() => {
+    const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") { e.preventDefault(); onFechar(); } };
+    const fora = (e: MouseEvent) => {
+      const alvo = e.target as Node;
+      if (raiz.current?.contains(alvo) || ancora?.current?.contains(alvo)) return;
+      onFechar();
+    };
+    document.addEventListener("keydown", tecla);
+    document.addEventListener("mousedown", fora);
+    return () => { document.removeEventListener("keydown", tecla); document.removeEventListener("mousedown", fora); };
+  }, [onFechar, ancora]);
+
+  const escolher = (d: DefDaAcao) => { if (d.escolhe !== "nenhuma") setAtiva(d); else onInserir(d.tipo, ""); };
 
   return (
     <div
+      ref={raiz}
       data-testid="menu-de-acoes"
-      onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onFechar(); } }}
-      className="absolute left-2 top-8 z-30 flex w-[34rem] max-w-[calc(100%-1rem)] overflow-hidden rounded-xl border bg-popover shadow-xl"
+      className="absolute left-2 top-2 z-30 flex w-[36rem] max-w-[calc(100%-1rem)] overflow-hidden rounded-xl border bg-popover shadow-xl"
     >
-      <div className="max-h-80 w-1/2 overflow-y-auto border-r p-2">
-        <Busca valor={busca} onChange={setBusca} placeholder={t("Buscar ação…")} auto={!ativa} />
-        {grupos.map((g) => (
-          <div key={g}>
-            <p className="px-2 pb-0.5 pt-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t(g)}</p>
-            {lista.filter((d) => d.grupo === g).map((d) => {
-              const Icone = d.icone;
-              return (
+      <div className="max-h-96 w-1/2 overflow-y-auto border-r p-2">
+        <div className="flex items-center gap-1">
+          <div className="min-w-0 flex-1"><Busca valor={busca} onChange={setBusca} placeholder={t("Buscar ação…")} auto={!ativa} /></div>
+          <button type="button" data-testid="menu-cancelar" aria-label={t("Cancelar")} title={t("Cancelar (Esc)")} onMouseDown={(e) => e.preventDefault()} onClick={onFechar} className="mb-1 shrink-0 rounded-full border px-2.5 py-1 text-xs hover:bg-muted">✕ {t("Cancelar")}</button>
+        </div>
+        {GRUPOS.map((g) => {
+          const itens = lista.filter((d) => d.grupo === g);
+          if (itens.length === 0) return null;
+          return (
+            <div key={g}>
+              <p className="px-2 pb-0.5 pt-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t(g)}</p>
+              {itens.map((d) => (
                 <button
-                  key={d.id}
+                  key={d.tipo}
                   type="button"
-                  data-testid={`acao-${d.id}`}
+                  data-testid={`acao-${d.tipo}`}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => escolher(d)}
-                  className={cn("flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted", ativa === d.id && "bg-muted")}
+                  className={cn("flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted", ativa?.tipo === d.tipo && "bg-muted")}
                 >
-                  <Icone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span aria-hidden className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs", d.cor)}>{d.icone}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{t(d.rotulo)}</span>
                     <span className="block truncate text-[11px] text-muted-foreground">{t(d.dica)}</span>
                   </span>
-                  {d.escolhe ? <span aria-hidden className="text-muted-foreground">›</span> : null}
+                  {d.escolhe !== "nenhuma" ? <span aria-hidden className="text-muted-foreground">›</span> : null}
                 </button>
-              );
-            })}
-          </div>
-        ))}
+              ))}
+            </div>
+          );
+        })}
+        {lista.length === 0 ? <Vazio texto={t("Nenhuma ação encontrada.")} /> : null}
       </div>
-      <div className="max-h-80 w-1/2 overflow-y-auto p-2">
-        {ativa ? <Opcoes tipo={ativa} funis={funis} onEscolher={(v) => onInserir(ativa, v)} t={t} /> : <Vazio texto={t("Escolha uma ação à esquerda. As opções aparecem aqui.")} />}
+      <div className="max-h-96 w-1/2 overflow-y-auto p-2">
+        {ativa ? <Opcoes def={ativa} funis={funis} onEscolher={(v) => onInserir(ativa.tipo, v)} t={t} /> : <Vazio texto={t("Escolha uma ação à esquerda. As opções aparecem aqui.")} />}
       </div>
     </div>
   );

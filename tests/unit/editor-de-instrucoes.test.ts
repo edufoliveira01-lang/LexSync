@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { acoesDoTexto, arrobaAberta, blocoDaAcao, juntarPartes, MARCA_FAQ, MARCA_REGRAS, separarPartes, tirarAcao } from "@/app/app/ai/agents/[id]/_components/EditorDeInstrucoes";
+import { arrobaAberta, juntarPartes, MARCA_FAQ, MARCA_LEGENDA, MARCA_REGRAS, separarPartes } from "@/app/app/ai/agents/[id]/_components/EditorDeInstrucoes";
 
 describe("instruções em três partes", () => {
   it("texto antigo, sem marcas, abre inteiro no Roteiro", () => {
@@ -21,7 +21,24 @@ describe("instruções em três partes", () => {
   });
 });
 
-describe("menu de ações com @", () => {
+describe("legenda automática das ações", () => {
+  it("só entra a legenda das ações usadas, entre as Regras e a FAQ", () => {
+    const texto = juntarPartes({ roteiro: "Mova. [[Etapa: Em triagem]] Calcule. [[Calcular renda]]", regras: "Regras.", faq: "Pergunta: a?\nResposta: b." });
+    expect(texto).toContain(MARCA_LEGENDA);
+    expect(texto.indexOf(MARCA_REGRAS)).toBeLessThan(texto.indexOf(MARCA_LEGENDA));
+    expect(texto.indexOf(MARCA_LEGENDA)).toBeLessThan(texto.indexOf(MARCA_FAQ));
+    expect(texto).toContain("update_lead_state");
+    expect(texto).toContain("crm_calcular_renda_per_capita");
+    expect(texto).not.toContain("crm_manage_tags"); // etiqueta não foi usada
+  });
+  it("sem ações no texto, não há legenda; e a legenda não vira parte editável", () => {
+    expect(juntarPartes({ roteiro: "texto", regras: "r", faq: "" })).not.toContain(MARCA_LEGENDA);
+    const completo = juntarPartes({ roteiro: "x [[Chamar equipe]]", regras: "r", faq: "" });
+    expect(separarPartes(completo)).toEqual({ roteiro: "x [[Chamar equipe]]", regras: "r", faq: "" });
+  });
+});
+
+describe("menu de ações com @ (modo texto)", () => {
   it("abre no @ solto e filtra pelo que vem depois", () => {
     expect(arrobaAberta("Passo 1\n@", 9)).toEqual({ inicio: 8, consulta: "" });
     expect(arrobaAberta("faça isso @eti", 14)).toEqual({ inicio: 10, consulta: "eti" });
@@ -29,23 +46,5 @@ describe("menu de ações com @", () => {
   it("não abre em e-mail, nem depois de quebra de linha", () => {
     expect(arrobaAberta("fale com a@b.com", 16)).toBeNull();
     expect(arrobaAberta("@x\nmais", 7)).toBeNull();
-  });
-  it("cada ação vira um bloco com o que foi escolhido, que manda executar e não mostrar ao cliente", () => {
-    const b = blocoDaAcao("etapa", "FUNIL JUS › Já é Cliente do Escritório");
-    expect(b).toContain("execute uma única vez");
-    expect(b).toContain("nunca mostre isto ao cliente");
-    expect(b).toContain("Etapa: FUNIL JUS › Já é Cliente do Escritório");
-    expect(blocoDaAcao("etiqueta_add", "NOVA DEMANDA")).toContain("Etiqueta: NOVA DEMANDA");
-    expect(blocoDaAcao("responsavel", "Ana Carolina")).toContain("Responsável: Ana Carolina");
-  });
-  it("as ações do texto aparecem como lista e podem ser tiradas", () => {
-    const texto = "Passo 1.\n" + blocoDaAcao("etiqueta_add", "NOVA DEMANDA") + "\nPasso 2.\n" + blocoDaAcao("etapa", "FUNIL JUS › Triagem") + "\nFim.";
-    const a = acoesDoTexto(texto);
-    expect(a.map((x) => x.linha)).toEqual(["Etiqueta: NOVA DEMANDA", "Etapa: FUNIL JUS › Triagem"]);
-    const sem = tirarAcao(texto, a[0]!);
-    expect(acoesDoTexto(sem).map((x) => x.linha)).toEqual(["Etapa: FUNIL JUS › Triagem"]);
-    expect(sem).toContain("Passo 1.");
-    expect(sem).toContain("Passo 2.");
-    expect(sem).not.toContain("NOVA DEMANDA");
   });
 });
