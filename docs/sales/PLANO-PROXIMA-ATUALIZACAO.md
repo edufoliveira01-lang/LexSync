@@ -67,6 +67,8 @@ Ainda sem repaginar (ordem combinada): **Início do CRM** (hub, `components/shel
 
 ### 3.4 Dropbox — DECIDIDO
 
+**DECIDIDO (10/11/2026) — cada escritório usa o PRÓPRIO drive, e pode ser Dropbox, Google Drive ou OneDrive. Agora só o Dropbox.** O código nasce **independente de provedor**: um módulo "armazenamento externo" com uma interface (conectar, ler a conta, listar pastas, criar pasta, enviar arquivo, resolver pasta por identificador) e um provedor `dropbox`. As regras (`CLIENTES/NOME/TIPO`, nome do arquivo, pastas parecidas, vínculo, fila de envio com nova tentativa) ficam **fora do provedor** e valem para os três. O vínculo cliente→pasta guarda o **identificador da pasta do provedor** (no Google Drive os nomes de pasta nem são únicos e não existe caminho; no Dropbox/OneDrive o caminho existe, mas o identificador sobrevive a renomeação). Cada provedor tem o próprio app OAuth: a decisão de **app central da plataforma × app por escritório** vale por provedor e fica para quando formos vender. Atenção futura: Google Drive e OneDrive pedem permissões amplas para enxergar pastas que já existem (o Google exige verificação do app); avaliar antes de prometer.
+
 **Onde mora:** no **Sales** (uma conexão por escritório, uma regra de pastas). O Deskcomm entrega o arquivo ao Sales; o Sales guarda/encaminha ao Dropbox. A pasta é vinculada ao **cadastro do cliente (CPF)**, nunca ao telefone.
 
 **Fluxo 1 — assinados pelo ZapSign** (contrato, procuração, declarações): continuam online no Sales; ao concluir a assinatura, o Sales envia **cópia** ao Dropbox.
