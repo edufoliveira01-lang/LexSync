@@ -54,6 +54,7 @@ import { PROXIMO_PASSO_DA_MENSAGEM_NOVA } from "@/lib/atendimento/proximo-passo-
 import { rotuloParaAEquipe } from "@/lib/contacts/rotulo-do-contato";
 import { phoneForDisplay } from "@/lib/channels/phone-variants";
 import { AtalhosDoNegocio } from "@/components/kanban/AtalhosDoCard";
+import { CamposDoContato } from "./CamposDoContato";
 import type { AtalhoDoCard } from "@/lib/leads/atalhos-do-card";
 
 interface Props {
@@ -1123,6 +1124,7 @@ export function CRMSidePanel({
               </Button>
             )}
           </div>
+          {contactId && !contact?.is_anonymized ? <CamposDoContato contactId={contactId} somenteLeitura={readonly} /> : null}
         </Card>
       </section>
     ),
