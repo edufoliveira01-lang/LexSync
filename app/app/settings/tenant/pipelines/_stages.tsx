@@ -185,12 +185,6 @@ type Arquivamento = {
 // varre o texto-fonte, então `sm:${...}` montado por interpolação NÃO gera CSS.
 // E o prefixo é o certo de qualquer jeito — no celular a linha empilha e largura
 // fixa espremeria os controles.
-const LARGURA = {
-  chance: "sm:w-[124px]",
-  ordem: "sm:w-[76px]",
-  papel: "sm:w-56",
-  arquivar: "sm:w-[104px]",
-} as const;
 
 /**
  * O texto de cada rótulo, em UM lugar só — porque ele aparece em DOIS.
@@ -383,6 +377,8 @@ export function StagesSection({
   const [confirmacao, setConfirmacao] = useState<{ etapaId: string; papel: Papel; texto: string } | null>(null);
   const [arquivamento, setArquivamento] = useState<Arquivamento | null>(null);
   const [nova, setNova] = useState<string | null>(null);
+  // Qual etapa está com o painel "Ajustar" aberto (uma por vez: a tela fica limpa).
+  const [aberta, setAberta] = useState<string | null>(null);
 
   if (consulta.isError) {
     return (
@@ -492,29 +488,26 @@ export function StagesSection({
         </p>
       </div>
 
-      {/* ⚠️ O CABEÇALHO NÃO É ENFEITE. Sem ele a linha tem um campo de texto sem
-          rótulo, duas setas sem legenda e um seletor dizendo "Nada especial"
-          sobre coisa nenhuma — a dona da clínica precisa adivinhar o que cada
-          controle faz. No celular a linha EMPILHA e um cabeçalho de colunas não
-          alinha com nada: lá o mesmo texto vai em cima de cada controle
-          (`sm:hidden`, mesmas constantes). `aria-label` não substitui nenhum dos
-          dois — é invisível para quem enxerga. */}
-      {/* `border border-transparent`: a lista abaixo tem borda de 1px, que empurra
-          o conteúdo dela 1px para dentro. Sem a mesma borda aqui, cada rótulo
-          fica 1px à direita do controle que nomeia — medido, não estimado. */}
-      <div
-        className="hidden gap-3 border border-transparent px-4 text-xs font-medium text-text-muted sm:flex"
-        data-testid="etapas-cabecalho"
-      >
-        <span className="w-6 shrink-0" />
-        <span className="min-w-0 flex-1">{t(ROTULO.nome)}</span>
-        <span className={`${LARGURA.chance} shrink-0`}>{t(ROTULO.chance)}</span>
-        <span className={`${LARGURA.ordem} shrink-0 text-center`}>{t(ROTULO.ordem)}</span>
-        <span className={`${LARGURA.papel} shrink-0`}>{t(ROTULO.papel)}</span>
-        <span className={`${LARGURA.arquivar} shrink-0`} />
-      </div>
+      {/* Fork Sales — repaginação: a FAIXA do funil (as etapas em sequência, como um mini quadro) e, abaixo, um cartão por etapa. O cartão só LÊ: número,
+          nome (editável no lugar), selos e setas. O que se edita (papel, chance, janela, aviso, arquivar) fica no painel "Ajustar" — uma etapa por vez. */}
+      <ol className="flex items-stretch gap-1 overflow-x-auto pb-1" aria-label={t("Faixa do funil")} data-testid="faixa-do-funil">
+        {etapas.map((e, i) => (
+          <li key={e.id} className="flex items-center gap-1">
+            {i > 0 ? <span aria-hidden className="text-text-muted">›</span> : null}
+            <button
+              type="button"
+              onClick={() => setAberta(e.id)}
+              className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs ${
+                e.is_won ? "border-green-600/40 bg-green-500/10 text-green-700 dark:text-green-400" : e.is_lost ? "border-red-600/40 bg-red-500/10 text-red-700 dark:text-red-400" : "bg-muted/50 text-foreground hover:bg-muted"
+              }`}
+            >
+              {e.name}
+            </button>
+          </li>
+        ))}
+      </ol>
 
-      <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
+      <ul className="flex flex-col gap-2">
         {etapas.map((etapa, i) => {
           const passo = passos.get(etapa.id) ?? null;
           const taxa = corpoDasTaxas?.taxas.find((linha) => linha.etapa_id === etapa.id) ?? null;
@@ -527,24 +520,26 @@ export function StagesSection({
           const confirmandoAqui = confirmacao?.etapaId === etapa.id ? confirmacao : null;
           const arquivandoAqui = arquivamento?.etapaId === etapa.id ? arquivamento : null;
           const destinos = destinosPossiveis(etapas, etapa.id);
+          const painelAberto = aberta === etapa.id || confirmandoAqui !== null || arquivandoAqui !== null || erroDaLinha !== null;
+          const selo = "rounded-full bg-muted px-2 py-0.5 text-[11px] text-text-muted";
 
           return (
             <li
               key={`${etapa.id}:${etapa.name}`}
-              className="flex flex-col gap-2 px-3 py-2.5"
+              className="rounded-xl border border-border bg-card"
               data-testid={`etapa-${etapa.id}`}
             >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <span className="w-6 shrink-0 text-xs tabular-nums text-text-muted">
-                  {i + 1}.
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5">
+                <span
+                  className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
+                    etapa.is_won ? "bg-green-500/15 text-green-700 dark:text-green-400" : etapa.is_lost ? "bg-red-500/15 text-red-700 dark:text-red-400" : "bg-muted text-text-muted"
+                  }`}
+                >
+                  {i + 1}
                 </span>
 
-                {/* No empilhado, cada controle carrega o rótulo que no desktop
-                    vive no cabeçalho — mesmas constantes, `sm:hidden`. */}
-                <div className="min-w-0 flex-1 space-y-1">
-                  <span className="block text-xs font-medium text-text-muted sm:hidden">
-                    {t(ROTULO.nome)}
-                  </span>
+                <div className="min-w-[10rem] flex-1">
+                  <span className="sr-only">{t(ROTULO.nome)}</span>
                   <NomeDaEtapa
                     etapa={etapa}
                     desabilitado={ocupado}
@@ -552,41 +547,24 @@ export function StagesSection({
                   />
                 </div>
 
-                {/* A calibração da previsão (issue #1535). Ganho e perda valem
-                    100 e 0 NA REGRA, então o campo fica desabilitado ali —
-                    digitar um número seria uma promessa que a regra ignora. */}
-                <div className={`${LARGURA.chance} shrink-0 space-y-1`}>
-                  <span className="block text-xs font-medium text-text-muted sm:hidden">
-                    {t(ROTULO.chance)}
-                  </span>
-                  <ProbabilidadeDaEtapa
-                    key={`prob-${etapa.id}-${etapa.win_probability ?? "sem"}`}
-                    etapa={etapa}
-                    desabilitado={ocupado}
-                    aoConfirmar={(valor) => aplicar(etapa.id, { win_probability: valor })}
-                  />
+                <div className="flex flex-wrap items-center gap-1.5" data-testid={`selos-${etapa.id}`}>
+                  {etapa.is_won ? <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[11px] font-medium text-green-700 dark:text-green-400">✓ {t("Fechamento")}</span> : null}
+                  {etapa.is_lost ? <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-700 dark:text-red-400">✕ {t("Perda")}</span> : null}
+                  {!etapa.is_won && !etapa.is_lost && etapa.win_probability != null ? <span className={selo}>{etapa.win_probability}%</span> : null}
+                  {tempo && tempo.quantidade > 0 ? <span className={selo}>{contagemDeNegocios(tempo.quantidade, t)}</span> : null}
+                  {passo ? <span className={selo} title={t("O assistente usa esta etapa para")}>🤖 {t(ROTULO_DO_PASSO[passo])}</span> : null}
+                  {etapa.avisar_na_central === true ? <span className={selo}>🔔 {t("Avisa a Central")}</span> : null}
+                  {etapa.expected_duration_hours ? <span className={selo}>⏱ {etapa.expected_duration_hours} h</span> : null}
                 </div>
 
-                {/* No empilhado o rótulo vai EM CIMA, como os outros dois: ao
-                    lado, ele desalinhava com as setas (medido no celular:
-                    rótulo em y=4893, setas em y=4883) e a linha ficava com três
-                    rótulos em duas convenções diferentes. */}
-                <div
-                  className={`flex flex-col gap-1 ${LARGURA.ordem} shrink-0 sm:flex-row sm:items-center sm:justify-center sm:gap-1`}
-                >
-                  <span className="text-xs font-medium text-text-muted sm:hidden">
-                    {t(ROTULO.ordem)}
-                  </span>
-                  <div className="flex items-center gap-1">
+                <div className="ml-auto flex items-center gap-0.5">
                   <Button
                     variant="ghost"
                     size="icon"
                     aria-label={`${t("Mover")} «${etapa.name}» ${t("uma coluna para trás")}`}
                     data-testid={`subir-${etapa.id}`}
                     disabled={i === 0 || ocupado}
-                    onClick={() =>
-                      aplicar(etapa.id, { depois_de: vizinhoAoMover(etapas, i, "subir") })
-                    }
+                    onClick={() => aplicar(etapa.id, { depois_de: vizinhoAoMover(etapas, i, "subir") })}
                   >
                     <CaretUp size={16} aria-hidden />
                   </Button>
@@ -596,169 +574,136 @@ export function StagesSection({
                     aria-label={`${t("Mover")} «${etapa.name}» ${t("uma coluna para frente")}`}
                     data-testid={`descer-${etapa.id}`}
                     disabled={i === etapas.length - 1 || ocupado}
-                    onClick={() =>
-                      aplicar(etapa.id, { depois_de: vizinhoAoMover(etapas, i, "descer") })
-                    }
+                    onClick={() => aplicar(etapa.id, { depois_de: vizinhoAoMover(etapas, i, "descer") })}
                   >
                     <CaretDown size={16} aria-hidden />
                   </Button>
-                  </div>
-                </div>
-
-                <div className={`w-full shrink-0 space-y-1 ${LARGURA.papel} sm:space-y-0`}>
-                  <span className="block text-xs font-medium text-text-muted sm:hidden">
-                    {t(ROTULO.papel)}
-                  </span>
-                  <Select
-                    value={papelDaEtapa(etapa)}
-                    onValueChange={(v) => escolherPapel(etapa, v as Papel)}
-                    disabled={ocupado}
+                  <Button
+                    variant={aberta === etapa.id ? "secondary" : "outline"}
+                    size="sm"
+                    className="ml-1"
+                    aria-expanded={aberta === etapa.id}
+                    data-testid={`ajustar-${etapa.id}`}
+                    onClick={() => setAberta((a) => (a === etapa.id ? null : etapa.id))}
                   >
-                    <SelectTrigger
-                      aria-label={`${t("Papel de")} «${etapa.name}» ${t("no funil")}`}
-                      data-testid={`papel-${etapa.id}`}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(["nenhum", "won", "lost"] as const).map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {t(ROTULO_DO_PAPEL[p])}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {t("Ajustar")}
+                    <CaretDown size={14} aria-hidden className={`ml-1 transition-transform ${aberta === etapa.id ? "rotate-180" : ""}`} />
+                  </Button>
                 </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`${LARGURA.arquivar} shrink-0`}
-                  data-testid={`arquivar-${etapa.id}`}
-                  disabled={ocupado}
-                  onClick={() => {
-                    setErro(null);
-                    setArquivamento({ etapaId: etapa.id, negocios: null, destino: null, erro: null });
-                  }}
-                >
-                  <Archive size={16} className="mr-1" aria-hidden />
-                  {t("Arquivar")}
-                </Button>
               </div>
 
-              {/* Fork Sales — tela compacta: o que é configuração fina da etapa (janela de "esfriando", aviso na Central, de onde veio a coluna, fluxos
-                  armados) fica recolhido em "Mais opções", com um resumo do que está ligado. O conteúdo continua no DOM (e nos testes). */}
-              <details className="group" data-testid={`mais-opcoes-${etapa.id}`}>
-                <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 text-xs text-text-muted hover:text-foreground [&::-webkit-details-marker]:hidden">
-                  <span aria-hidden className="inline-block transition-transform group-open:rotate-90">›</span>
-                  <span>{t("Mais opções")}</span>
-                  {passo ? (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]" title={t("O assistente usa esta etapa para")}>
-                      🤖 {t(ROTULO_DO_PASSO[passo])}
-                    </span>
-                  ) : null}
-                  {etapa.avisar_na_central === true ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">🔔 {t("Avisa a Central")}</span> : null}
-                  {etapa.expected_duration_hours ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">⏱ {etapa.expected_duration_hours} h</span> : null}
-                </summary>
-                <div className="mt-2 space-y-2 border-l pl-4">
-                  <div className="space-y-1" data-testid={`estatisticas-${etapa.id}`}>
-                    {/* Ganho e perda valem 100 e 0 NA REGRA, então não há
-                        calibração a sugerir ali — a contagem também não diria
-                        nada que a própria coluna já não diga. */}
-                    {corpoDasTaxas && taxa && !etapa.is_won && !etapa.is_lost ? (
-                      <SugestaoDeTaxa
-                        taxa={taxa}
-                        inicio={corpoDasTaxas.inicio}
-                        fim={corpoDasTaxas.fim}
-                        truncado={corpoDasTaxas.truncado}
-                        desabilitado={ocupado}
-                        aoAceitar={(valor) => aplicar(etapa.id, { win_probability: valor })}
-                      />
-                    ) : null}
-                    {/* #2032 — a etapa ATUAL, ao lado da taxa histórica (#1753),
-                        que é de OUTRA população: aquela mede quem passou na
-                        janela, esta quem está aqui agora. Ganho e perda ficam de
-                        fora porque lá a coluna não segura trabalho em curso — o
-                        tempo dela é tempo desde o desfecho, não espera. */}
-                    {!etapa.is_won && !etapa.is_lost && fraseDeTempo ? (
-                      <p
-                        className="text-xs leading-snug text-text-muted"
-                        data-testid={`tempo-etapa-${etapa.id}`}
-                      >
-                        {fraseDeTempo}
-                        {/* Este bloco não tem período: o corte é na leitura dos
-                            negócios abertos, e a frase diz isso — não a da taxa. */}
-                        {corpoDasTaxas?.tempo_na_etapa?.truncado
-                          ? ` ${t("Amostra limitada: este número cobre só parte dos negócios abertos do funil.")}`
-                          : ""}
-                      </p>
-                    ) : null}
+              {/* O painel fica SEMPRE no DOM (só escondido): campo editado e não salvo não some ao recolher. */}
+              <div className={`space-y-3 border-t border-border bg-muted/30 px-3 py-3 ${painelAberto ? "" : "hidden"}`} data-testid={`mais-opcoes-${etapa.id}`}>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <span className="block text-xs font-medium text-text-muted">{t(ROTULO.papel)}</span>
+                    <Select value={papelDaEtapa(etapa)} onValueChange={(v) => escolherPapel(etapa, v as Papel)} disabled={ocupado}>
+                      <SelectTrigger aria-label={`${t("Papel de")} «${etapa.name}» ${t("no funil")}`} data-testid={`papel-${etapa.id}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(["nenhum", "won", "lost"] as const).map((p) => (
+                          <SelectItem key={p} value={p}>
+                            {t(ROTULO_DO_PAPEL[p])}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-              {/* #1532: a janela de "esfriando" é configuração da etapa, não
-                  coluna do quadro — ela mora aqui, na segunda linha, com
-                  rótulo próprio. Ganhar uma coluna no cabeçalho exigiria
-                  medir `LARGURA` em dois lugares e apertar uma linha que já
-                  carrega nome, chance, ordem, papel e arquivar. */}
-              <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
-                <span className="font-medium">
-                  {t("Janela de esfriando (vazio = 24 h de padrão)")}
-                </span>
-                <JanelaDaEtapa
-                  key={`janela-${etapa.id}-${etapa.expected_duration_hours ?? "padrao"}`}
-                  etapa={etapa}
-                  desabilitado={ocupado}
-                  aoConfirmar={(valor) => aplicar(etapa.id, { expected_duration_hours: valor })}
-                />
-              </div>
 
-              {/* Uma coluna que apareceu no quadro sem o dono ter criado precisa
-                  dizer de onde veio — senão o assistente muda o funil e a única
-                  pista fica no log que nenhuma tela lê. */}
-              <SeloDeAutoria
-                kind={etapa.last_change_actor_kind ?? null}
-                em={etapa.last_change_at ?? null}
-                className={`etapa-autoria-${etapa.id}`}
-              />
+                  {/* A calibração da previsão (issue #1535). Ganho e perda valem 100 e 0 NA REGRA, então o campo fica desabilitado ali. */}
+                  <div className="space-y-1">
+                    <span className="block text-xs font-medium text-text-muted">{t(ROTULO.chance)}</span>
+                    <ProbabilidadeDaEtapa
+                      key={`prob-${etapa.id}-${etapa.win_probability ?? "sem"}`}
+                      etapa={etapa}
+                      desabilitado={ocupado}
+                      aoConfirmar={(valor) => aplicar(etapa.id, { win_probability: valor })}
+                    />
+                  </div>
 
-              {/* #3603 — «quais fluxos disparam ao entrar aqui» é LEITURA: texto
-                  simples, sem botão nem seletor. O fluxo se configura no editor
-                  de follow-up; o funil só diz o que já está armado, para quem
-                  suspeita de mensagem automática ter onde conferir. A frase sai
-                  quando o campo não veio (ver `fraseDosFluxosDaEtapa`). */}
-              {fraseDosFluxos ? (
-                <p
-                  className="text-xs leading-snug text-text-muted"
-                  data-testid={`fluxos-de-${etapa.id}`}
-                >
-                  {fraseDosFluxos}
-                </p>
-              ) : null}
-
-              {/* Numa venda com pagamento na entrega o momento que pede ação é o
-                  pedido confirmado, não o ganho — e quem sabe qual etapa é essa é
-                  a organização. Ver a migration 0440. */}
-              <label className="flex items-center gap-2 text-xs text-text-muted">
-                <Switch
-                  checked={etapa.avisar_na_central === true}
-                  onCheckedChange={(v) => aplicar(etapa.id, { avisar_na_central: v })}
-                  disabled={ocupado}
-                  aria-label={`${t("Avisar a equipe na Central quando um negócio entrar em")} «${etapa.name}»`}
-                  data-testid={`avisar-${etapa.id}`}
-                />
-                {t("Avisar a equipe na Central quando um negócio entrar aqui")}
-              </label>
-
-              {passo && (
-                <p className="text-xs text-text-muted" data-testid={`passo-de-${etapa.id}`}>
-                  {t("O assistente usa esta etapa para")} «{t(ROTULO_DO_PASSO[passo])}».{" "}
-                  <a className="underline underline-offset-2" href={`#${ancoraMapeamento}`}>
-                    {t("Mudar isso")}
-                  </a>
-                </p>
-              )}
-
+                  {/* #1532: a janela de "esfriando". */}
+                  <div className="space-y-1">
+                    <span className="block text-xs font-medium text-text-muted">{t("Janela de esfriando (vazio = 24 h de padrão)")}</span>
+                    <JanelaDaEtapa
+                      key={`janela-${etapa.id}-${etapa.expected_duration_hours ?? "padrao"}`}
+                      etapa={etapa}
+                      desabilitado={ocupado}
+                      aoConfirmar={(valor) => aplicar(etapa.id, { expected_duration_hours: valor })}
+                    />
+                  </div>
                 </div>
-              </details>
+
+                <label className="flex items-center gap-2 text-xs text-text-muted">
+                  <Switch
+                    checked={etapa.avisar_na_central === true}
+                    onCheckedChange={(v) => aplicar(etapa.id, { avisar_na_central: v })}
+                    disabled={ocupado}
+                    aria-label={`${t("Avisar a equipe na Central quando um negócio entrar em")} «${etapa.name}»`}
+                    data-testid={`avisar-${etapa.id}`}
+                  />
+                  {t("Avisar a equipe na Central quando um negócio entrar aqui")}
+                </label>
+
+                <div className="space-y-1" data-testid={`estatisticas-${etapa.id}`}>
+                  {corpoDasTaxas && taxa && !etapa.is_won && !etapa.is_lost ? (
+                    <SugestaoDeTaxa
+                      taxa={taxa}
+                      inicio={corpoDasTaxas.inicio}
+                      fim={corpoDasTaxas.fim}
+                      truncado={corpoDasTaxas.truncado}
+                      desabilitado={ocupado}
+                      aoAceitar={(valor) => aplicar(etapa.id, { win_probability: valor })}
+                    />
+                  ) : null}
+                  {!etapa.is_won && !etapa.is_lost && fraseDeTempo ? (
+                    <p className="text-xs leading-snug text-text-muted" data-testid={`tempo-etapa-${etapa.id}`}>
+                      {fraseDeTempo}
+                      {corpoDasTaxas?.tempo_na_etapa?.truncado
+                        ? ` ${t("Amostra limitada: este número cobre só parte dos negócios abertos do funil.")}`
+                        : ""}
+                    </p>
+                  ) : null}
+                </div>
+
+                <SeloDeAutoria
+                  kind={etapa.last_change_actor_kind ?? null}
+                  em={etapa.last_change_at ?? null}
+                  className={`etapa-autoria-${etapa.id}`}
+                />
+
+                {fraseDosFluxos ? (
+                  <p className="text-xs leading-snug text-text-muted" data-testid={`fluxos-de-${etapa.id}`}>
+                    {fraseDosFluxos}
+                  </p>
+                ) : null}
+
+                {passo && (
+                  <p className="text-xs text-text-muted" data-testid={`passo-de-${etapa.id}`}>
+                    {t("O assistente usa esta etapa para")} «{t(ROTULO_DO_PASSO[passo])}».{" "}
+                    <a className="underline underline-offset-2" href={`#${ancoraMapeamento}`}>
+                      {t("Mudar isso")}
+                    </a>
+                  </p>
+                )}
+
+                <div className="flex justify-end border-t border-border pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700"
+                    data-testid={`arquivar-${etapa.id}`}
+                    disabled={ocupado}
+                    onClick={() => {
+                      setErro(null);
+                      setArquivamento({ etapaId: etapa.id, negocios: null, destino: null, erro: null });
+                    }}
+                  >
+                    <Archive size={16} className="mr-1" aria-hidden />
+                    {t("Arquivar")}
+                  </Button>
+                </div>
+              </div>
 
               {confirmandoAqui && (
                 <Card

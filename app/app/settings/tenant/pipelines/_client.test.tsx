@@ -67,8 +67,8 @@ import {
  * só isso: o comportamento testado abaixo é o de sempre.
  */
 function abrirEditores(): void {
-  const botoes = screen.queryAllByRole("button", {
-    name: /Editar vocabulário e campos deste funil/i,
+  const botoes = screen.queryAllByRole("tab", {
+    name: /Campos e vocabulário/i,
   });
   for (const botao of botoes) fireEvent.click(botao);
 }
@@ -652,7 +652,7 @@ describe("'Este campo pertence a' só no funil padrão (#2791)", () => {
     const cards = container.querySelectorAll("h2");
     expect(cards[0]?.textContent).toBe("Vendas");
     expect(screen.getAllByLabelText(/Escopo do campo 1/i)).toHaveLength(1);
-    const cardDoPos = cards[1]?.closest("div.space-y-6");
+    const cardDoPos = cards[1]?.closest("div.space-y-4");
     expect(cardDoPos?.textContent).toContain("Este campo pertence a:");
   });
 

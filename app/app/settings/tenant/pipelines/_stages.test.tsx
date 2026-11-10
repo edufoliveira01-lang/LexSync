@@ -11,7 +11,7 @@
  * sem dizer para onde eles vão; e (d) reler o servidor depois de tudo.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -200,26 +200,29 @@ describe("StagesSection — a linha se explica sozinha", () => {
    * entende o que é a etapa de fechamento?") vira um chute. O rótulo do seletor
    * foi escrito para ser lido SOB este cabeçalho.
    */
-  it("cada controle tem rótulo NOS DOIS layouts — cabeçalho no desktop, na linha no celular", async () => {
+  it("cada etapa é um cartão: nome com rótulo, selos à vista, e papel/chance no painel Ajustar", async () => {
     montar();
     await screen.findByTestId("nome-e1");
 
-    // Desktop: o cabeçalho de colunas.
-    const cabecalho = within(screen.getByTestId("etapas-cabecalho"));
-    for (const texto of [ROTULO.nome, ROTULO.ordem, ROTULO.papel]) {
-      expect(cabecalho.getByText(texto)).toBeInTheDocument();
-    }
+    // A faixa do funil mostra todas as etapas em sequência, como um mini quadro.
+    const faixa = within(screen.getByTestId("faixa-do-funil"));
+    expect(faixa.getAllByRole("button").length).toBeGreaterThanOrEqual(3);
 
-    // ⭐ Celular: a linha EMPILHA e o cabeçalho não alinha com nada — os mesmos
-    // rótulos precisam viajar dentro da linha. Sem isto, o defeito que o
-    // cabeçalho consertou fica intacto num viewport inteiro, e `aria-label` não
-    // cobre: é invisível para quem enxerga.
+    // O cartão: nome com rótulo (para leitor de tela), e o painel com papel e chance rotulados.
     const linha = within(screen.getByTestId("etapa-e1"));
     expect(linha.getByText(ROTULO.nome)).toBeInTheDocument();
-    expect(linha.getByText(ROTULO.ordem)).toBeInTheDocument();
     expect(linha.getByText(ROTULO.papel)).toBeInTheDocument();
+    expect(linha.getByText(ROTULO.chance)).toBeInTheDocument();
 
-    // E o seletor mostra o rótulo que só faz sentido debaixo deles.
+    // O painel abre pelo botão Ajustar e fecha pelo mesmo botão.
+    const painel = screen.getByTestId("mais-opcoes-e1");
+    expect(painel).toHaveClass("hidden");
+    fireEvent.click(screen.getByTestId("ajustar-e1"));
+    expect(painel).not.toHaveClass("hidden");
+    fireEvent.click(screen.getByTestId("ajustar-e1"));
+    expect(painel).toHaveClass("hidden");
+
+    // E o seletor mostra o rótulo que só faz sentido debaixo do rótulo do papel.
     expect(screen.getByTestId("papel-e3")).toHaveTextContent("Aqui o cliente fecha");
     expect(screen.getByTestId("papel-e1")).toHaveTextContent("Nada especial");
   });

@@ -380,57 +380,60 @@ function CardDoFunil({
   ehFunilPadrao: boolean;
 }) {
   const t = useT();
-  const [editorAberto, setEditorAberto] = useState(false);
-  // Monta na primeira vez que abre e fica montado: recolher só ESCONDE. Desmontar
-  // apagaria em silêncio o que foi editado e ainda não salvo.
+  // Fork Sales — repaginação: o funil vira ABAS (uma coisa por vez) em vez de uma página longa empilhada. Todas as abas ficam montadas (só
+  // escondidas), então o que foi digitado e não salvo não some ao trocar de aba; só o editor pesado (#3176) monta na primeira vez que abre.
+  const [aba, setAba] = useState<"etapas" | "agente" | "campos">("etapas");
   const [editorMontado, setEditorMontado] = useState(false);
+  const editorAberto = aba === "campos";
+  const abas: Array<{ id: "etapas" | "agente" | "campos"; rotulo: string }> = [
+    { id: "etapas", rotulo: t("Etapas") },
+    { id: "agente", rotulo: t("Agente") },
+    ...(podeEditarConfig ? [{ id: "campos" as const, rotulo: t("Campos e vocabulário") }] : []),
+  ];
   return (
-    <Card className="space-y-6 p-6">
-      <header>
-        <h2 className="text-base font-semibold">{pipeline.name}</h2>
-        <p className="text-xs text-muted-foreground">/{pipeline.slug}</p>
+    <Card className="space-y-4 p-5">
+      <header className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-base font-semibold">{pipeline.name}</h2>
+          <span className="text-xs text-muted-foreground">/{pipeline.slug}</span>
+        </div>
+        <div role="tablist" aria-label={t("Partes do funil")} className="inline-flex gap-1 rounded-lg bg-muted p-1">
+          {abas.map((x) => (
+            <button
+              key={x.id}
+              type="button"
+              role="tab"
+              aria-selected={aba === x.id}
+              aria-expanded={x.id === "campos" ? editorAberto : undefined}
+              data-testid={x.id === "campos" ? `abrir-editor-${pipeline.id}` : `aba-${x.id}-${pipeline.id}`}
+              onClick={() => {
+                if (x.id === "campos") {
+                  setEditorMontado(true);
+                  setAba((atual) => (atual === "campos" ? "etapas" : "campos"));
+                } else setAba(x.id);
+              }}
+              className={`rounded-md px-3 py-1 text-sm transition-colors ${aba === x.id ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {x.rotulo}
+            </button>
+          ))}
+        </div>
       </header>
-      {/* As ETAPAS vêm primeiro, e a ordem é a do raciocínio de quem
-          configura: primeiro o quadro existe do jeito da sua operação,
-          depois se decide o que o assistente faz com ele. Invertido, a
-          primeira coisa que o dono da clínica vê é um mapeamento sobre
-          colunas de e-commerce que ele nem sabia que dava para trocar. */}
-      <StagesSection pipelineId={pipeline.id} ancoraMapeamento={ancoraDoMapeamento(pipeline.id)} />
-      <div className="border-t border-border pt-6">
+      {/* As ETAPAS vêm primeiro: primeiro o quadro existe do jeito da operação, depois se decide o que o assistente faz com ele. */}
+      <div className={aba === "etapas" ? "" : "hidden"}>
+        <StagesSection pipelineId={pipeline.id} ancoraMapeamento={ancoraDoMapeamento(pipeline.id)} />
+      </div>
+      <div className={aba === "agente" ? "" : "hidden"}>
         <AgentMappingSection pipelineId={pipeline.id} ancoraEtapas={ancoraDasEtapas(pipeline.id)} />
       </div>
-      {podeEditarConfig && (
-        <div className="space-y-4 border-t border-border pt-6">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            aria-expanded={editorAberto}
-            data-testid={`abrir-editor-${pipeline.id}`}
-            onClick={() => {
-              setEditorMontado(true);
-              setEditorAberto((aberto) => !aberto);
-            }}
-          >
-            <CaretDown
-              size={14}
-              aria-hidden
-              className={editorAberto ? "mr-1 rotate-180" : "mr-1"}
-            />
-            {editorAberto
-              ? t("Recolher")
-              : t("Editar vocabulário e campos deste funil")}
-          </Button>
-          {editorMontado && (
-            <div hidden={!editorAberto} data-testid={`area-do-editor-${pipeline.id}`}>
-              <PipelineEditor
-                pipeline={pipeline}
-                etapas={etapas}
-                comandaDisponivel={comandaDisponivel}
-                ehFunilPadrao={ehFunilPadrao}
-              />
-            </div>
-          )}
+      {podeEditarConfig && editorMontado && (
+        <div hidden={!editorAberto} data-testid={`area-do-editor-${pipeline.id}`}>
+          <PipelineEditor
+            pipeline={pipeline}
+            etapas={etapas}
+            comandaDisponivel={comandaDisponivel}
+            ehFunilPadrao={ehFunilPadrao}
+          />
         </div>
       )}
     </Card>
