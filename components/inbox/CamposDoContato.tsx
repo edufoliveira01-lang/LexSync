@@ -20,7 +20,7 @@ import { useDefaultPipeline } from "@/hooks/pipelines/useDefaultPipeline";
 import { camposDoFunil, camposPorEscopo } from "@/lib/leads/campos-do-funil";
 import { soChavesAlteradas } from "@/lib/leads/custom-fields-so-diff";
 
-export function CamposDoContato({ contactId, somenteLeitura }: { contactId: string; somenteLeitura?: boolean }) {
+export function CamposDoContato({ contactId, somenteLeitura, duasColunas = false }: { contactId: string; somenteLeitura?: boolean; duasColunas?: boolean }) {
   const t = useT();
   const funil = useDefaultPipeline(true);
   const contato = useContact(contactId);
@@ -70,7 +70,7 @@ export function CamposDoContato({ contactId, somenteLeitura }: { contactId: stri
         onChange={setValores}
         mode="contact"
         disabled={somenteLeitura}
-        className="gap-4 md:grid-cols-1"
+        className={duasColunas ? "gap-4" : "gap-4 md:grid-cols-1"}
       />
       <Button
         size="sm"

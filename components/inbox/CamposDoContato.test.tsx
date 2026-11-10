@@ -34,6 +34,13 @@ describe("CamposDoContato (painel da conversa)", () => {
     expect(screen.queryByText("Processo")).not.toBeInTheDocument();
   });
 
+  it("na janela flutuante os campos ficam em DUAS colunas; na coluna estreita, em uma", () => {
+    const { container, rerender } = render(<CamposDoContato contactId="c1" duasColunas />);
+    expect(container.querySelector(".grid")!.className).not.toContain("md:grid-cols-1");
+    rerender(<CamposDoContato contactId="c1" />);
+    expect(container.querySelector(".grid")!.className).toContain("md:grid-cols-1");
+  });
+
   it("sem campo do contato no funil, o bloco não aparece", () => {
     funil = { pipeline: { settings: { fields: [CAMPOS[1]] } } };
     render(<CamposDoContato contactId="c1" />);

@@ -437,7 +437,10 @@ function InboxLeadEditor({
   onSalvo,
   podeLevarParaOutroFunil,
   onTrocouDeNegocio,
+  duasColunas = false,
 }: {
+  /** Janela lateral flutuante (fork Sales): os campos do funil ficam em duas colunas. */
+  duasColunas?: boolean;
   leads: LeadRow[];
   selecionadoId: string | null;
   onSelecionar: (id: string) => void;
@@ -553,6 +556,7 @@ function InboxLeadEditor({
         fieldDefs={ativo.field_defs ?? []}
         valores={ativo.custom_fields ?? {}}
         onSalvo={onSalvo}
+        duasColunas={duasColunas}
       />
     </div>
   );
@@ -691,12 +695,14 @@ function CamposDoFunil({
   fieldDefs,
   valores,
   onSalvo,
+  duasColunas = false,
 }: {
   leadId: string;
   pipelineId: string;
   fieldDefs: CustomFieldDef[];
   valores: Record<string, unknown>;
   onSalvo: () => void;
+  duasColunas?: boolean;
 }) {
   const t = useT();
   const edit = useEditLead(pipelineId);
@@ -731,7 +737,7 @@ function CamposDoFunil({
         onChange={setCustomFields}
         mode="lead"
         leadId={leadId}
-        className="gap-3 md:grid-cols-1"
+        className={duasColunas ? "gap-4" : "gap-3 md:grid-cols-1"}
       />
       <Button
         size="sm"
@@ -1130,7 +1136,7 @@ export function CRMSidePanel({
               </Button>
             )}
           </div>
-          {contactId && !contact?.is_anonymized ? <CamposDoContato contactId={contactId} somenteLeitura={readonly} /> : null}
+          {contactId && !contact?.is_anonymized ? <CamposDoContato contactId={contactId} somenteLeitura={readonly} duasColunas={flutuante} /> : null}
         </Card>
       </section>
     ),
@@ -1349,6 +1355,7 @@ export function CRMSidePanel({
             onSalvo={recarregar}
             podeLevarParaOutroFunil={podeLevarParaOutroFunil}
             onTrocouDeNegocio={aoTrocarDeNegocio}
+            duasColunas={flutuante}
           /></fieldset>
         ) : (
           <SemLista
