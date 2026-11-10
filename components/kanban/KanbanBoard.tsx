@@ -24,6 +24,7 @@ import { LeadDossier } from "./LeadDossier";
 import { RetomarComoNovoNegocioDialog } from "./RetomarComoNovoNegocioDialog";
 import { atalhosDoFunil } from "@/lib/leads/atalhos-do-card";
 import { camposPorEscopo, camposDoFunil } from "@/lib/leads/campos-do-funil";
+import { camposDoCard } from "@/lib/leads/campos-no-card";
 
 interface KanbanBoardProps {
   pipelineId: string;
@@ -351,6 +352,9 @@ export function KanbanBoard({
     );
   }
 
+  // Os campos que o funil marcou "Mostrar no card" (fork Sales): do negócio, no máximo 3.
+  const camposNoCard = camposDoCard(camposDoFunil(data.pipeline.settings ?? null));
+
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       {/* UM contêiner de rolagem só, nos dois eixos. Rolar cada coluna por
@@ -405,6 +409,7 @@ export function KanbanBoard({
               podeRenomear={podeRenomearEtapa}
               onRenomear={(nome) => renameStage.mutate({ stageId: stage.id, name: nome })}
               denso={denso}
+              camposNoCard={camposNoCard}
               somenteLeitura={somenteLeitura}
             />
           ))}

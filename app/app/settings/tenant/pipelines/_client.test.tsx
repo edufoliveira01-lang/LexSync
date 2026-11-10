@@ -713,6 +713,23 @@ describe("lista pesquisável: o controle de múltipla escolha no funil (#3182)",
     ]);
   });
 
+  it("«Mostrar no card»: nasce desligado, ligar grava `no_card: true`, e desligar APAGA a chave", async () => {
+    render(<PipelinesClient pipelines={[FUNIL_FORNECEDORES]} podeEditarConfig />);
+    abrirEditores();
+    const caixa = screen.getByLabelText(/Mostrar no card — /i);
+    expect(caixa).not.toBeChecked();
+
+    fireEvent.click(caixa);
+    salvar();
+    expect(vi.mocked(updatePipelineConfig).mock.calls.at(-1)![1].fields?.[0]?.no_card).toBe(true);
+
+    // Espera o botão voltar de «Salvando…» antes de salvar de novo.
+    await screen.findByRole("button", { name: /Salvar vocabulário e campos/i });
+    fireEvent.click(screen.getByLabelText(/Mostrar no card — /i));
+    salvar();
+    expect(vi.mocked(updatePipelineConfig).mock.calls.at(-1)![1].fields?.[0]).not.toHaveProperty("no_card");
+  });
+
   it("campo JÁ múltiplo abre marcado, e desmarcar apaga a chave", () => {
     const jaMultiplo: PipelineRow = {
       ...FUNIL_FORNECEDORES,

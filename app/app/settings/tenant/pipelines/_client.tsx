@@ -1387,6 +1387,7 @@ function PipelineEditor({
                 <span aria-hidden className="inline-block transition-transform group-open:rotate-90">›</span>
                 <span>{t("Regras do campo")}</span>
                 {(f.obrigatorio_em && ((f.obrigatorio_em.etapas?.length ?? 0) + (f.obrigatorio_em.ao_ganhar ? 1 : 0) + (f.obrigatorio_em.ao_perder ? 1 : 0)) > 0) ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("Obrigatório em")} {(f.obrigatorio_em.etapas?.length ?? 0) + (f.obrigatorio_em.ao_ganhar ? 1 : 0) + (f.obrigatorio_em.ao_perder ? 1 : 0)}</span> : null}
+                {f.no_card ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("No card")}</span> : null}
                 {f.mostrar_quando ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("Condicional")}</span> : null}
                 {escopoDoCampo(f) === "contato" ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("Do contato")}</span> : null}
                 {f.mascara ? <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{t("Máscara")}: {ehMascaraPronta(f.mascara) ? MASCARAS_PRONTAS[f.mascara].rotulo : padraoDaMascara(f.mascara)}</span> : null}
@@ -1398,6 +1399,32 @@ function PipelineEditor({
                 marcas são as que `campoExigidoNoDestino` lê — etapas de
                 entrada, `ao_ganhar` e `ao_perder` — e nada mais, para a tela
                 não prometer gatilho que o servidor não pergunta. */}
+            {escopoDoCampo(f) === "negocio" && f.type !== "file" && (
+              <LinhaDeRegra
+                titulo={t("Mostrar no card")}
+                ajuda={t("Aparece como etiqueta no card do quadro. O card mostra até 3 campos por funil.")}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <ChipDeRegra
+                    rotulo={t("Mostrar este campo no card")}
+                    ariaLabel={`${t("Mostrar no card")} — ${f.label || i + 1}`}
+                    marcado={f.no_card === true}
+                    aoMudar={(ligado) => {
+                      const next = [...fields];
+                      const { no_card: _antigo, ...semMarca } = f;
+                      next[i] = (ligado ? { ...f, no_card: true } : semMarca) as CustomFieldDef;
+                      setFields(next);
+                    }}
+                  />
+                  {f.no_card === true &&
+                    fields.filter((o) => o.no_card === true && escopoDoCampo(o) === "negocio").length > 3 && (
+                      <span className="text-[11px] text-amber-600 dark:text-amber-400">
+                        {t("Há mais de 3 campos marcados: o card mostra só os 3 primeiros.")}
+                      </span>
+                    )}
+                </div>
+              </LinhaDeRegra>
+            )}
             <LinhaDeRegra
               titulo={t("Obrigatório em")}
               ajuda={t("Sem marca, nunca é exigido. Marcado, precisa estar preenchido para o negócio entrar nessa etapa ou ser fechado.")}

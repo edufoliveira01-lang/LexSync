@@ -9,6 +9,7 @@ import { buildCardInput } from "@/lib/kanban/card-state";
 import { intervaloDaColuna } from "@/lib/kanban/selecao";
 import { formatSomaPorMoeda, formatValorDoNegocio, MOEDA_PADRAO, somaPorMoeda } from "@/lib/money";
 import { KanbanCard, type GestoDeSelecao } from "./KanbanCard";
+import type { CustomFieldDef } from "@/lib/schemas/settings";
 
 interface StageColumnProps {
   stage: Stage;
@@ -42,6 +43,8 @@ interface StageColumnProps {
   onRenomear?: (nome: string) => void;
   /** Densidade dos cards (issue #3461, item 2) — atravessa como `pulses`. */
   denso?: boolean;
+  /** Campos do funil marcados "Mostrar no card" (fork Sales). */
+  camposNoCard?: readonly CustomFieldDef[];
   /**
    * Quadro de um funil ARQUIVADO (#1298): abre para OLHAR, e nada aqui grava.
    * Sem arraste, sem menu de ações de card, sem seleção (a barra em lote é
@@ -67,6 +70,7 @@ export function StageColumn({
   podeRenomear = false,
   onRenomear,
   denso = false,
+  camposNoCard,
   somenteLeitura = false,
 }: StageColumnProps) {
   const t = useT();
@@ -288,6 +292,7 @@ export function StageColumn({
                 etapas={etapas}
                 onMoverPara={onMoverPara}
                 denso={denso}
+                camposNoCard={camposNoCard}
                 somenteLeitura={somenteLeitura}
               />
             ))}

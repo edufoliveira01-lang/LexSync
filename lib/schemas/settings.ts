@@ -203,6 +203,12 @@ export const customFieldSchema = z.object({
    */
   escopo: z.enum(["negocio", "contato"]).optional(),
   /**
+   * MOSTRAR NO CARD (fork Sales): o campo aparece como uma etiqueta no card do quadro ("Benefício: BPC"), para quem bate o olho saber do que se
+   * trata sem abrir o negócio. Opcional e ausente por padrão — o card de quem não marca nada fica idêntico ao de antes. Só vale para campo do
+   * NEGÓCIO (o do contato mora na ficha da pessoa), e o card mostra no máximo os 3 primeiros marcados (`lib/leads/campos-no-card.ts`).
+   */
+  no_card: z.boolean().optional(),
+  /**
    * QUANDO este campo passa a OBRIGAR (issue #1536).
    *
    * `required` continua com o significado antigo (destaca o campo no formulário);

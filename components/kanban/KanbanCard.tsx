@@ -16,6 +16,8 @@ import { ScoreSlot } from "./ScoreSlot";
 import { OwnerBadge } from "./OwnerBadge";
 import { ContatoNoCard } from "./ContatoNoCard";
 import { ArquivosNoCard } from "./ArquivosNoCard";
+import { CamposNoCard } from "./CamposNoCard";
+import type { CustomFieldDef } from "@/lib/schemas/settings";
 import { TarefasNoCard } from "./TarefasNoCard";
 
 /** Os dois gestos de seleção que o card sabe relatar. */
@@ -69,6 +71,8 @@ interface KanbanCardProps {
    * de escrita próprias).
    */
   somenteLeitura?: boolean;
+  /** Os campos do funil marcados "Mostrar no card" (fork Sales). Sem eles o card não muda. */
+  camposNoCard?: readonly CustomFieldDef[];
 }
 
 function formatValor(cents: number | null, currency: string | null): string | null {
@@ -104,6 +108,7 @@ export function KanbanCard({
   onMoverPara,
   denso = false,
   somenteLeitura = false,
+  camposNoCard,
 }: KanbanCardProps) {
   const t = useT();
   const value = formatValor(card.valueCents, card.currency);
@@ -326,6 +331,9 @@ export function KanbanCard({
             )}
             {!value && !recorrente && "—"}
           </p>
+
+          {/* Os campos que o funil escolheu mostrar no card (do que se trata). Some quando não há nenhum com valor. */}
+          <CamposNoCard lead={lead} defs={camposNoCard} />
 
           {/* ③ a linha do agente — um slot, três estados, nunca três blocos. */}
           <div
