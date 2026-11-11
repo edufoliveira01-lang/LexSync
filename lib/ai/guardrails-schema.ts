@@ -162,6 +162,10 @@ export const agentConfigSchema = z.object({
    * Só quem é admin grava `config` (rota PATCH e RLS de `ai_agents`).
    */
   mcp_externo_no_atendimento: z.boolean().default(false),
+  /**
+   * Fork Sales: mensagem com que ESTE agente se apresenta quando outro agente lhe passa a conversa (ação @ «Passar para outro agente»). Aceita {{nome}}. Vazio = não abre sozinho.
+   */
+  mensagem_de_abertura: z.string().max(500).default(""),
 });
 export type AgentConfig = z.infer<typeof agentConfigSchema>;
 
@@ -176,6 +180,7 @@ export const AGENT_CONFIG_DEFAULTS: AgentConfig = {
   voice_model: "gpt-realtime",
   aceita_comandos_celular: false,
   mcp_externo_no_atendimento: false,
+  mensagem_de_abertura: "",
   sentiment_threshold: DEFAULT_SENTIMENT_THRESHOLD,
 };
 
@@ -202,6 +207,7 @@ export const agentConfigPatchSchema = agentConfigSchema
     voice_model: cfg.voice_model.removeDefault(),
     aceita_comandos_celular: cfg.aceita_comandos_celular.removeDefault(),
     mcp_externo_no_atendimento: cfg.mcp_externo_no_atendimento.removeDefault(),
+    mensagem_de_abertura: cfg.mensagem_de_abertura.removeDefault(),
     // Sem `.default()`, senão um PATCH de outra chave reescrevia o limiar de
     // todo agente que nunca o configurou — o mesmo defeito de #1631.
     sentiment_threshold: cfg.sentiment_threshold.removeDefault(),

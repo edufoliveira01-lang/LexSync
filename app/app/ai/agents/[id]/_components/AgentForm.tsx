@@ -64,6 +64,7 @@ import { Bloco, CabecalhoDaSecao, MenuDasSecoes, ProvedorDaSecao, RodapeDaSecao,
 import type { SkillDisponivel } from "@/lib/ai/skills/skills-do-agente";
 import { FunisDoAgente, type CoberturaPorFunil } from "./FunisDoAgente";
 import { PublishConfirmDialog } from "./PublishConfirmDialog";
+import { AberturaDaPassagem } from "./AberturaDaPassagem";
 import { ComandosDoCelular } from "./ComandosDoCelular";
 import { ServidorExternoNoAtendimento } from "./ServidorExternoNoAtendimento";
 import { ServidoresMcpDoAgente } from "./ServidoresMcpDoAgente";
@@ -1759,6 +1760,17 @@ export function AgentForm(props: Props) {
             <ComandosDoCelular
               agentId={props.agent.id}
               inicial={(props.agent.config ?? {}).aceita_comandos_celular}
+              disabled={disabled}
+            />
+          )}
+          </Bloco>
+
+          {/* Fork Sales: a abertura deste agente quando outro lhe passa a conversa. Salva em `ai_agents.config.mensagem_de_abertura`. */}
+          <Bloco secao="avancado">
+          {isEdit && (
+            <AberturaDaPassagem
+              agentId={props.agent.id}
+              inicial={(props.agent.config ?? {}).mensagem_de_abertura}
               disabled={disabled}
             />
           )}

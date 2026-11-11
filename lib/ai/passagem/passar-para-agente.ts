@@ -29,7 +29,7 @@ export interface PedidoDePassagem {
 }
 
 export type ResultadoDaPassagem =
-  | { ok: true; agente: string; agentId: string; funil?: string; card?: string }
+  | { ok: true; agente: string; agentId: string; funil?: string; card?: string; abertura?: string }
   | { ok: false; motivo: string };
 
 function acharPorNome<T extends { name: string }>(lista: T[], nome: string): T | null {
@@ -41,12 +41,12 @@ export async function passarParaAgente(p: PedidoDePassagem): Promise<ResultadoDa
   try {
     const { data: agentes, error } = await p.admin
       .from("ai_agents")
-      .select("id, name, published_version_id")
+      .select("id, name, published_version_id, config")
       .eq("organization_id", p.organizationId)
       .is("archived_at", null)
       .not("published_version_id", "is", null);
     if (error) return { ok: false, motivo: "Não consegui consultar os agentes agora." };
-    const agente = acharPorNome((agentes ?? []) as { id: string; name: string }[], p.agente);
+    const agente = acharPorNome((agentes ?? []) as { id: string; name: string; config?: { mensagem_de_abertura?: unknown } | null }[], p.agente);
     if (!agente) return { ok: false, motivo: `Não encontrei um agente publicado chamado «${p.agente}».` };
 
     // O funil primeiro, para não passar a conversa se o destino do card estiver errado.
@@ -90,7 +90,16 @@ export async function passarParaAgente(p: PedidoDePassagem): Promise<ResultadoDa
       .eq("id", p.conversationId);
     if (erroAtualizar) return { ok: false, motivo: "Não consegui passar a conversa agora. Chame a equipe." };
 
-    return { ok: true, agente: agente.name, agentId: agente.id, ...(destino ? { funil: destino.nome } : {}), ...(card ? { card } : {}) };
+    // A abertura do agente de destino, com o nome do cliente (se o agente tem uma). Quem chama é quem envia.
+    const modelo = typeof agente.config?.mensagem_de_abertura === "string" ? agente.config.mensagem_de_abertura.trim() : "";
+    let abertura: string | undefined;
+    if (modelo) {
+      const { data: contato } = await p.admin.from("contacts").select("display_name, name").eq("organization_id", p.organizationId).eq("id", p.contactId).maybeSingle();
+      const c = contato as { display_name?: string | null; name?: string | null } | null;
+      const primeiro = (c?.display_name || c?.name || "").trim().split(/\s+/)[0] ?? "";
+      abertura = modelo.replace(/\{\{\s*nome\s*\}\}/gi, primeiro).replace(/\s+([,.!?])/g, "$1").replace(/\s{2,}/g, " ").trim() || undefined;
+    }
+    return { ok: true, agente: agente.name, agentId: agente.id, ...(destino ? { funil: destino.nome } : {}), ...(card ? { card } : {}), ...(abertura ? { abertura } : {}) };
   } catch (e) {
     return { ok: false, motivo: `Não consegui passar a conversa: ${(e instanceof Error ? e.message : String(e)).slice(0, 120)}` };
   }

@@ -20,20 +20,33 @@ const URL_DO_APP = () => (process.env.NEXT_PUBLIC_APP_URL ?? "").trim().replace(
 /** Quem é o cliente da conversa e um resumo curto das últimas mensagens (sem IA: rápido e sem custo). */
 export async function dadosDaConversa(admin: SupabaseClient, orgId: string, conversationId: string, resumoExtra?: string | null): Promise<DadosDaMensagem> {
   const dados: DadosDaMensagem = { link: URL_DO_APP() ? `${URL_DO_APP()}/app/inbox?id=${conversationId}` : "" };
+  let contactId: string | null = null;
   try {
     const { data: conv } = await admin.from("conversations").select("contact_id, contacts:contact_id(name, display_name, phone_number)").eq("id", conversationId).eq("organization_id", orgId).maybeSingle();
-    const c = (conv as { contacts?: { name?: string | null; display_name?: string | null; phone_number?: string | null } | null } | null)?.contacts;
-    dados.nome = c?.display_name || c?.name || "";
-    dados.telefone = c?.phone_number ?? "";
+    const c = (conv as { contact_id?: string | null; contacts?: { name?: string | null; display_name?: string | null; phone_number?: string | null } | null } | null);
+    contactId = c?.contact_id ?? null;
+    dados.nome = c?.contacts?.display_name || c?.contacts?.name || "";
+    dados.telefone = c?.contacts?.phone_number ?? "";
   } catch { /* segue sem o nome */ }
   const partes: string[] = [];
   if (resumoExtra?.trim()) partes.push(resumoExtra.trim());
-  try {
-    const { data: msgs } = await admin.from("messages").select("direction, body").eq("organization_id", orgId).eq("conversation_id", conversationId).not("body", "is", null).order("sent_at", { ascending: false }).limit(4);
-    const lista = ((msgs ?? []) as { direction: string; body: string }[]).reverse().map((m) => `${m.direction === "inbound" ? "Cliente" : "Atendimento"}: ${m.body.replace(/\s+/g, " ").slice(0, 160)}`);
-    if (lista.length > 0 && !resumoExtra?.trim()) partes.push(lista.join("\n"));
-  } catch { /* segue sem o resumo */ }
-  dados.resumo = partes.join("\n").slice(0, 400);
+  // O resumo que o próprio agente mantém da conversa (checkpoint durável): escrito pela IA, sem custo extra.
+  if (contactId) {
+    try {
+      const { data: cp } = await admin.from("lead_checkpoints").select("rolling_summary, next_action").eq("organization_id", orgId).eq("contact_id", contactId).order("seq", { ascending: false }).limit(1).maybeSingle();
+      const r = cp as { rolling_summary?: string | null; next_action?: string | null } | null;
+      if (r?.rolling_summary?.trim()) partes.push(r.rolling_summary.replace(/\s+/g, " ").trim().slice(0, 300));
+      if (r?.next_action?.trim()) partes.push(`Próximo passo: ${r.next_action.replace(/\s+/g, " ").trim().slice(0, 100)}`);
+    } catch { /* cai nas últimas mensagens */ }
+  }
+  if (partes.length === 0) {
+    try {
+      const { data: msgs } = await admin.from("messages").select("direction, body").eq("organization_id", orgId).eq("conversation_id", conversationId).not("body", "is", null).order("sent_at", { ascending: false }).limit(4);
+      const lista = ((msgs ?? []) as { direction: string; body: string }[]).reverse().map((m) => `${m.direction === "inbound" ? "Cliente" : "Atendimento"}: ${m.body.replace(/\s+/g, " ").slice(0, 160)}`);
+      if (lista.length > 0) partes.push(lista.join("\n"));
+    } catch { /* segue sem o resumo */ }
+  }
+  dados.resumo = partes.join("\n").slice(0, 500);
   return dados;
 }
 

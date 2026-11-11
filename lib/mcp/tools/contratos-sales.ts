@@ -306,6 +306,14 @@ export const crmPassarParaAgente: McpToolDefinition<typeof passarShape> = {
       handlerCtx: { organization_id: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId },
     });
     if (!r.ok) return { ok: false, erro: r.motivo, proximo_passo: "Não repita a tentativa. Chame a equipe com um resumo curto e siga a conversa." };
-    return { ok: true, agente: r.agente, funil: r.funil ?? null, proximo_passo: `A conversa agora é atendida por «${r.agente}». Não escreva mais nada sobre o caso: ele assume na próxima mensagem.` };
+    const abriu = r.abertura ? await enviarTexto(ctx.organizationId, conversationId, r.abertura) : false;
+    return {
+      ok: true,
+      agente: r.agente,
+      funil: r.funil ?? null,
+      proximo_passo: abriu
+        ? `A conversa agora é atendida por «${r.agente}», que já se apresentou ao cliente. NÃO escreva mais nenhuma mensagem: encerre o turno.`
+        : `A conversa agora é atendida por «${r.agente}», que assume na próxima mensagem do cliente. Se ainda não avisou, diga em uma frase curta que outro atendente vai continuar, e não escreva mais nada sobre o caso.`,
+    };
   },
 };
