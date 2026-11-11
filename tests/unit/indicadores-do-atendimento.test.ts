@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mesDeBrasilia, montarRetrato, situacaoDoLead, ultimosMesesDoRetrato, type EtapaLida } from "@/lib/sales/indicadores-do-atendimento";
+import { leadsQueContam, mesDeBrasilia, montarRetrato, situacaoDoLead, ultimosMesesDoRetrato, type EtapaLida } from "@/lib/sales/indicadores-do-atendimento";
 
 const etapas: EtapaLida[] = [
   { id: "e1", name: "Novo contato", is_lost: false, is_won: false, position: 1 },
@@ -51,5 +51,15 @@ describe("meses e retrato", () => {
     expect(r.abertos).toBe(4);
     expect(nov.fontes).toEqual({ meta_ads: 1 });
     expect(r.meses).toHaveLength(12);
+  });
+
+  it("com a etiqueta «Lead» em uso, só conta quem a tem; o que veio antes do primeiro etiquetado segue contado", () => {
+    const l = (created_at: string, tags: string[] = [], contacts?: { tags: string[] }) => ({ created_at, status: "open", stage_id: "e1", tags, contacts });
+    const antigo = l("2026-10-01T12:00:00Z");
+    const comEtiqueta = l("2026-11-02T12:00:00Z", ["Lead"]);
+    const doContato = l("2026-11-03T12:00:00Z", [], { tags: ["lead"] });
+    const funcionario = l("2026-11-04T12:00:00Z");
+    expect(leadsQueContam([antigo, comEtiqueta, doContato, funcionario])).toEqual([antigo, comEtiqueta, doContato]);
+    expect(leadsQueContam([antigo, funcionario])).toHaveLength(2); // sem nenhum etiquetado: conta tudo
   });
 });

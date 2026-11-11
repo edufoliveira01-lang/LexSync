@@ -12,7 +12,25 @@ import { configDosContratos, enviarIndicadoresDoAtendimento } from "./contratos"
 
 export type Situacao = "desqualificado" | "sem_interesse" | "qualificado" | "em_andamento";
 export interface EtapaLida { id: string; name: string; is_lost: boolean; is_won: boolean; position: number | null }
-export interface LeadLido { created_at: string; status: string; stage_id: string; source?: string | null }
+export interface LeadLido { created_at: string; status: string; stage_id: string; source?: string | null; tags?: string[] | null; contacts?: { tags?: string[] | null } | Array<{ tags?: string[] | null }> | null }
+
+/** A etiqueta que o agente (ou a equipe) põe quando a pessoa é um contato NOVO — só estes contam como «lead que entrou». */
+export const ETIQUETA_DE_LEAD = "lead";
+const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+const temEtiquetaDeLead = (l: LeadLido): boolean => {
+  const c = Array.isArray(l.contacts) ? l.contacts[0] : l.contacts;
+  return [...(l.tags ?? []), ...(c?.tags ?? [])].some((t) => semAcento(String(t)) === ETIQUETA_DE_LEAD);
+};
+/**
+ * Funcionário, cliente que volta a falar e número de teste também abrem card. Depois que a etiqueta «Lead» entra em uso, só conta quem a tem.
+ * O que nasceu ANTES do primeiro lead etiquetado segue contado como estava (o histórico não zera). Sem nenhum etiquetado, conta tudo.
+ */
+export function leadsQueContam<T extends LeadLido>(leads: readonly T[]): T[] {
+  const etiquetados = leads.filter(temEtiquetaDeLead);
+  if (etiquetados.length === 0) return [...leads];
+  const corte = etiquetados.reduce((m, l) => (l.created_at < m ? l.created_at : m), etiquetados[0]!.created_at);
+  return leads.filter((l) => l.created_at < corte || temEtiquetaDeLead(l));
+}
 export interface MesDoRetrato { mes: string; novos: number; qualificados: number; desqualificados: number; sem_interesse: number; em_andamento: number; fontes: Record<string, number> }
 
 const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -38,7 +56,7 @@ export function montarRetrato(leads: readonly LeadLido[], abertos: readonly { st
   const porId = new Map(etapas.map((e) => [e.id, e]));
   const meses = ultimosMesesDoRetrato(mesDeBrasilia(agora.toISOString()));
   const base = new Map<string, MesDoRetrato>(meses.map((m) => [m, { mes: m, novos: 0, qualificados: 0, desqualificados: 0, sem_interesse: 0, em_andamento: 0, fontes: {} }]));
-  for (const l of leads) {
+  for (const l of leadsQueContam(leads)) {
     const linha = base.get(mesDeBrasilia(l.created_at));
     if (!linha) continue;
     linha.novos++;
@@ -74,7 +92,7 @@ export async function calcularRetratoDaOrganizacao(orgId: string, agora = new Da
   const meses = ultimosMesesDoRetrato(mesDeBrasilia(agora.toISOString()));
   const desde = new Date(Date.parse(`${meses[0]}-01T03:00:00Z`)).toISOString();
   const etapas = await lerTudo<EtapaLida>((de, ate) => admin.from("crm_stages").select("id, name, is_lost, is_won, position").eq("organization_id", orgId).range(de, ate));
-  const leads = await lerTudo<LeadLido>((de, ate) => admin.from("crm_leads").select("created_at, status, stage_id, source").eq("organization_id", orgId).gte("created_at", desde).order("created_at").range(de, ate));
+  const leads = await lerTudo<LeadLido>((de, ate) => admin.from("crm_leads").select("created_at, status, stage_id, source, tags, contacts(tags)").eq("organization_id", orgId).gte("created_at", desde).order("created_at").range(de, ate));
   const abertos = await lerTudo<{ stage_id: string }>((de, ate) => admin.from("crm_leads").select("stage_id").eq("organization_id", orgId).eq("status", "open").range(de, ate), 5);
   return montarRetrato(leads, abertos, etapas, agora);
 }
