@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { JanelaSelo } from "@/components/inbox/JanelaSelo";
 import { ChannelLogo } from "@/components/inbox/ChannelLogo";
 import { Phone, ArrowRight, MagnifyingGlass, DotsThree, Copy, Check } from "@/lib/ui/icons";
+import { AnotacaoDoSales } from "@/components/inbox/AnotacaoDoSales";
 import { GerarContrato } from "@/components/inbox/GerarContrato";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { useAuth } from "@/hooks/auth/AuthProvider";
@@ -422,6 +423,7 @@ export function ConversationHeader({
         )}
         {/* Fork Sales: o botão principal do cabeçalho é "Gerar contrato". "Assumir" continua
             disponível em "Mais ações" (e dentro da caixa de mensagem quando ela está travada). */}
+        <AnotacaoDoSales conversationId={conversation.id} />
         {!encerrada && (
           <GerarContrato
             conversationId={conversation.id}

@@ -42,6 +42,23 @@ type Traducoes = Record<string, Partial<Record<Exclude<Idioma, "pt-BR">, string>
 export const DICIONARIO: Traducoes = {
   // Fork Sales: textos novos do cabeçalho da conversa e da lista do Inbox.
   "Conversa ainda sem responsável": { es: "Conversación aún sin responsable" },
+  // Fork Sales — anotação rápida na conversa (Alt+N)
+  "Anotar em": { es: "Anotar en" },
+  "Anotar no cadastro do cliente (Alt+N)": { es: "Anotar en la ficha del cliente (Alt+N)" },
+  "Anotar": { es: "Anotar" },
+  "Anotação salva no Sales.": { es: "Nota guardada en Sales." },
+  "Escreva a anotação.": { es: "Escriba la nota." },
+  "Escreva a anotação…": { es: "Escriba la nota…" },
+  "Esta empresa ainda não está ligada ao Sales.": { es: "Esta empresa aún no está conectada a Sales." },
+  "Este contato não tem telefone para localizar o cliente no Sales.": { es: "Este contacto no tiene teléfono para ubicar al cliente en Sales." },
+  "Este número ainda não está cadastrado como cliente no Sales. Gere o contrato (ou cadastre a pessoa no Sales) para poder anotar.": { es: "Este número aún no está registrado como cliente en Sales. Genere el contrato (o registre a la persona en Sales) para poder anotar." },
+  "Fica no cadastro do cliente no Sales. Ctrl+Enter salva.": { es: "Queda en la ficha del cliente en Sales. Ctrl+Enter guarda." },
+  "No cadastro do cliente": { es: "En la ficha del cliente" },
+  "Nova anotação": { es: "Nueva nota" },
+  "Não foi possível falar com o Sales.": { es: "No fue posible comunicarse con Sales." },
+  "Procurando o cliente no Sales…": { es: "Buscando al cliente en Sales…" },
+  "Salvar anotação": { es: "Guardar nota" },
+  "Últimas anotações": { es: "Últimas notas" },
   "Gerar contrato": { es: "Generar contrato" },
   "Informe o nome do cliente.": { es: "Indique el nombre del cliente." },
   "Contrato registrado na conversa. O envio para assinatura será ligado em breve.": { es: "Contrato registrado en la conversación. El envío para firma se conectará pronto." },

@@ -45,7 +45,7 @@ export function assinar(segredo: string, metodo: string, caminho: string, corpo:
   return createHmac("sha256", segredo).update(`${ts}.${metodo.toUpperCase()}.${caminho}.${sha256(corpo)}`).digest("hex");
 }
 
-async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, corpo: unknown, http: typeof fetch, recurso: "contratos" | "agente" | "documentos" | "armazenamento" | "indicadores" = "contratos"): Promise<T> {
+async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, corpo: unknown, http: typeof fetch, recurso: "contratos" | "agente" | "documentos" | "armazenamento" | "indicadores" | "anotacoes" = "contratos"): Promise<T> {
   const cfg = configDosContratos();
   if (!cfg) throw new ErroContratoSales("A geração de contratos ainda não foi ligada neste servidor (SALES_PAINEL_URL e CONTRATOS_SEGREDO).", 503);
   const caminho = `/v1/offices/${encodeURIComponent(slug)}/${recurso}${sufixo}`;
@@ -91,3 +91,15 @@ export const saudeDoArmazenamento = (slug: string, http: typeof fetch = fetch) =
 /** O retrato dos indicadores do atendimento, que o Deskcomm empurra para a tela Início do Sales. */
 export const enviarIndicadoresDoAtendimento = (slug: string, retrato: unknown, http: typeof fetch = fetch) =>
   chamar<{ ok: boolean }>(slug, "POST", "", retrato, http, "indicadores");
+
+/** Anotação rápida (Alt+N na conversa): o Sales acha o cliente pelo telefone e grava no cadastro ou no processo escolhido. */
+export interface ClienteParaAnotar {
+  encontrado: boolean;
+  pessoa?: { id: number; nome: string };
+  processos?: { id: number; pasta: string; numero: string; titulo: string; status: string }[];
+  recentes?: { autor: string; texto: string; criado_em: string; onde: string }[];
+}
+export const buscarClienteParaAnotar = (slug: string, telefone: string, http: typeof fetch = fetch) =>
+  chamar<ClienteParaAnotar>(slug, "POST", "/buscar", { telefone }, http, "anotacoes");
+export const anotarNoSales = (slug: string, dados: { pessoa_id: number; processo_id?: number; texto: string; autor_nome: string; autor_email: string }, http: typeof fetch = fetch) =>
+  chamar<{ ok: boolean; destino: "cadastro" | "processo" }>(slug, "POST", "", dados, http, "anotacoes");
