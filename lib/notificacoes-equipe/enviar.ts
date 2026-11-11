@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { sendMessageHandler } from "@/app/api/v1/messages/_handler";
+import { fraseDaFalhaDeCanal } from "@/lib/channels/frases-de-falha";
 import { logger } from "@/lib/logger";
 import { openSharedContactConversation } from "@/lib/messaging/open-shared-contact-conversation";
 import { depsDoRitmo, registrarEnvioPorToken, segurarEnvioPorToken } from "@/lib/messaging/ritmo-do-envio-por-token";
@@ -52,7 +53,13 @@ export async function enviarAviso(a: { orgId: string; canalId: string; telefone:
     await marcarComoEquipe(admin, a.orgId, aberta.contact_id);
     const enviada = await sendMessageHandler(admin, { organization_id: a.orgId, actor: ATOR, requestId }, { ...mensagem, conversation_id: aberta.conversation_id });
     await registrarEnvioPorToken(ritmo, a.orgId, segurado, enviada.status);
-    return enviada.status === "failed" ? { ok: false, erro: "O WhatsApp recusou o envio." } : { ok: true };
+    if (enviada.status !== "failed") return { ok: true };
+    // O motivo real fica na própria mensagem (error_code / error_message): sem ele a tela só dizia "recusou" e ninguém sabia o que consertar.
+    const m = enviada as { error_code?: string | null; error_message?: string | null };
+    const frase = fraseDaFalhaDeCanal(m.error_code);
+    const detalhe = (frase ?? m.error_message ?? m.error_code ?? "").toString().trim();
+    logger.warn("[notificacoes-equipe] o canal recusou o aviso", { org: a.orgId, canal: a.canalId, codigo: m.error_code ?? null, erro: (m.error_message ?? "").toString().slice(0, 200) });
+    return { ok: false, erro: detalhe ? `O WhatsApp recusou o envio: ${detalhe}`.slice(0, 300) : "O WhatsApp recusou o envio (sem detalhe do canal)." };
   } catch (e) {
     const erro = e instanceof Error ? e.message : String(e);
     logger.warn("[notificacoes-equipe] aviso não enviado", { org: a.orgId, erro: erro.slice(0, 200) });
