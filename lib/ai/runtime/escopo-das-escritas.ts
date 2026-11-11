@@ -113,6 +113,8 @@ export const ESCOPO_DAS_ESCRITAS: Readonly<Record<string, Readonly<Record<string
   crm_salvar_documento_do_cliente: {},
   // Fork Sales: avisa a equipe por WhatsApp pela central de notificações; o alvo é a conversa do contato do turno, sem id nenhum.
   crm_notificar_equipe: {},
+  // Fork Sales: passa a conversa do contato do turno para outro agente (e leva o card ao funil indicado); nenhum id vem do modelo.
+  crm_passar_para_agente: {},
 };
 
 export type VereditoDaEscrita =

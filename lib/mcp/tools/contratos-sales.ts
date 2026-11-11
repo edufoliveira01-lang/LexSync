@@ -15,6 +15,7 @@ import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
 import { ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
+import { passarParaAgente } from "@/lib/ai/passagem/passar-para-agente";
 import { dispararNotificacoes } from "@/lib/notificacoes-equipe/disparar";
 import { listarDocumentosRecebidos, salvarDocumentoRecebido, TIPOS_DE_DOCUMENTO_DO_CHAT } from "@/lib/sales/documentos-do-chat";
 import type { McpToolDefinition } from "../types";
@@ -270,5 +271,41 @@ export const crmNotificarEquipe: McpToolDefinition<typeof notificarShape> = {
     if (r.motivo === "nenhuma_notificacao") return { ok: false, erro: "Não há notificação ativa com esse nome (ou ela não tem destinatários).", proximo_passo: "Registre uma nota para a equipe e siga a conversa." };
     if (r.enviadas === 0) return { ok: false, erro: "Não consegui enviar o aviso agora.", proximo_passo: "Registre uma nota para a equipe e siga a conversa." };
     return { ok: true, enviadas: r.enviadas, falhas: r.falhas, proximo_passo: "A equipe foi avisada. Não conte isso ao cliente além do que o Roteiro mandar." };
+  },
+};
+
+const passarShape = {
+  agente: z.string().min(1).max(100).describe("Nome do agente que continua a conversa."),
+  funil: z.string().max(100).optional().describe("Funil para onde o card vai, se o Roteiro indicou."),
+  etapa: z.string().max(100).optional().describe("Etapa do funil de destino, se o Roteiro indicou."),
+};
+
+/** O Roteiro passa a conversa para outro agente (ex.: cliente antigo vai para o agente de clientes) e, se indicado, leva o card para o funil dele. */
+export const crmPassarParaAgente: McpToolDefinition<typeof passarShape> = {
+  name: "crm_passar_para_agente",
+  description:
+    "Passa a conversa para outro agente publicado (pelo nome) e, se informar funil e etapa, leva o card para esse funil. Use uma única vez, como o Roteiro indicar.",
+  inputSchema: passarShape,
+  category: "write",
+  requiresRole: "ai_operator",
+  requiresScope: "mcp:write",
+  handler: async (input, ctx) => {
+    const contato = ctx.contatoDoTurno;
+    if (!contato) return { ok: false, erro: "Não há contato nesta conversa.", proximo_passo: "Siga a conversa normalmente." };
+    const { data: conv } = await ctx.supabase.from("conversations").select("id").eq("organization_id", ctx.organizationId).eq("contact_id", contato).order("last_inbound_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
+    const conversationId = (conv as { id: string } | null)?.id;
+    if (!conversationId) return { ok: false, erro: "Conversa do contato não encontrada.", proximo_passo: "Siga a conversa normalmente." };
+    const r = await passarParaAgente({
+      admin: ctx.supabase,
+      organizationId: ctx.organizationId,
+      contactId: contato,
+      conversationId,
+      agente: input.agente,
+      funil: input.funil,
+      etapa: input.etapa,
+      handlerCtx: { organization_id: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId },
+    });
+    if (!r.ok) return { ok: false, erro: r.motivo, proximo_passo: "Não repita a tentativa. Chame a equipe com um resumo curto e siga a conversa." };
+    return { ok: true, agente: r.agente, funil: r.funil ?? null, proximo_passo: `A conversa agora é atendida por «${r.agente}». Não escreva mais nada sobre o caso: ele assume na próxima mensagem.` };
   },
 };

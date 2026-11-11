@@ -240,7 +240,9 @@ export function validarMarcacao(
     const campo = CAMPO_DO_PASSO[passo];
     const desfecho = passo === "won" ? "de ganho" : "de perda";
 
-    if (!desejado[passo] && etapa[campo]) {
+    // Fork Sales: um funil pode ter VÁRIAS etapas de perda (ex.: «Sem interesse» e «Desqualificado»). Desmarcar uma só é recusado quando ela é a única.
+    const outraDePerda = passo === "lost" && ativas(etapas).some((e) => e.id !== etapa.id && e.is_lost);
+    if (!desejado[passo] && etapa[campo] && !outraDePerda) {
       return {
         ok: false,
         erro:
@@ -297,6 +299,7 @@ export function updatesDeMarcacao(
   if (!alvo) return [];
 
   const liberacoes: UpdateDeMarcacao[] = [];
+  const depois: UpdateDeMarcacao[] = [];
   const patchDoAlvo: PatchDeMarcacao = {};
 
   for (const passo of ["won", "lost"] as const) {
@@ -307,11 +310,21 @@ export function updatesDeMarcacao(
     patchDoAlvo[campo] = desejado;
 
     if (!desejado) {
-      if (alvo.agent_stage_hint === passo) patchDoAlvo.agent_stage_hint = null;
+      if (alvo.agent_stage_hint === passo) {
+        patchDoAlvo.agent_stage_hint = null;
+        // Fork Sales: a etapa de perda que carregava o passo do assistente o repassa a outra etapa de perda (o índice do passo é único por funil).
+        if (passo === "lost") {
+          const outra = ativas(etapas).find((e) => e.id !== alvo.id && e.is_lost && !e.agent_stage_hint);
+          if (outra) depois.push({ stageId: outra.id, patch: { agent_stage_hint: "lost" } });
+        }
+      }
       continue;
     }
 
-    // Arquivada não disputa: os índices únicos de ganho/perda são parciais.
+    // Fork Sales: perda é ADITIVA — marcar mais uma etapa de perda não desmarca as outras, e o passo «lost» do assistente fica com a primeira.
+    if (passo === "lost") continue;
+
+    // Arquivada não disputa: os índices únicos de ganho são parciais.
     const anterior = ativas(etapas).find((e) => e.id !== alvo.id && e[campo]);
     if (!anterior) continue;
 
@@ -324,7 +337,7 @@ export function updatesDeMarcacao(
   }
 
   if (Object.keys(patchDoAlvo).length === 0) return liberacoes;
-  return [...liberacoes, { stageId: alvo.id, patch: patchDoAlvo }];
+  return [...liberacoes, { stageId: alvo.id, patch: patchDoAlvo }, ...depois];
 }
 
 /**

@@ -65,7 +65,17 @@ function Opcoes({ def, funis, onEscolher, t }: { def: DefDaAcao; funis: readonly
   const [busca, setBusca] = React.useState("");
   const [funil, setFunil] = React.useState<FunilDaResposta | null>(null);
   const [texto, setTexto] = React.useState("");
-  React.useEffect(() => { setBusca(""); setFunil(null); setTexto(""); }, [def.tipo]);
+  const [agente, setAgente] = React.useState<string | null>(null);
+  React.useEffect(() => { setBusca(""); setFunil(null); setTexto(""); setAgente(null); }, [def.tipo]);
+  const agentes = useQuery({
+    queryKey: ["agente", "editor", "agentes-publicados"],
+    queryFn: async () => {
+      const r = await apiClient.get<{ data: { name: string; published_version_id?: string | null }[] }>("/api/v1/ai/agents");
+      return (r.data ?? []).filter((a) => a.published_version_id).map((a) => a.name);
+    },
+    enabled: def.escolhe === "agente",
+    staleTime: 60_000,
+  });
 
   const etiquetas = useQuery({
     queryKey: ["agente", "editor", "etiquetas"],
@@ -76,6 +86,37 @@ function Opcoes({ def, funis, onEscolher, t }: { def: DefDaAcao; funis: readonly
   const pessoas = useAssignableMembers(def.escolhe === "pessoa");
   const q = norm(busca);
 
+  if (def.escolhe === "agente") {
+    if (agente !== null) {
+      const lista = funis.filter((f) => !q || norm(f.name).includes(q));
+      if (funil) {
+        return (
+          <div>
+            <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => setFunil(null)} className="mb-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground">← {t("Funis")}</button>
+            <p className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{funil.name}</p>
+            <EtapasDoFunil funil={funil} onEscolher={(v) => onEscolher(`${agente} › ${v}`)} t={t} />
+          </div>
+        );
+      }
+      return (
+        <div>
+          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => setAgente(null)} className="mb-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground">← {t("Agentes")}</button>
+          <p className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{agente}</p>
+          <Linha titulo={t("Só passar a conversa")} sub={t("O card fica onde está")} onClick={() => onEscolher(agente)} />
+          <p className="px-3 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{t("Ou levar o card para um funil")}</p>
+          <Busca valor={busca} onChange={setBusca} placeholder={t("Buscar funil…")} />
+          {lista.map((f) => <Linha key={f.id} titulo={f.name} seta onClick={() => setFunil(f)} />)}
+        </div>
+      );
+    }
+    const lista = (agentes.data ?? []).filter((a) => !q || norm(a).includes(q));
+    return (
+      <div>
+        <Busca valor={busca} onChange={setBusca} placeholder={t("Buscar agente…")} auto />
+        {agentes.isLoading ? <Vazio texto={t("Carregando os agentes…")} /> : lista.length === 0 ? <Vazio texto={t("Nenhum outro agente publicado encontrado.")} /> : lista.map((a) => <Linha key={a} titulo={a} seta onClick={() => setAgente(a)} />)}
+      </div>
+    );
+  }
   if (def.escolhe === "etapa") {
     if (funil) {
       return (

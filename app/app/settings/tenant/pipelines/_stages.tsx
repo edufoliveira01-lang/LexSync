@@ -425,8 +425,9 @@ export function StagesSection({
     // ⚠️ O AVISO CITA A ETAPA QUE PERDE A MARCAÇÃO, e é a única informação que
     // importa aqui: "só uma pode" é regra abstrata; «Pago» é a coluna que vai
     // deixar de fechar negócio quando ele confirmar.
-    const atual = etapas.find((e) => e.id !== etapa.id && (papel === "won" ? e.is_won : e.is_lost));
-    if ((papel === "won" || papel === "lost") && atual) {
+    // Fork Sales: o funil pode ter várias etapas de perda («Sem interesse», «Desqualificado»…): marcar mais uma não desmarca as outras, então só o ganho pede confirmação.
+    const atual = papel === "won" ? etapas.find((e) => e.id !== etapa.id && e.is_won) : undefined;
+    if (papel === "won" && atual) {
       setErro(null);
       setConfirmacao({
         etapaId: etapa.id,

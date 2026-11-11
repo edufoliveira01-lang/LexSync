@@ -58,6 +58,8 @@
  */
 import type pg from 'pg';
 
+import { INTENCAO_DA_PASSAGEM } from '@/lib/ai/passagem/intencao';
+
 import { CLASSIFIER_CONTEXT_MESSAGES, MAX_CLASSIFIER_CONTEXT_MESSAGES, contextoDoClassificador } from '@/lib/ai/classifier-context';
 
 import { consultarJevNoRoteador } from '@/lib/ai/decisao/roteador';
@@ -637,6 +639,15 @@ export async function resolveConversationTurn(
     recentMessages = contextRows
       .map((r) => ({ direction: r.direction, body: corpoDaMensagem(r) }))
       .reverse();
+  }
+
+  // Fork Sales: a conversa foi PASSADA para outro agente pela ação @ do Roteiro (`crm_passar_para_agente`). Vale mesmo sem roteador de intenção; se o agente
+  // de destino não está mais publicado, cai no fluxo de sempre (nunca deixa a conversa sem resposta).
+  if (rows[0]?.active_intent === INTENCAO_DA_PASSAGEM && rows[0]?.active_ai_agent_id) {
+    const destino = await (deps.loadPublishedAgentConfigById ?? loadPublishedAgentConfigById)(db, input.tenantId, rows[0].active_ai_agent_id);
+    if (destino) {
+      return { config: destino, routerId: null, intentName: INTENCAO_DA_PASSAGEM, confidence: null, outcome: 'sticky' };
+    }
   }
 
   return resolveTurnAgent(db, llmCfg, {

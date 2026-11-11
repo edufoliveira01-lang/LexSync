@@ -36,6 +36,16 @@ export const TOOLS_CONTRATOS_SALES = declararTools([
     pacotes: ["vender"],
   },
   {
+    name: "crm_passar_para_agente",
+    category: "write",
+    rotulo: "Passar para outro agente",
+    explicacao:
+      "O Roteiro passa a conversa para outro agente publicado (por exemplo, o agente que atende quem já é cliente) e, se indicado, leva o card para o funil dele. O outro agente assume na próxima mensagem do cliente.",
+    oQueToca: "Quem atende a conversa e o funil do card",
+    risco: "atencao",
+    pacotes: ["vender"],
+  },
+  {
     name: "crm_notificar_equipe",
     category: "write",
     rotulo: "Avisar a equipe por WhatsApp",

@@ -129,11 +129,24 @@ describe('updatesDeMarcacao', () => {
     expect(updatesDeMarcacao(etapas, 'e3', { is_won: true })).toEqual([]);
   });
 
-  it('move a marcação de PERDA com a mesma ordem e o mesmo cuidado com o hint', () => {
+  it('perda é ADITIVA: marcar uma segunda etapa de perda não desmarca a primeira nem toma o passo do assistente', () => {
     const comPerdido = [...etapas, { ...etapas[0]!, id: 'e4', name: 'Perdido', slug: 'perdido', is_lost: true, agent_stage_hint: 'lost' }];
     const ups = updatesDeMarcacao(comPerdido, 'e1', { is_lost: true });
-    expect(ups[0]).toEqual({ stageId: 'e4', patch: { is_lost: false, agent_stage_hint: null } });
-    expect(ups[1]).toEqual({ stageId: 'e1', patch: { is_lost: true, agent_stage_hint: 'lost' } });
+    expect(ups).toEqual([{ stageId: 'e1', patch: { is_lost: true } }]);
+    expect(validarMarcacao(comPerdido, 'e1', { is_lost: true }).ok).toBe(true);
+  });
+
+  it('desmarcar a perda que tem o passo do assistente o repassa à outra etapa de perda', () => {
+    const duas = [
+      ...etapas,
+      { ...etapas[0]!, id: 'e4', name: 'Perdido', slug: 'perdido', is_lost: true, agent_stage_hint: 'lost' },
+      { ...etapas[0]!, id: 'e5', name: 'Desqualificado', slug: 'desqualificado', is_lost: true, agent_stage_hint: null },
+    ];
+    expect(validarMarcacao(duas, 'e4', { is_lost: false }).ok).toBe(true);
+    expect(updatesDeMarcacao(duas, 'e4', { is_lost: false })).toEqual([
+      { stageId: 'e4', patch: { is_lost: false, agent_stage_hint: null } },
+      { stageId: 'e5', patch: { agent_stage_hint: 'lost' } },
+    ]);
   });
 
   it('desmarca a etapa de ganho VIVA, não uma arquivada — o índice único ignora arquivadas', () => {

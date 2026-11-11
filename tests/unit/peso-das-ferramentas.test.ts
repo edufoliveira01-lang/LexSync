@@ -66,6 +66,7 @@ const TETO: Readonly<Record<string, { tokens: number; motivo: string }>> = {
   "crm_consultar_base_juridica": { tokens: 134, motivo: "Fork Sales: consulta a ficha jurídica curada do tema (requisitos, prazos, fonte) em vez de responder de memória" },
   "crm_calcular_renda_per_capita": { tokens: 207, motivo: "Fork Sales: renda por pessoa contra 1/4 e 1/2 do salário mínimo vigente (BPC), para o agente não errar a conta" },
   "crm_enviar_contrato": { tokens: 800, motivo: "Fork Sales: os dados de qualificação (17 campos, 3 tipos de documento) entram numa chamada só, para o agente não pedir o contrato aos pedaços; a descrição também ensina que o sistema envia o link ao cliente (não reenviar)" },
+  "crm_passar_para_agente": { tokens: 162, motivo: "Fork Sales: o Roteiro passa a conversa para outro agente (ação @ Passar para outro agente) e, se indicado, leva o card ao funil dele" },
   "crm_notificar_equipe": { tokens: 157, motivo: "Fork Sales: o Roteiro chama (ação @ Notificar WhatsApp) uma notificação da Central pelo nome, para avisar a equipe por WhatsApp" },
   "crm_salvar_documento_do_cliente": { tokens: 384, motivo: "Fork Sales: lista os documentos que o cliente mandou e salva um no drive (código, pasta com os exemplos de cada tipo e título); uma ferramenta só para listar e salvar, em vez de duas" },
   "crm_describe_external_data": { tokens: 300, motivo: BASE },
@@ -138,7 +139,7 @@ const TETO: Readonly<Record<string, { tokens: number; motivo: string }>> = {
   "schedule_followup (com negócio)": { tokens: 314, motivo: BASE },
 };
 
-const TETO_TOTAL = 31592; // Fork Sales: +792 de crm_enviar_contrato , +324 de crm_registrar_dados_do_cliente, +14 da dica do CEP +384 de crm_salvar_documento_do_cliente e +157 de crm_notificar_equipe
+const TETO_TOTAL = 31754; // Fork Sales: +792 de crm_enviar_contrato , +324 de crm_registrar_dados_do_cliente, +14 da dica do CEP +384 de crm_salvar_documento_do_cliente +157 de crm_notificar_equipe e +162 de crm_passar_para_agente
 
 const VARIANTE = "schedule_followup (com negócio)";
 
