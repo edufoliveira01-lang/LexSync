@@ -43,7 +43,7 @@ export function assinar(segredo: string, metodo: string, caminho: string, corpo:
   return createHmac("sha256", segredo).update(`${ts}.${metodo.toUpperCase()}.${caminho}.${sha256(corpo)}`).digest("hex");
 }
 
-async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, corpo: unknown, http: typeof fetch, recurso: "contratos" | "agente" | "documentos" = "contratos"): Promise<T> {
+async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, corpo: unknown, http: typeof fetch, recurso: "contratos" | "agente" | "documentos" | "armazenamento" = "contratos"): Promise<T> {
   const cfg = configDosContratos();
   if (!cfg) throw new ErroContratoSales("A geração de contratos ainda não foi ligada neste servidor (SALES_PAINEL_URL e CONTRATOS_SEGREDO).", 503);
   const caminho = `/v1/offices/${encodeURIComponent(slug)}/${recurso}${sufixo}`;
@@ -81,3 +81,7 @@ export interface DocumentoDoChatParaOSales {
 export type SituacaoDoDocumentoNoSales = "enfileirado" | "aguardando_assinatura" | "ja_recebido" | "drive_nao_configurado";
 export const enviarDocumentoDoChat = (slug: string, dados: DocumentoDoChatParaOSales, http: typeof fetch = fetch) =>
   chamar<{ situacao: SituacaoDoDocumentoNoSales }>(slug, "POST", "", dados, http, "documentos");
+
+/** A saúde do envio ao drive deste escritório (o Sales devolve um `problema` em frase quando há erro, e uma `chave` estável do problema). */
+export interface SaudeDoArmazenamento { ligado: boolean; problema: string | null; chave: string; aguardando_pasta: number; esperando_assinatura: number }
+export const saudeDoArmazenamento = (slug: string, http: typeof fetch = fetch) => chamar<SaudeDoArmazenamento>(slug, "GET", "/saude", undefined, http, "armazenamento");

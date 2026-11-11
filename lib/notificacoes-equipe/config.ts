@@ -11,13 +11,14 @@
 import { z } from "zod";
 
 /** Quando a notificação dispara. `roteiro` só dispara quando o Roteiro do agente chama a ação `@ Notificar equipe`. */
-export const GATILHOS = ["passou_para_equipe", "contrato_enviado", "contrato_assinado", "roteiro"] as const;
+export const GATILHOS = ["passou_para_equipe", "contrato_enviado", "contrato_assinado", "armazenamento", "roteiro"] as const;
 export type Gatilho = (typeof GATILHOS)[number];
 
 export const ROTULO_DO_GATILHO: Record<Gatilho, string> = {
   passou_para_equipe: "Quando o agente passar para um atendente",
   contrato_enviado: "Quando o contrato for enviado",
   contrato_assinado: "Quando o contrato for assinado",
+  armazenamento: "Quando o envio ao Dropbox der problema",
   roteiro: "Só quando o Roteiro chamar (ação @)",
 };
 
@@ -108,6 +109,7 @@ export const MENSAGEM_PADRAO: Record<Gatilho, string> = {
   passou_para_equipe: "🙋 *Cliente para atender*\n\n*Cliente*: {{nome}}\n*WhatsApp*: {{telefone}}\n\n*Resumo*: {{resumo}}\n\n{{link}}",
   contrato_enviado: "📄 *Contrato enviado*\n\n*Cliente*: {{nome}}\n*WhatsApp*: {{telefone}}\n*Status*: aguardando assinatura\n\n{{link}}",
   contrato_assinado: "✅ *Contrato assinado*\n\n*Cliente*: {{nome}}\n*WhatsApp*: {{telefone}}\n\n{{link}}",
+  armazenamento: "⚠️ *Dropbox com problema*\n\n{{resumo}}",
   roteiro: "🔔 *Aviso do atendimento*\n\n*Cliente*: {{nome}}\n*WhatsApp*: {{telefone}}\n\n*Resumo*: {{resumo}}\n\n{{link}}",
 };
 

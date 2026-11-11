@@ -231,6 +231,9 @@ function Editor({ inicial, canalId, onFechar, onSalvar }: { inicial: Notificacao
                 {GATILHOS.map((g) => <option key={g} value={g}>{ROTULO_DO_GATILHO[g]}</option>)}
               </select>
             </label>
+            {n.gatilho === "armazenamento" && (
+              <p className="rounded-md bg-muted p-2 text-xs">Este aviso não tem cliente: use só <b>{"{{resumo}}"}</b>, que traz o problema (por exemplo, envios que falharam ou Dropbox desconectado). É enviado uma vez por problema novo.</p>
+            )}
             {n.gatilho === "roteiro" && (
               <p className="rounded-md bg-muted p-2 text-xs">No Roteiro, use a ação <b>@ Notificar WhatsApp</b> e escreva este nome: <b>{n.nome || "…"}</b>.</p>
             )}
