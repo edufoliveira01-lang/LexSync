@@ -150,7 +150,7 @@ export const crmConsultarBaseJuridica: McpToolDefinition<typeof baseShape> = {
     return {
       ok: true, cobertura: true, ficha,
       aviso: [vencida ? "A ficha passou da validade de revisão: responda com ressalva e diga que o advogado confirma." : null, ficha.status === "pendente_revisao" ? "Ficha ainda sem a conferência de um advogado: use, e diga que o advogado confirma pelo caso." : null].filter(Boolean),
-      proximo_passo: "Responda com segurança e em linguagem simples, com base na ficha; nunca prometa resultado; cite o prazo quando houver. As `perguntas_que_faltam` da ficha são só CANDIDATAS: escolha as mais decisivas, uma por vez, respeitando o limite de perguntas da triagem do atendimento; nunca faça todas. Se a pessoa claramente não cumpre um requisito, diga com cuidado que o advogado confirma, sem afirmar que ela atende.",
+      proximo_passo: "Responda com segurança e em linguagem simples, com base na ficha; nunca prometa resultado; cite o prazo quando houver. As `perguntas_que_faltam` da ficha são só CANDIDATAS: escolha as mais decisivas, uma por vez, respeitando o limite de perguntas da triagem do atendimento; nunca faça todas. VIABILIDADE (faça isto ANTES do resumo e do contrato): compare o que a pessoa já contou com `quando_nao_cabe` e `quando_ha_duvida`. (1) Se algo de `quando_nao_cabe` bate com o que ela disse, o caso aparenta NÃO caber: não ofereça o contrato; explique com cuidado, sem frieza e sem prometer nem negar de forma definitiva, qual requisito não parece cumprido, diga que o advogado confirma se existe outra possibilidade e passe à equipe com o resumo. (2) Se bater com `quando_ha_duvida` ou faltar informação, siga com ressalva e deixe isso no resumo. (3) Se nada bater, siga normalmente. Nunca diga que a pessoa atende sem conferir.",
     };
   },
 };
@@ -208,7 +208,7 @@ export const crmSalvarDocumentoDoCliente: McpToolDefinition<typeof documentoShap
           ok: true, documentos_pendentes: pendentes,
           proximo_passo: pendentes.length === 0
             ? "Não há documento do cliente esperando ser salvo."
-            : "Para cada documento, veja o conteúdo, escolha o tipo e chame de novo com `referencia`, `tipo` e `titulo`. Não peça nada de novo ao cliente por causa disto.",
+            : "Para cada documento, veja o conteúdo, escolha o tipo e chame de novo com `referencia`, `tipo` e `titulo`. Os com `disponivel: false` ainda estão chegando: salve-os no próximo turno. Não peça nada de novo ao cliente por causa disto.",
         };
       }
       if (!input.referencia || !input.tipo || !input.titulo) {

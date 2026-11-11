@@ -680,6 +680,13 @@ export function pickToolsFromMcp(input: PickToolsInput): Record<string, Tool> {
     }
   }
 
+  // Fork Sales — quem já grava os dados do cliente na conversa (o agente de atendimento jurídico) ganha também a ferramenta de SALVAR os documentos que o
+  // cliente manda: ela é da mesma família e o agente já existente não tem como "ligá-la" sem reaplicar o texto do escritório. O Roteiro decide quando usar.
+  if (result["crm_registrar_dados_do_cliente"] && !result["crm_salvar_documento_do_cliente"]) {
+    const doc = allTools.find((t) => t.name === "crm_salvar_documento_do_cliente");
+    if (doc) result["crm_salvar_documento_do_cliente"] = wrapMcpTool(doc, input, executarEscrita);
+  }
+
   // A ferramenta de rascunho entra sozinha quando a chave da versão está
   // ligada — o preparo vai junto, nas mesmas condições: sem ele o modelo não
   // tem como saber o que perguntar antes de rascunhar.

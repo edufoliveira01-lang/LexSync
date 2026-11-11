@@ -19,7 +19,11 @@ const BUCKET = "whatsapp-media";
 const VALIDADE_DO_LINK_S = 600;
 const TIPOS_DE_MENSAGEM_COM_DOCUMENTO = ["image", "document"];
 
-export interface DocumentoRecebido { referencia: string; tipo_de_arquivo: string; nome_do_arquivo: string; recebido_em: string | null }
+export interface DocumentoRecebido {
+  referencia: string; tipo_de_arquivo: string; nome_do_arquivo: string; recebido_em: string | null;
+  /** `false` quando o arquivo ainda está chegando ao armazenamento: salve de novo no próximo turno. */
+  disponivel: boolean;
+}
 
 interface LinhaDeMensagem {
   id: string; type: string; media_storage_path: string | null; media_mime: string | null; sent_at: string | null; created_at: string | null;
@@ -51,7 +55,6 @@ async function mensagensComDocumento(orgId: string, conversationId: string): Pro
     .eq("conversation_id", conversationId)
     .eq("direction", "inbound")
     .in("type", TIPOS_DE_MENSAGEM_COM_DOCUMENTO)
-    .not("media_storage_path", "is", null)
     .order("sent_at", { ascending: true })
     .limit(60);
   return (data ?? []) as unknown as LinhaDeMensagem[];
@@ -65,6 +68,7 @@ export async function listarDocumentosRecebidos(orgId: string, conversationId: s
       tipo_de_arquivo: m.type === "image" ? "imagem" : "documento",
       nome_do_arquivo: String((m.metadata as { media_filename?: unknown } | null)?.media_filename ?? ""),
       recebido_em: m.sent_at ?? m.created_at,
+      disponivel: Boolean(m.media_storage_path),
     }));
 }
 
@@ -84,7 +88,7 @@ export async function salvarDocumentoRecebido(a: {
   const m = (await mensagensComDocumento(a.orgId, a.conversationId)).find((x) => x.id === a.referencia);
   if (!m) return { situacao: "nao_encontrado" };
   if (jaSalvo(m)) return { situacao: "ja_recebido" };
-  if (!m.media_storage_path) return { situacao: "sem_arquivo" };
+  if (!m.media_storage_path) return { situacao: "sem_arquivo", mensagem: "O arquivo ainda está chegando ao sistema. Tente salvar de novo no próximo turno." };
   const slug = await slugDaOrg(a.orgId);
   if (!slug) return { situacao: "sem_sales" };
 

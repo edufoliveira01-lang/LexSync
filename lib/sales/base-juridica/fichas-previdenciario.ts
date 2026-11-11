@@ -36,6 +36,14 @@ export const FICHAS_PREVIDENCIARIO: readonly FichaJuridica[] = [
     ],
     a_favor: ["Contas, contrato de aluguel, plano de saúde, filhos em comum e outros documentos antigos, em nome dos dois, mostrando a vida em comum.", "Pedido feito logo após o óbito."],
     contra: ["Prova só de testemunhas.", "Falecido sem qualidade de segurado e sem direito adquirido à aposentadoria.", "Pedido tardio (perde o retroativo)."],
+    quando_nao_cabe: [
+      "Falecido sem qualidade de segurado na data do óbito e sem direito adquirido a aposentadoria: em regra não cabe.",
+      "Quem pede não é dependente (por exemplo, irmão ou pai ou mãe sem dependência econômica provada, havendo dependentes de classe anterior): em regra não cabe.",
+    ],
+    quando_ha_duvida: [
+      "União estável sem documentos antigos em nome dos dois (prova só de testemunhas não basta).",
+      "Datas do óbito e da última contribuição ou aposentadoria do falecido ainda desconhecidas.",
+    ],
     perguntas_que_faltam: ["Qual a data do óbito e a do requerimento no INSS?", "O falecido contribuía ou já era aposentado?", "Qual a idade de quem pede e há filhos menores?", "Há quanto tempo viviam juntos e que documentos mostram isso?"],
     cuidados: ["Renda de quem pede não é requisito: não pergunte renda.", "Não afirme prazos, retroativo nem duração como certos: dê a regra geral e diga que o advogado confirma pelas datas do caso."],
     fontes: [L8213, D3048],
@@ -65,6 +73,16 @@ export const FICHAS_PREVIDENCIARIO: readonly FichaJuridica[] = [
     ],
     a_favor: ["Laudos e exames recentes, com CID e a limitação funcional descrita.", "CAT emitida (acidentário) e prontuários.", "Contribuições em dia."],
     contra: ["Laudos sem a descrição da limitação para o trabalho.", "Contribuições atrasadas que levem à perda da qualidade de segurado."],
+    quando_nao_cabe: [
+      "Nunca contribuiu ao INSS e não está em período de graça (sem qualidade de segurado): em regra não cabe. A carência é dispensada em acidente, mas a qualidade de segurado não.",
+      "Parou de contribuir há mais de 12 meses (ou o prazo maior que a lei prevê) antes de a incapacidade começar: em regra perdeu a qualidade de segurado.",
+      "Não há incapacidade para o trabalho ou a atividade habitual (por exemplo, já voltou a trabalhar normalmente).",
+    ],
+    quando_ha_duvida: [
+      "Trabalhava sem registro ou como entregador ou motorista de aplicativo e pode haver discussão de vínculo: ponto para o advogado analisar (veja também a área trabalhista).",
+      "Contribuiu no passado, mas não se sabe a data da última contribuição nem do início da incapacidade.",
+      "Doença que o INSS pode chamar de preexistente (começou antes de contribuir) ou que se agravou depois.",
+    ],
     perguntas_que_faltam: ["Qual a doença ou lesão, e desde quando está afastado?", "Houve acidente de trabalho ou CAT?", "O benefício foi negado ou cortado? Quando e por quê (carta e número do requerimento)?", "Contribuiu em dia nos últimos meses? É empregado, autônomo ou MEI?"],
     cuidados: ["Não opine sobre a perícia do INSS nem diga que a decisão foi errada: diga que o advogado analisa laudos e a decisão.", "Se a pessoa já recebeu benefício acidentário e foi demitida, consulte também a ficha de estabilidade do acidente de trabalho."],
     fontes: [L8213, D3048],
@@ -81,6 +99,14 @@ export const FICHAS_PREVIDENCIARIO: readonly FichaJuridica[] = [
     prazos: ["Recurso administrativo contra a negativa: 30 dias da ciência da decisão."],
     a_favor: ["Laudos que descrevam a limitação permanente e a impossibilidade de qualquer atividade.", "Idade avançada e baixa escolaridade."],
     contra: ["Laudos que apontam capacidade para outras funções."],
+    quando_nao_cabe: [
+      "Sem qualidade de segurado quando a incapacidade começou (nunca contribuiu ou parou de contribuir há muito tempo): em regra não cabe. A carência é dispensada só em acidente e doenças graves previstas em lei.",
+      "Incapacidade apenas temporária ou parcial, com possibilidade de reabilitação para outra atividade: em regra o caminho é outro (auxílio por incapacidade temporária).",
+    ],
+    quando_ha_duvida: [
+      "Contribuiu no passado, mas faltam as datas.",
+      "Doença grave prevista em lei (que dispensa a carência) ainda sem laudo que a descreva.",
+    ],
     perguntas_que_faltam: ["Qual a doença e desde quando?", "Já recebeu auxílio por incapacidade antes?", "Qual a idade, a escolaridade e o trabalho que fazia?"],
     cuidados: ["Não afirme que a pessoa 'tem direito': explique os requisitos e que o advogado analisa laudos e histórico."],
     fontes: [L8213, EC103],
@@ -102,6 +128,14 @@ export const FICHAS_PREVIDENCIARIO: readonly FichaJuridica[] = [
     prazos: ["Começa no dia seguinte à cessação do auxílio por incapacidade temporária.", "Recurso administrativo contra a negativa: 30 dias da ciência da decisão."],
     a_favor: ["CAT, laudos e fotos mostrando a sequela e a limitação para a função.", "Prontuário do tratamento e alta médica."],
     contra: ["Laudos que não descrevem a limitação para a atividade habitual."],
+    quando_nao_cabe: [
+      "Sem sequela permanente que reduza a capacidade para o trabalho habitual (lesão que se recuperou totalmente): em regra não cabe.",
+      "Sem qualidade de segurado na data do acidente, ou categoria sem direito ao auxílio-acidente (em regra só empregado, empregado doméstico, trabalhador avulso e segurado especial): em regra não cabe.",
+    ],
+    quando_ha_duvida: [
+      "Lesão ainda em tratamento, sem consolidação: o advogado vê se há sequela depois da alta.",
+      "Dúvida sobre a categoria de segurado (por exemplo, trabalho sem registro ou por aplicativo).",
+    ],
     perguntas_que_faltam: ["O que aconteceu e quando? Houve CAT?", "Recebeu auxílio-doença? Qual espécie (91 acidentário ou 31 comum) e quando acabou?", "Que sequela ficou e o que mudou no trabalho?"],
     cuidados: ["Não prometa valor: diga a regra geral (50% do salário de benefício) e que o advogado calcula.", "Se houve demissão depois do retorno, consulte também a ficha de estabilidade do acidente de trabalho."],
     fontes: [L8213, D3048],

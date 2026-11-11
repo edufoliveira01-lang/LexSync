@@ -20,6 +20,10 @@ export interface FichaJuridica {
   a_favor: readonly string[];
   contra: readonly string[];
   perguntas_que_faltam: readonly string[];
+  /** Quando o caso, em regra, NÃO cabe neste tema: o agente confere com o que a pessoa contou ANTES de oferecer o contrato. */
+  quando_nao_cabe?: readonly string[];
+  /** Quando há dúvida (falta informação ou existe tese): segue com ressalva, e o advogado confere. */
+  quando_ha_duvida?: readonly string[];
   cuidados: readonly string[];
   fontes: readonly FonteDaFicha[];
   revisado_em: string;
@@ -57,9 +61,18 @@ const FICHA_BPC: FichaJuridica =
     ],
     a_favor: ["Idoso com 65 anos ou mais e renda dentro do limite.", "Deficiência de longo prazo bem documentada (laudo, relatórios de terapias e da escola), CadÚnico atualizado e gastos de saúde comprovados."],
     contra: ["Renda per capita acima de 1/2 salário mínimo.", "CadÚnico desatualizado.", "Laudos que não descrevem a limitação nem a duração."],
+    quando_nao_cabe: [
+      "Menos de 65 anos e sem deficiência ou impedimento de longo prazo (em regra, 2 anos ou mais): não cabe por idade nem por deficiência. Uma lesão recente e temporária, que tende a melhorar, em regra não é impedimento de longo prazo.",
+      "Renda por pessoa acima de 1/2 salário mínimo (conferida na calculadora): em regra não cabe.",
+    ],
+    quando_ha_duvida: [
+      "Renda por pessoa entre 1/4 e 1/2 salário mínimo: depende do grau da deficiência, da dependência de terceiros e dos gastos de saúde.",
+      "Deficiência de longo prazo possível, mas ainda sem laudo que descreva a limitação e a duração.",
+      "Renda de familiares incerta ou variável, ou dúvida sobre quem entra na conta da família.",
+    ],
     perguntas_que_faltam: ["Quantas pessoas moram na casa e qual é a renda total? (use a ferramenta de cálculo)", "Há gastos mensais de saúde comprovados (terapias, remédios, fraldas, alimentação especial)?", "O CadÚnico está atualizado?", "Qual é a data da negativa e o número do requerimento? O que diz a carta (renda, impedimento de longo prazo ou os dois)?"],
     cuidados: [
-      "Nunca diga que há \"chance\" ou \"não há chance\": diga o que a lei prevê e que o advogado confirma pelo caso.",
+      "Não prometa resultado nem diga que a pessoa \"tem direito\": diga o que a lei prevê e que o advogado confirma pelo caso. Mas, se um requisito essencial claramente não é cumprido (ver `quando_nao_cabe`), explique isso com cuidado em vez de oferecer o contrato.",
       "Se a carta cita DOIS motivos (renda e impedimento de longo prazo), comente os dois.",
       "Cite o prazo de 30 dias do recurso e calcule a partir da data da negativa; se já passou, explique os outros caminhos.",
     ],

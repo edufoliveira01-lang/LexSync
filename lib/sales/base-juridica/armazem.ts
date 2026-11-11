@@ -23,7 +23,7 @@ export async function carregarBase(agora = Date.now()): Promise<{ fichas: FichaJ
   let valores: ValorVigente[] = [...VALORES];
   try {
     const f = await tabela("sales_base_juridica_fichas").select("tema, conteudo");
-    if (!f.error) for (const r of (f.data ?? []) as { tema: string; conteudo: FichaJuridica }[]) if (r?.conteudo?.tema === r.tema) fichas.set(r.tema, r.conteudo);
+    if (!f.error) for (const r of (f.data ?? []) as { tema: string; conteudo: FichaJuridica }[]) if (r?.conteudo?.tema === r.tema) fichas.set(r.tema, { ...(fichas.get(r.tema) ?? {}), ...r.conteudo });
     const v = await tabela("sales_base_juridica_valores").select("chave, vigente_desde, valor, fonte, revisado_em, confirmado");
     if (!v.error) {
       for (const r of (v.data ?? []) as ValorVigente[]) {
