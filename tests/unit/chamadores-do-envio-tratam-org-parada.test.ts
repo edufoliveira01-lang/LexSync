@@ -38,6 +38,10 @@ const CHAMADORES: Record<string, string> = {
   "lib/campanhas/acoes.ts": "ação disparada da tela: o erro sobe para quem clicou, sem estado gravado",
   "lib/mcp/tools/messages.ts": "ferramenta MCP: o erro sobe ao cliente; o token da org parada já é recusado antes",
   "lib/mcp/tools/start-conversation.ts": "ferramenta MCP: o erro sobe ao cliente; o token da org parada já é recusado antes",
+  "lib/notificacoes-equipe/enviar.ts":
+    "o catch devolve ok:false e o disparo registra a falha do instante na Central; nada fica pendente nem é retentado — com a org parada o aviso simplesmente não sai",
+  "lib/sales/acompanhar-contratos.ts":
+    "o catch registra o desfecho do instante e segue; sem retentativa e sem estado que sobreviva à reativação",
   "lib/inbox/encaminhar-mensagem.ts":
     "propaga o 403 org_suspended ao chamador da rota `forward`; nada é gravado — a linha do destino só nasce se o envio aceitar",
 };

@@ -178,6 +178,13 @@ const ESTEIRAS: readonly { caminho: string; motivo: string }[] = [
  * Exceções da R3, cadeia a cadeia, com a razão escrita. Só encolhe.
  */
 const CHAVE_SEM_TENANT_LIBERADA: readonly { arquivo: string; tabela: string; motivo: string }[] = [
+  { arquivo: "app/api/v1/conversations/[id]/contrato/dados/route.ts", tabela: "contacts", motivo: "O contactId vem da conversa já lida com filtro de organização na mesma rota." },
+  { arquivo: "lib/inbox/acao-do-agente.ts", tabela: "crm_stages", motivo: "O stage_id vem do negócio lido logo acima com filtro de organização." },
+  { arquivo: "lib/sales/acompanhar-contratos.ts", tabela: "conversations", motivo: "O id da conversa vem do contrato da própria organização, lido antes com o filtro." },
+  { arquivo: "lib/sales/contrato-na-conversa.ts", tabela: "contacts", motivo: "Os ids (contato, negócio, etapa, funil) vêm da conversa e do negócio já filtrados por organização no início da função." },
+  { arquivo: "lib/sales/contrato-na-conversa.ts", tabela: "crm_leads", motivo: "Mesma razão: o id vem de leitura anterior filtrada por organização." },
+  { arquivo: "lib/sales/contrato-na-conversa.ts", tabela: "crm_stages", motivo: "Mesma razão: o stage_id vem do negócio já filtrado por organização." },
+  { arquivo: "lib/sales/contrato-na-conversa.ts", tabela: "crm_pipelines", motivo: "Mesma razão: o pipeline_id vem do negócio já filtrado por organização." },
   {
     arquivo: "app/api/v1/ai/skills/[name]/route.ts",
     tabela: "skill_versions",
