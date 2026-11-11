@@ -584,6 +584,15 @@ export const NAV_CATALOG = [
     sidebar: true,
   },
   {
+    href: "/app/ai/notificacoes",
+    label: "Notificações da equipe",
+    description: "Avisos por WhatsApp para a equipe: passou para atendente, contrato enviado ou assinado.",
+    icon: "Bell",
+    group: "ia",
+    section: "Montar o agente",
+    minRole: "manager",
+  },
+  {
     href: "/app/ai/followups",
     label: "Follow-ups",
     description: "Como o agente retoma uma conversa que esfriou, para nenhuma morrer no silêncio.",

@@ -111,6 +111,8 @@ export const ESCOPO_DAS_ESCRITAS: Readonly<Record<string, Readonly<Record<string
   crm_registrar_dados_do_cliente: {},
   // Fork Sales: salva documento que o CLIENTE mandou, do contato do turno e da conversa dele; a referência é validada contra a conversa.
   crm_salvar_documento_do_cliente: {},
+  // Fork Sales: avisa a equipe por WhatsApp pela central de notificações; o alvo é a conversa do contato do turno, sem id nenhum.
+  crm_notificar_equipe: {},
 };
 
 export type VereditoDaEscrita =

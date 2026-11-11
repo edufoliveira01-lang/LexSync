@@ -15,6 +15,7 @@ import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
 import { ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
+import { dispararNotificacoes } from "@/lib/notificacoes-equipe/disparar";
 import { listarDocumentosRecebidos, salvarDocumentoRecebido, TIPOS_DE_DOCUMENTO_DO_CHAT } from "@/lib/sales/documentos-do-chat";
 import type { McpToolDefinition } from "../types";
 
@@ -240,5 +241,34 @@ export const crmSalvarDocumentoDoCliente: McpToolDefinition<typeof documentoShap
     } catch (e) {
       return { ok: false, erro: e instanceof Error ? e.message : "não consegui salvar agora", proximo_passo: "Siga a conversa e registre uma nota para a equipe guardar o documento." };
     }
+  },
+};
+
+const notificarShape = {
+  notificacao: z.string().min(1).max(100).describe("Nome da notificação indicada no Roteiro."),
+  resumo: z.string().max(400).optional().describe("Resumo curto do caso para a equipe (1 ou 2 frases)."),
+};
+
+/** Central de notificações: o Roteiro manda avisar a equipe por WhatsApp (ex.: cliente desqualificado). Quem envia, para quem e por qual número é configuração do dono. */
+export const crmNotificarEquipe: McpToolDefinition<typeof notificarShape> = {
+  name: "crm_notificar_equipe",
+  description:
+    "Avisa a equipe por WhatsApp, usando uma notificação já cadastrada pelo escritório (informe o nome dela, como está no Roteiro). " +
+    "Envie `resumo` com 1 ou 2 frases do caso. Quem recebe, o texto e o número que envia são configuração do escritório; você só aciona.",
+  inputSchema: notificarShape,
+  category: "write",
+  requiresRole: "ai_operator",
+  requiresScope: "mcp:write",
+  handler: async (input, ctx) => {
+    const contato = ctx.contatoDoTurno;
+    if (!contato) return { ok: false, erro: "Não há contato nesta conversa.", proximo_passo: "Siga a conversa normalmente." };
+    const { data: conv } = await ctx.supabase.from("conversations").select("id").eq("organization_id", ctx.organizationId).eq("contact_id", contato).order("last_inbound_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
+    const conversationId = (conv as { id: string } | null)?.id;
+    if (!conversationId) return { ok: false, erro: "Conversa do contato não encontrada.", proximo_passo: "Siga a conversa normalmente." };
+    const r = await dispararNotificacoes({ orgId: ctx.organizationId, gatilho: "roteiro", conversationId, nomeDaNotificacao: input.notificacao, resumo: input.resumo ?? null });
+    if (r.motivo === "sem_conexao") return { ok: false, erro: "A central de notificações ainda não tem uma conexão de WhatsApp escolhida.", proximo_passo: "Registre uma nota para a equipe e siga a conversa." };
+    if (r.motivo === "nenhuma_notificacao") return { ok: false, erro: "Não há notificação ativa com esse nome (ou ela não tem destinatários).", proximo_passo: "Registre uma nota para a equipe e siga a conversa." };
+    if (r.enviadas === 0) return { ok: false, erro: "Não consegui enviar o aviso agora.", proximo_passo: "Registre uma nota para a equipe e siga a conversa." };
+    return { ok: true, enviadas: r.enviadas, falhas: r.falhas, proximo_passo: "A equipe foi avisada. Não conte isso ao cliente além do que o Roteiro mandar." };
   },
 };

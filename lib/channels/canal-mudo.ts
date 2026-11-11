@@ -91,6 +91,8 @@ export function emModoDeTeste(metadata: Record<string, unknown> | null): boolean
  * disputando com ela mesma a atenção de quem lê.
  */
 export function avaliarCanal(canal: CanalParaAvaliar, agora: Date): DesfechoDoCanal {
+  // Fork Sales: o número de AVISOS da equipe (Central de notificações) é mudo de propósito — a IA nunca responde nele.
+  if (canal.metadata?.["finalidade"] === "avisos" && canal.archived_at === null) return { acao: "aguardar" };
   if (canal.archived_at !== null) return { acao: "resolver", motivo: "canal_arquivado" };
   if (!emModoDeTeste(canal.metadata))
     return { acao: "resolver", motivo: "saiu_do_modo_de_teste" };

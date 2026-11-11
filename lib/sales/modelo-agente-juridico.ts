@@ -19,6 +19,8 @@ export const FERRAMENTAS_DO_AGENTE_JURIDICO: readonly string[] = [
   "crm_registrar_dados_do_cliente",
   // documentos que o cliente manda pelo chat: o agente classifica e o sistema guarda no drive, depois da assinatura
   "crm_salvar_documento_do_cliente",
+  // aviso à equipe por WhatsApp (central de notificações)
+  "crm_notificar_equipe",
   // base jurídica e cálculo (BPC): responder com a ficha e a conta certa, não de memória
   "crm_consultar_base_juridica", "crm_calcular_renda_per_capita",
   // agenda (consultas, confirmações)

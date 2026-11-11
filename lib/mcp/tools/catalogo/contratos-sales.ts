@@ -36,6 +36,16 @@ export const TOOLS_CONTRATOS_SALES = declararTools([
     pacotes: ["vender"],
   },
   {
+    name: "crm_notificar_equipe",
+    category: "write",
+    rotulo: "Avisar a equipe por WhatsApp",
+    explicacao:
+      "O Roteiro chama uma notificação cadastrada na Central de notificações (por exemplo, quando o cliente é desqualificado) e a equipe recebe um aviso no WhatsApp, com o nome, o telefone, um resumo e o link da conversa. Quem recebe e o número que envia são configurados na Central.",
+    oQueToca: "WhatsApp da equipe (pela conexão de avisos)",
+    risco: "atencao",
+    pacotes: ["vender"],
+  },
+  {
     name: "crm_consultar_base_juridica",
     category: "read",
     rotulo: "Consultar a base jurídica",

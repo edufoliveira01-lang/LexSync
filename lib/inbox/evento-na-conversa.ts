@@ -60,6 +60,14 @@ export async function registrarEventoNaConversa(p: {
       created_by_user_id: p.userId,
       created_by_name: nome,
     });
+    // Fork Sales — central de notificações da equipe: contrato enviado/assinado avisam o time por WhatsApp. Melhor esforço, e só depois de o evento gravado
+    // (que acontece UMA vez por assinatura: o aviso também).
+    if (p.acao === "contrato_enviado" || p.acao === "contrato_assinado") {
+      try {
+        const { dispararNotificacoes } = await import("@/lib/notificacoes-equipe/disparar");
+        await dispararNotificacoes({ orgId: p.organizationId, gatilho: p.acao, conversationId: p.conversationId, resumo: p.detalhe ?? null, admin });
+      } catch { /* a notificação é um extra */ }
+    }
   } catch (err) {
     logger.warn("[inbox.evento] registro na conversa falhou", {
       conversation_id: p.conversationId,

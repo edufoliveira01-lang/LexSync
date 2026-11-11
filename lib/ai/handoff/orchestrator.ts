@@ -537,6 +537,19 @@ export async function triggerHandoff(
       }
     }
 
+    // Fork Sales — central de notificações da equipe (WhatsApp): "quando o agente passar para um atendente". Melhor esforço: nunca derruba nem atrasa a
+    // passagem (o disparo nunca lança), e só roda depois de tudo acima ter dado certo.
+    try {
+      const { dispararNotificacoes } = await import("@/lib/notificacoes-equipe/disparar");
+      await dispararNotificacoes({
+        orgId: input.organizationId,
+        gatilho: "passou_para_equipe",
+        conversationId: input.conversationId,
+        resumo: input.motivoTexto?.trim() || input.declarado?.cliente_quer?.trim() || null,
+        admin,
+      });
+    } catch { /* a notificação é um extra */ }
+
     return { triggered: true, reason: input.reason, aviso };
   } catch (err) {
     logger.warn("[handoff-orchestrator] unexpected error", {

@@ -23,6 +23,10 @@ export function frasesDaFerramenta(nome: string, entrada: Record<string, unknown
       const campos = Object.keys(entrada).filter((k) => entrada[k] !== undefined && entrada[k] !== null && String(entrada[k]).trim() !== "").map((k) => ROTULOS_DOS_DADOS[k] ?? k);
       return campos.length > 0 ? `gravou no cadastro: ${campos.join(", ")}` : null;
     }
+    case "crm_notificar_equipe": {
+      const nome = String(entrada.notificacao ?? "").trim();
+      return nome ? `avisou a equipe por WhatsApp («${nome}»)` : null;
+    }
     case "crm_salvar_documento_do_cliente": {
       // Sem argumentos é só a listagem: não anota. Com os três campos, diz qual documento e em que pasta (nunca o conteúdo).
       const tipo = String(entrada.tipo ?? "").trim();
