@@ -179,19 +179,17 @@ export const crmCalcularRendaPerCapita: McpToolDefinition<typeof rendaShape> = {
 };
 
 const documentoShape = {
-  referencia: z.string().uuid().optional().describe("O código do documento, como veio em `documentos_pendentes`. Sem código, a ferramenta só LISTA o que o cliente mandou e ainda não foi salvo."),
-  tipo: z.enum(TIPOS_DE_DOCUMENTO_DO_CHAT).optional().describe("A pasta do documento: PARTE MÉDICA (laudos, receitas, exames, atestados), DOCUMENTOS PESSOAIS (RG, CPF, certidões, comprovante de residência), DOCUMENTOS ADMINISTRATIVO (CNIS, CTPS, indeferimento do INSS, extratos) ou A CLASSIFICAR (só se não der para identificar)."),
-  titulo: z.string().min(2).max(100).optional().describe("Título curto do documento, sem data nem nome do cliente. Ex.: CNIS, RG, Laudo da coluna, Comprovante de residência."),
+  referencia: z.string().uuid().optional().describe("Código do documento (de `documentos_pendentes`). Sem código, só lista."),
+  tipo: z.enum(TIPOS_DE_DOCUMENTO_DO_CHAT).optional().describe("Pasta: PARTE MÉDICA (laudos, exames, atestados), DOCUMENTOS PESSOAIS (RG, CPF, certidões, comprovante de residência), DOCUMENTOS ADMINISTRATIVO (CNIS, CTPS, indeferimento, extratos) ou A CLASSIFICAR."),
+  titulo: z.string().min(2).max(100).optional().describe("Título curto, sem data nem nome. Ex.: CNIS, RG, Laudo da coluna."),
 };
 
 /** Fase 2 do Dropbox: o agente classifica o documento que o cliente mandou; o SISTEMA guarda no drive, na pasta do cliente, depois da assinatura. */
 export const crmSalvarDocumentoDoCliente: McpToolDefinition<typeof documentoShape> = {
   name: "crm_salvar_documento_do_cliente",
   description:
-    "Salva no drive do escritório (pasta do cliente) um documento que o CLIENTE mandou pela conversa. " +
-    "Sem argumentos, LISTA os documentos recebidos que ainda não foram salvos (`documentos_pendentes`, cada um com o código `referencia`). " +
-    "Com `referencia`, `tipo` e `titulo`, salva aquele documento: olhe o conteúdo, escolha a pasta certa e dê um título curto. O sistema cria a pasta e o nome do arquivo; você só informa o tipo. " +
-    "Se não der para identificar o documento, use A CLASSIFICAR (a equipe é avisada). O documento fica guardado e segue para o drive depois da assinatura do contrato.",
+    "Salva no drive do escritório um documento que o CLIENTE mandou. Sem argumentos, lista os recebidos ainda não salvos (cada um com `referencia`). " +
+    "Com `referencia`, `tipo` e `titulo`, salva: veja o conteúdo e escolha a pasta; o sistema cria a pasta e o nome. Sem identificar, use A CLASSIFICAR (a equipe é avisada). Segue para o drive depois da assinatura do contrato.",
   inputSchema: documentoShape,
   category: "write",
   requiresRole: "ai_operator",

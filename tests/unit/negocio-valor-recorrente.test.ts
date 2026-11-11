@@ -493,7 +493,7 @@ describe("o painel lateral do atendimento", () => {
       refetch: vi.fn(),
       data: {
         data: {
-          id: CONTACT_ID,
+          id: "c0000000-0000-4000-8000-000000000001",
           name: "Joana Prado",
           display_name: null,
           email: null,
