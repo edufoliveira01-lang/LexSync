@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { atualizarFicha, decidirAtualizacao, evidenciaConfere, extrairJson, textoDaPagina, urlOficial } from "@/lib/sales/base-juridica/atualizar";
+import { atualizarFicha, decidirAtualizacao, evidenciaConfere, extrairJson, impressaoDasFontes, rodadaDevida, textoDaPagina, urlOficial } from "@/lib/sales/base-juridica/atualizar";
 import { FICHAS } from "@/lib/sales/base-juridica/fichas";
 
 const ficha = FICHAS[0]!;
@@ -96,5 +96,33 @@ describe("trechosRelevantes", () => {
     const r = trechosRelevantes(longo, ["pensão por morte", "cônjuge", "companheiro"], 6000, 1000);
     expect(r.length).toBeLessThan(longo.length);
     expect(r).toContain("pensao por morte sera devida");
+  });
+});
+
+describe("custo da rotina: não chama o modelo à toa", () => {
+  const fontes = { ...ficha, fontes: [{ titulo: "a", url: L1 }] };
+  it("fonte igual à da última vez: pula a ficha sem chamar o modelo", async () => {
+    const hash = impressaoDasFontes(fontes, { [L1]: T1 });
+    const modelo = vi.fn(async () => null);
+    const r = await atualizarFicha(fontes, { baixar: async () => T1, modelo }, new Date(), { hashAnterior: hash });
+    expect(r.resultado.pulada).toBe(true);
+    expect(modelo).not.toHaveBeenCalled();
+  });
+  it("fonte que mudou: chama o modelo e devolve a nova impressão digital", async () => {
+    const modelo = vi.fn(async () => null);
+    const r = await atualizarFicha(fontes, { baixar: async () => T2, modelo }, new Date(), { hashAnterior: impressaoDasFontes(fontes, { [L1]: T1 }) });
+    expect(modelo).toHaveBeenCalledTimes(1);
+    expect(r.resultado.hash).toBe(impressaoDasFontes(fontes, { [L1]: T2 }));
+  });
+  it("a busca na web só liga com BASE_JURIDICA_BUSCA=1", async () => {
+    const modelo = vi.fn(async (_p: string, _o: { busca: boolean }) => null);
+    await atualizarFicha(fontes, { baixar: async () => T1, modelo });
+    expect(modelo.mock.calls[0]![1].busca).toBe(false);
+  });
+  it("rodadaDevida: sem registro é devida; dentro do intervalo não é", () => {
+    const agora = Date.parse("2026-11-11T12:00:00Z");
+    expect(rodadaDevida(undefined, agora)).toBe(true);
+    expect(rodadaDevida("2026-11-11T10:00:00Z", agora)).toBe(false);
+    expect(rodadaDevida("2026-11-01T10:00:00Z", agora)).toBe(true);
   });
 });

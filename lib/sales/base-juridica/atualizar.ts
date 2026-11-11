@@ -10,6 +10,8 @@
  *      ficam no histórico, para o advogado ver e desfazer.
  * Só domínios oficiais (gov.br, jus.br, leg.br). Nada aqui derruba o atendimento: qualquer falha vira log e a ficha anterior continua valendo.
  */
+import { createHash } from "node:crypto";
+
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -125,6 +127,13 @@ export const baixarOficial: Dependencias["baixar"] = async (url) => {
   }
 };
 
+/**
+ * O que a rodada atual já gastou (entrada + saída). A rodada para quando passa do teto — o consumo é do escritório, não pode ser aberto.
+ * Fica em memória: zera a cada rodada (`rodarAtualizacaoDaBase`).
+ */
+export const consumoDaRodada = { entrada: 0, saida: 0, chamadas: 0 };
+export const TETO_DA_RODADA = () => Math.max(50_000, Number(process.env.BASE_JURIDICA_TETO_TOKENS) || 400_000);
+
 export const modeloAnthropic: Dependencias["modelo"] = async (prompt, { busca }) => {
   const chave = process.env.BASE_JURIDICA_ANTHROPIC_KEY;
   if (!chave) return null;
@@ -135,15 +144,18 @@ export const modeloAnthropic: Dependencias["modelo"] = async (prompt, { busca })
       method: "POST",
       headers: { "x-api-key": chave, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
-        model: process.env.BASE_JURIDICA_MODEL || "claude-sonnet-5-5",
+        model: process.env.BASE_JURIDICA_MODEL || "claude-haiku-4-5",
         max_tokens: 8000,
         messages: [{ role: "user", content: prompt }],
-        ...(busca ? { tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6, allowed_domains: DOMINIOS_DA_BUSCA }] } : {}),
+        ...(busca ? { tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3, allowed_domains: DOMINIOS_DA_BUSCA }] } : {}),
       }),
       signal: ctl.signal,
     });
     if (!r.ok) { logger.warn("[base-juridica] o modelo recusou a chamada", { status: r.status }); return null; }
-    const j = (await r.json()) as { content?: { type: string; text?: string }[] };
+    const j = (await r.json()) as { content?: { type: string; text?: string }[]; usage?: { input_tokens?: number; output_tokens?: number } };
+    consumoDaRodada.entrada += Number(j.usage?.input_tokens) || 0;
+    consumoDaRodada.saida += Number(j.usage?.output_tokens) || 0;
+    consumoDaRodada.chamadas += 1;
     return (j.content ?? []).filter((b) => b.type === "text").map((b) => b.text ?? "").join("\n");
   } catch (e) {
     logger.warn("[base-juridica] falha ao chamar o modelo", { erro: e instanceof Error ? e.message : String(e) });
@@ -181,21 +193,32 @@ ${JSON.stringify(Object.fromEntries(CAMPOS_ATUALIZAVEIS.map((c) => [c, ficha[c]]
 ${textos}`;
 }
 
-export interface ResultadoDaFicha { tema: string; aplicada: boolean; mudancas: MudancaDecidida[]; erro?: string }
+export interface ResultadoDaFicha { tema: string; aplicada: boolean; mudancas: MudancaDecidida[]; erro?: string; hash?: string; pulada?: boolean }
+
+/** A impressão digital do que as fontes oficiais dizem sobre a ficha: igual à da última vez = nada mudou lá = não chama o modelo. */
+export function impressaoDasFontes(ficha: FichaJuridica, textos: Record<string, string>): string {
+  const termos = [ficha.titulo, ficha.resumo, ...ficha.palavras_chave, ...ficha.requisitos, ...ficha.prazos];
+  const h = createHash("sha256");
+  for (const u of Object.keys(textos).sort()) h.update(`${u}\n${norm(trechosRelevantes(textos[u]!, termos))}\n`);
+  return h.digest("hex");
+}
 
 /** Atualiza UMA ficha. Não grava: devolve a decisão (quem chama grava). */
-export async function atualizarFicha(ficha: FichaJuridica, deps: Dependencias, hoje = new Date()): Promise<{ nova: FichaJuridica; resultado: ResultadoDaFicha }> {
+export async function atualizarFicha(ficha: FichaJuridica, deps: Dependencias, hoje = new Date(), opcoes: { hashAnterior?: string } = {}): Promise<{ nova: FichaJuridica; resultado: ResultadoDaFicha }> {
   const textos: Record<string, string> = {};
   for (const f of ficha.fontes) { if (!urlOficial(f.url)) continue; const t = await deps.baixar(f.url); if (t) textos[f.url] = t; }
   if (Object.keys(textos).length === 0) return { nova: ficha, resultado: { tema: ficha.tema, aplicada: false, mudancas: [], erro: "nenhuma fonte oficial pôde ser baixada" } };
-  const resposta = await deps.modelo(promptDaFicha(ficha, textos), { busca: true });
+  const hash = impressaoDasFontes(ficha, textos);
+  if (opcoes.hashAnterior && opcoes.hashAnterior === hash) return { nova: ficha, resultado: { tema: ficha.tema, aplicada: false, mudancas: [], pulada: true, hash } };
+  // A busca na web é cara (cada resultado entra no pedido): só com BASE_JURIDICA_BUSCA=1. As fontes oficiais da própria ficha já são baixadas acima.
+  const resposta = await deps.modelo(promptDaFicha(ficha, textos), { busca: process.env.BASE_JURIDICA_BUSCA === "1" });
   const j = resposta ? (extrairJson(resposta) as { ficha_proposta?: Partial<Record<Campo, unknown>>; evidencias?: Evidencia[] } | null) : null;
-  if (!j || typeof j.ficha_proposta !== "object" || !j.ficha_proposta) return { nova: ficha, resultado: { tema: ficha.tema, aplicada: false, mudancas: [], erro: "resposta do modelo ausente ou ilegível" } };
+  if (!j || typeof j.ficha_proposta !== "object" || !j.ficha_proposta) return { nova: ficha, resultado: { tema: ficha.tema, aplicada: false, mudancas: [], erro: "resposta do modelo ausente ou ilegível", hash } };
   const evidencias = Array.isArray(j.evidencias) ? j.evidencias.filter((e) => e && typeof e.url === "string" && typeof e.trecho === "string" && typeof e.campo === "string") : [];
   // fontes citadas que não estavam na ficha (achadas pela busca): baixa para conferir o trecho (só as oficiais, no máximo 8)
   for (const u of [...new Set(evidencias.map((e) => e.url))].slice(0, 8)) if (!textos[u] && urlOficial(u)) { const t = await deps.baixar(u); if (t) textos[u] = t; }
   const d = decidirAtualizacao(ficha, j.ficha_proposta, evidencias, textos, hoje);
-  return { nova: d.nova, resultado: { tema: ficha.tema, aplicada: d.aplicada, mudancas: d.mudancas } };
+  return { nova: d.nova, resultado: { tema: ficha.tema, aplicada: d.aplicada, mudancas: d.mudancas, hash } };
 }
 
 type Escreve = { upsert: (v: unknown, o?: unknown) => Promise<{ error: { message: string } | null }>; insert: (v: unknown) => Promise<{ error: { message: string } | null }> };
@@ -230,39 +253,100 @@ export async function atualizarSalarioMinimo(deps: Dependencias, hoje = new Date
   return { gravado: true, motivo: "valor conferido na fonte oficial" };
 }
 
+const CHAVE_DO_ESTADO = "BASE_JURIDICA_ESTADO";
+export interface EstadoDaBase { ultima_rodada?: string; salario_conferido_em?: string; hashes: Record<string, string>; ultimo_consumo?: { entrada: number; saida: number; chamadas: number } }
+
+type LeTabela = { select: (c: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: { valor: string | null } | null }> } }; upsert: (v: unknown, o?: unknown) => Promise<{ error: { message: string } | null }> };
+const tabelaDoEstado = (): LeTabela => (createAdminClient() as unknown as { from: (n: string) => LeTabela }).from("platform_config");
+
+/** O estado da rotina fica no banco (sem tabela nova): a data da última rodada e a impressão digital das fontes de cada ficha. Nunca lança. */
+export async function lerEstado(): Promise<EstadoDaBase> {
+  try {
+    const { data } = await tabelaDoEstado().select("valor").eq("chave", CHAVE_DO_ESTADO).maybeSingle();
+    const j = data?.valor ? (JSON.parse(data.valor) as Partial<EstadoDaBase>) : {};
+    return { ...j, hashes: j.hashes && typeof j.hashes === "object" ? j.hashes : {} };
+  } catch {
+    return { hashes: {} };
+  }
+}
+export async function gravarEstado(e: EstadoDaBase): Promise<void> {
+  try {
+    await tabelaDoEstado().upsert({ chave: CHAVE_DO_ESTADO, valor: JSON.stringify(e), updated_at: new Date().toISOString() }, { onConflict: "chave" });
+  } catch (err) {
+    logger.warn("[base-juridica] não consegui gravar o estado da rotina", { erro: err instanceof Error ? err.message : String(err) });
+  }
+}
+
+const DIA_MS = 86_400_000;
+/** O intervalo entre rodadas, em horas: padrão 7 dias, no mínimo 24 h (subir o app NÃO dispara rodada). */
+export const intervaloEmHoras = () => Math.max(24, Number(process.env.BASE_JURIDICA_INTERVALO_HORAS) || 168);
+export function rodadaDevida(ultima: string | undefined, agora = Date.now(), horas = intervaloEmHoras()): boolean {
+  const t = ultima ? Date.parse(ultima) : NaN;
+  return !Number.isFinite(t) || agora - t >= horas * 3_600_000;
+}
+
 export async function rodarAtualizacaoDaBase(deps: Dependencias = { baixar: baixarOficial, modelo: modeloAnthropic }): Promise<ResultadoDaFicha[]> {
   const resultados: ResultadoDaFicha[] = [];
-  try {
-    const sm = await atualizarSalarioMinimo(deps);
-    logger.info("[base-juridica] salário mínimo", sm);
-  } catch (e) {
-    logger.warn("[base-juridica] salário mínimo falhou", { erro: e instanceof Error ? e.message : String(e) });
+  consumoDaRodada.entrada = 0; consumoDaRodada.saida = 0; consumoDaRodada.chamadas = 0;
+  const estado = await lerEstado();
+  const teto = TETO_DA_RODADA();
+  const estourou = () => consumoDaRodada.entrada + consumoDaRodada.saida >= teto;
+  // O salário mínimo só muda uma vez por ano: confere no máximo a cada 30 dias.
+  if (rodadaDevida(estado.salario_conferido_em, Date.now(), 30 * 24)) {
+    try {
+      const sm = await atualizarSalarioMinimo(deps);
+      logger.info("[base-juridica] salário mínimo", sm);
+      if (sm.gravado || sm.motivo === "já está atualizado") estado.salario_conferido_em = new Date().toISOString();
+    } catch (e) {
+      logger.warn("[base-juridica] salário mínimo falhou", { erro: e instanceof Error ? e.message : String(e) });
+    }
   }
   const base = await carregarBase();
   for (const ficha of base.fichas) {
+    if (estourou()) { logger.warn("[base-juridica] teto de tokens da rodada atingido: o resto fica para a próxima", { teto, gasto: consumoDaRodada }); break; }
     try {
-      const { nova, resultado } = await atualizarFicha(ficha, deps);
+      const { nova, resultado } = await atualizarFicha(ficha, deps, new Date(), { hashAnterior: estado.hashes[ficha.tema] });
       if (resultado.aplicada) await gravarFicha(ficha, resultado, nova);
+      // só guarda a impressão digital quando o modelo respondeu (ou nada mudou): resposta ilegível tenta de novo na próxima rodada
+      if (resultado.hash && !resultado.erro) estado.hashes[ficha.tema] = resultado.hash;
       resultados.push(resultado);
-      logger.info("[base-juridica] ficha revisada", { tema: ficha.tema, aplicada: resultado.aplicada, mudancas: resultado.mudancas.map((m) => `${m.campo}:${m.aceita ? "ok" : "recusada"}`), erro: resultado.erro });
+      logger.info("[base-juridica] ficha revisada", { tema: ficha.tema, pulada: resultado.pulada === true, aplicada: resultado.aplicada, mudancas: resultado.mudancas.map((m) => `${m.campo}:${m.aceita ? "ok" : "recusada"}`), erro: resultado.erro });
     } catch (e) {
       resultados.push({ tema: ficha.tema, aplicada: false, mudancas: [], erro: e instanceof Error ? e.message : String(e) });
       logger.warn("[base-juridica] ficha falhou", { tema: ficha.tema, erro: e instanceof Error ? e.message : String(e) });
     }
   }
   limparCacheDaBase();
+  estado.ultimo_consumo = { ...consumoDaRodada };
+  await gravarEstado(estado);
+  logger.info("[base-juridica] rodada concluída", { ...consumoDaRodada, teto, puladas: resultados.filter((r) => r.pulada).length });
   return resultados;
 }
 
 let iniciado = false;
-/** Liga a rotina: `BASE_JURIDICA_AUTO=1` e `BASE_JURIDICA_ANTHROPIC_KEY` definidos. Primeira rodada 3 min depois de subir; depois a cada `BASE_JURIDICA_INTERVALO_HORAS` (24). */
+/**
+ * Liga a rotina: `BASE_JURIDICA_AUTO=1` e `BASE_JURIDICA_ANTHROPIC_KEY` definidos. A data da última rodada fica no banco: subir o app (deploy, reinício)
+ * NÃO dispara rodada — só quando passou o intervalo (`BASE_JURIDICA_INTERVALO_HORAS`, padrão 168 = 7 dias, mínimo 24).
+ */
 export function iniciarAtualizacaoDaBaseJuridica(): void {
   if (iniciado) return;
   if (process.env.BASE_JURIDICA_AUTO !== "1" || !process.env.BASE_JURIDICA_ANTHROPIC_KEY) return;
   iniciado = true;
-  const horas = Math.max(1, Number(process.env.BASE_JURIDICA_INTERVALO_HORAS) || 24);
-  const rodar = () => { void rodarAtualizacaoDaBase().catch((e) => logger.warn("[base-juridica] rodada falhou", { erro: e instanceof Error ? e.message : String(e) })); };
-  setTimeout(rodar, 3 * 60_000).unref?.();
-  setInterval(rodar, horas * 3_600_000).unref?.();
+  const horas = intervaloEmHoras();
+  const verificar = async (): Promise<void> => {
+    try {
+      const estado = await lerEstado();
+      if (rodadaDevida(estado.ultima_rodada)) {
+        // reserva a rodada ANTES de começar: um reinício no meio dela não a repete
+        await gravarEstado({ ...estado, ultima_rodada: new Date().toISOString() });
+        await rodarAtualizacaoDaBase();
+      }
+    } catch (e) {
+      logger.warn("[base-juridica] rodada falhou", { erro: e instanceof Error ? e.message : String(e) });
+    }
+  };
+  setTimeout(() => void verificar(), 3 * 60_000).unref?.();
+  // confere de hora em hora se já venceu o intervalo (barato: só lê uma linha do banco)
+  setInterval(() => void verificar(), 3_600_000).unref?.();
   logger.info("[base-juridica] atualização automática ligada", { cada_horas: horas });
 }
