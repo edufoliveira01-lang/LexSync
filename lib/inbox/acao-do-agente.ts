@@ -23,6 +23,15 @@ export function frasesDaFerramenta(nome: string, entrada: Record<string, unknown
       const campos = Object.keys(entrada).filter((k) => entrada[k] !== undefined && entrada[k] !== null && String(entrada[k]).trim() !== "").map((k) => ROTULOS_DOS_DADOS[k] ?? k);
       return campos.length > 0 ? `gravou no cadastro: ${campos.join(", ")}` : null;
     }
+    case "crm_salvar_documento_do_cliente": {
+      // Sem argumentos é só a listagem: não anota. Com os três campos, diz qual documento e em que pasta (nunca o conteúdo).
+      const tipo = String(entrada.tipo ?? "").trim();
+      const titulo = String(entrada.titulo ?? "").trim();
+      if (!tipo || !titulo) return null;
+      return tipo === "A CLASSIFICAR"
+        ? `guardou o documento «${titulo}» em A CLASSIFICAR: a equipe precisa classificar`
+        : `guardou o documento «${titulo}» na pasta ${tipo} do cliente (vai para o drive depois da assinatura do contrato)`;
+    }
     case "crm_update_lead": return "atualizou dados do negócio";
     case "crm_create_lead": return "criou o negócio";
     case "crm_book_appointment":

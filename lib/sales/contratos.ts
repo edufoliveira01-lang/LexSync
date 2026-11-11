@@ -43,7 +43,7 @@ export function assinar(segredo: string, metodo: string, caminho: string, corpo:
   return createHmac("sha256", segredo).update(`${ts}.${metodo.toUpperCase()}.${caminho}.${sha256(corpo)}`).digest("hex");
 }
 
-async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, corpo: unknown, http: typeof fetch, recurso: "contratos" | "agente" = "contratos"): Promise<T> {
+async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, corpo: unknown, http: typeof fetch, recurso: "contratos" | "agente" | "documentos" = "contratos"): Promise<T> {
   const cfg = configDosContratos();
   if (!cfg) throw new ErroContratoSales("A geração de contratos ainda não foi ligada neste servidor (SALES_PAINEL_URL e CONTRATOS_SEGREDO).", 503);
   const caminho = `/v1/offices/${encodeURIComponent(slug)}/${recurso}${sufixo}`;
@@ -72,3 +72,12 @@ export const opcoesDoEscritorio = (slug: string, http: typeof fetch = fetch) => 
 /** O prompt do agente deste escritório, montado pelo Sales a partir do cadastro (Atendimento com IA + dados do escritório). */
 export interface PromptDoAgente { prompt: string; nome_agente: string; pendencias: string[] }
 export const promptDoAgenteDoEscritorio = (slug: string, http: typeof fetch = fetch) => chamar<PromptDoAgente>(slug, "GET", "/prompt", undefined, http, "agente");
+
+/** Documento que o cliente mandou pelo chat, já classificado. O arquivo vai por LINK TEMPORÁRIO (o Sales baixa); depois da assinatura do contrato, segue para o drive. */
+export interface DocumentoDoChatParaOSales {
+  origem_ref: string; tipo: string; titulo: string; extensao: string; url: string;
+  telefone?: string; cpf?: string; data?: string;
+}
+export type SituacaoDoDocumentoNoSales = "enfileirado" | "aguardando_assinatura" | "ja_recebido" | "drive_nao_configurado";
+export const enviarDocumentoDoChat = (slug: string, dados: DocumentoDoChatParaOSales, http: typeof fetch = fetch) =>
+  chamar<{ situacao: SituacaoDoDocumentoNoSales }>(slug, "POST", "", dados, http, "documentos");

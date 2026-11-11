@@ -109,6 +109,8 @@ export const ESCOPO_DAS_ESCRITAS: Readonly<Record<string, Readonly<Record<string
   crm_enviar_contrato: {},
   // Fork Sales: grava os dados do contato do turno (e do negócio aberto dele); não recebe id nenhum.
   crm_registrar_dados_do_cliente: {},
+  // Fork Sales: salva documento que o CLIENTE mandou, do contato do turno e da conversa dele; a referência é validada contra a conversa.
+  crm_salvar_documento_do_cliente: {},
 };
 
 export type VereditoDaEscrita =

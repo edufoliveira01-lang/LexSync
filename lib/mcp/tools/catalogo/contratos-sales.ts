@@ -26,6 +26,16 @@ export const TOOLS_CONTRATOS_SALES = declararTools([
     pacotes: ["vender"],
   },
   {
+    name: "crm_salvar_documento_do_cliente",
+    category: "write",
+    rotulo: "Salvar os documentos do cliente no drive",
+    explicacao:
+      "Quando o cliente manda um documento pela conversa (CNIS, laudo, comprovante, RG…), o agente identifica o tipo e o sistema guarda no drive do escritório (Dropbox), na pasta do cliente, depois da assinatura do contrato. O agente só informa o tipo; quem cria a pasta e o nome do arquivo é o sistema. O que não for identificado vai para A CLASSIFICAR, e a equipe é avisada.",
+    oQueToca: "Pasta do cliente no drive do escritório",
+    risco: "atencao",
+    pacotes: ["vender"],
+  },
+  {
     name: "crm_consultar_base_juridica",
     category: "read",
     rotulo: "Consultar a base jurídica",

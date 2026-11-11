@@ -152,6 +152,8 @@ export const ALVO_DE_FUNIL: Record<string, AlvoDeFunil> = {
   crm_enviar_contrato: "sem_funil",
   // Fork Sales: grava dados do contato do turno e do negócio aberto dele, sem receber `lead_id`/`pipeline_id`; a barreira é o papel `ai_operator` e o alvo fixo.
   crm_registrar_dados_do_cliente: "sem_funil",
+  // Fork Sales: salva documento do cliente na conversa do contato do turno; não recebe `lead_id`/`pipeline_id`. Barreiras: `ai_operator`, referência checada contra a conversa.
+  crm_salvar_documento_do_cliente: "sem_funil",
   // Rascunho sugerido por integração (#1611): opera por `conversation_id`,
   // nunca `lead_id`, e não mexe em estado de funil nenhum. A barreira é OUTRA,
   // e é dela que a segurança depende: o RBAC da rota (agent+), o escopo

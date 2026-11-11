@@ -15,6 +15,7 @@ import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
 import { ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
+import { listarDocumentosRecebidos, salvarDocumentoRecebido, TIPOS_DE_DOCUMENTO_DO_CHAT } from "@/lib/sales/documentos-do-chat";
 import type { McpToolDefinition } from "../types";
 
 const pessoa = z.object({
@@ -174,5 +175,72 @@ export const crmCalcularRendaPerCapita: McpToolDefinition<typeof rendaShape> = {
     const r = calcularRendaPerCapita(input.renda_total_mensal, input.moradores, input.gastos_saude_mensais ?? 0, new Date(), base.valores);
     if (!r) return { ok: false, erro: "Não consegui calcular com esses números.", proximo_passo: "Diga que o advogado faz a conta com os números exatos." };
     return { ok: true, ...r, proximo_passo: "Explique o resultado em linguagem simples, sem prometer: diga a faixa e que o advogado confirma pelo caso." };
+  },
+};
+
+const documentoShape = {
+  referencia: z.string().uuid().optional().describe("O código do documento, como veio em `documentos_pendentes`. Sem código, a ferramenta só LISTA o que o cliente mandou e ainda não foi salvo."),
+  tipo: z.enum(TIPOS_DE_DOCUMENTO_DO_CHAT).optional().describe("A pasta do documento: PARTE MÉDICA (laudos, receitas, exames, atestados), DOCUMENTOS PESSOAIS (RG, CPF, certidões, comprovante de residência), DOCUMENTOS ADMINISTRATIVO (CNIS, CTPS, indeferimento do INSS, extratos) ou A CLASSIFICAR (só se não der para identificar)."),
+  titulo: z.string().min(2).max(100).optional().describe("Título curto do documento, sem data nem nome do cliente. Ex.: CNIS, RG, Laudo da coluna, Comprovante de residência."),
+};
+
+/** Fase 2 do Dropbox: o agente classifica o documento que o cliente mandou; o SISTEMA guarda no drive, na pasta do cliente, depois da assinatura. */
+export const crmSalvarDocumentoDoCliente: McpToolDefinition<typeof documentoShape> = {
+  name: "crm_salvar_documento_do_cliente",
+  description:
+    "Salva no drive do escritório (pasta do cliente) um documento que o CLIENTE mandou pela conversa. " +
+    "Sem argumentos, LISTA os documentos recebidos que ainda não foram salvos (`documentos_pendentes`, cada um com o código `referencia`). " +
+    "Com `referencia`, `tipo` e `titulo`, salva aquele documento: olhe o conteúdo, escolha a pasta certa e dê um título curto. O sistema cria a pasta e o nome do arquivo; você só informa o tipo. " +
+    "Se não der para identificar o documento, use A CLASSIFICAR (a equipe é avisada). O documento fica guardado e segue para o drive depois da assinatura do contrato.",
+  inputSchema: documentoShape,
+  category: "write",
+  requiresRole: "ai_operator",
+  requiresScope: "mcp:write",
+  handler: async (input, ctx) => {
+    const contato = ctx.contatoDoTurno;
+    if (!contato) return { ok: false, erro: "Não há contato nesta conversa.", proximo_passo: "Siga a conversa normalmente." };
+    const { data: conv } = await ctx.supabase.from("conversations").select("id").eq("organization_id", ctx.organizationId).eq("contact_id", contato).order("last_inbound_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
+    const conversationId = (conv as { id: string } | null)?.id;
+    if (!conversationId) return { ok: false, erro: "Conversa do contato não encontrada.", proximo_passo: "Siga a conversa normalmente." };
+
+    try {
+      if (!input.referencia && !input.tipo && !input.titulo) {
+        const pendentes = await listarDocumentosRecebidos(ctx.organizationId, conversationId);
+        return {
+          ok: true, documentos_pendentes: pendentes,
+          proximo_passo: pendentes.length === 0
+            ? "Não há documento do cliente esperando ser salvo."
+            : "Para cada documento, veja o conteúdo, escolha o tipo e chame de novo com `referencia`, `tipo` e `titulo`. Não peça nada de novo ao cliente por causa disto.",
+        };
+      }
+      if (!input.referencia || !input.tipo || !input.titulo) {
+        return { ok: false, erro: "Para salvar, informe `referencia`, `tipo` e `titulo` juntos.", proximo_passo: "Chame sem argumentos para listar e depois com os três campos." };
+      }
+      const [{ data: ct }, gravados] = await Promise.all([
+        ctx.supabase.from("contacts").select("phone_number").eq("id", contato).eq("organization_id", ctx.organizationId).maybeSingle(),
+        lerDadosGravados(ctx.organizationId, contato),
+      ]);
+      const r = await salvarDocumentoRecebido({
+        orgId: ctx.organizationId, conversationId, referencia: input.referencia, tipo: input.tipo, titulo: input.titulo,
+        telefone: (ct as { phone_number: string | null } | null)?.phone_number ?? null, cpf: gravados.cpf ?? null,
+      });
+      const aClassificar = input.tipo === "A CLASSIFICAR";
+      switch (r.situacao) {
+        case "aguardando_assinatura":
+          return { ok: true, situacao: r.situacao, a_classificar: aClassificar, proximo_passo: "Documento recebido e guardado. Ele segue para a pasta do cliente sozinho depois da assinatura do contrato. Apenas agradeça ao cliente, sem explicar a parte técnica." };
+        case "enfileirado":
+          return { ok: true, situacao: r.situacao, a_classificar: aClassificar, proximo_passo: "Documento recebido: a cópia para a pasta do cliente já está em andamento. Apenas agradeça ao cliente." };
+        case "ja_recebido":
+          return { ok: true, situacao: r.situacao, proximo_passo: "Este documento já estava salvo. Não faça nada." };
+        case "drive_nao_configurado":
+          return { ok: true, situacao: r.situacao, proximo_passo: "Este escritório não usa pasta externa para os documentos: não é preciso salvar. Siga a conversa." };
+        case "nao_encontrado":
+          return { ok: false, erro: "Documento não encontrado entre os que o cliente mandou nesta conversa.", proximo_passo: "Chame sem argumentos para ver os documentos pendentes." };
+        default:
+          return { ok: false, erro: r.mensagem ?? "Não consegui salvar agora.", proximo_passo: "Siga a conversa; registre uma nota para a equipe guardar o documento." };
+      }
+    } catch (e) {
+      return { ok: false, erro: e instanceof Error ? e.message : "não consegui salvar agora", proximo_passo: "Siga a conversa e registre uma nota para a equipe guardar o documento." };
+    }
   },
 };
