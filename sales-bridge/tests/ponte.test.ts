@@ -153,6 +153,12 @@ describe("servidor", () => {
     expect(html).toContain('name="token_hash" value="hash-de-teste"');
     expect(html).toContain('name="type" value="magiclink"');
     expect(ok.headers.get("content-security-policy")).toContain("default-src 'none'");
+    expect(html).toContain('name="next" value="/app"');
+    // abrir a conversa de um telefone: só esse destino fixo é aceito
+    const abrir = await (await fetch(`${b}/sso?t=${token()}&next=${encodeURIComponent("/app/abrir-conversa?telefone=5513999991111")}`)).text();
+    expect(abrir).toContain('name="next" value="/app/abrir-conversa?telefone=5513999991111"');
+    const externo = await (await fetch(`${b}/sso?t=${token()}&next=${encodeURIComponent("https://evil.example")}`)).text();
+    expect(externo).toContain('name="next" value="/app"');
     // uso único
     const t = token(); expect((await fetch(`${b}/sso?t=${t}`)).status).toBe(200); expect((await fetch(`${b}/sso?t=${t}`)).status).toBe(400);
     // token forjado ou expirado

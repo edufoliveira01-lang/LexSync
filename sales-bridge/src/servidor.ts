@@ -39,9 +39,12 @@ export function criarServidor(db: Cliente, cfg: ConfigServidor, agora: () => num
         try {
           const e = await prepararEntrada(db, t.slug, t.email);
           if (e.org_status !== "active") return pagina(res, 403, "<p>O atendimento deste escritório está suspenso. Fale com o administrador do sistema.</p>");
+          // Só um destino fixo é aceito (abrir a conversa de um telefone); qualquer outra coisa cai em /app.
+          const pedido = url.searchParams.get("next") || "";
+          const destinoDepois = /^\/app\/abrir-conversa\?telefone=\d{8,15}$/.test(pedido) ? pedido : "/app";
           const destino = `${cfg.urlPublica.replace(/\/$/, "")}/auth/confirm`;
           // Formulário que se envia sozinho; o botão cobre quem tem scripts bloqueados.
-          return pagina(res, 200, `<form id="f" method="post" action="${esc(destino)}"><input type="hidden" name="token_hash" value="${esc(e.token_hash)}"><input type="hidden" name="type" value="magiclink"><input type="hidden" name="next" value="/app"><p>Entrando no atendimento…</p><noscript><button type="submit">Continuar</button></noscript></form><script>document.getElementById('f').submit()</script>`);
+          return pagina(res, 200, `<form id="f" method="post" action="${esc(destino)}"><input type="hidden" name="token_hash" value="${esc(e.token_hash)}"><input type="hidden" name="type" value="magiclink"><input type="hidden" name="next" value="${esc(destinoDepois)}"><p>Entrando no atendimento…</p><noscript><button type="submit">Continuar</button></noscript></form><script>document.getElementById('f').submit()</script>`);
         } catch (e) {
           if (e instanceof ErroPonte) return pagina(res, e.status, `<p>${esc(e.message)}</p>`);
           throw e;

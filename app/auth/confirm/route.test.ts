@@ -243,6 +243,20 @@ describe("GET /auth/confirm", () => {
     expect(destino(res)).toBe("/onboarding/welcome");
   });
 
+  it("entrada direta do Sales (magiclink + next): membro vai para a conversa do telefone; destino fora da lista é ignorado", async () => {
+    const base = stubSupabase({ verifyOtp: { data: { user: USUARIO }, error: null }, getUser: { data: { user: null } } });
+    const comVinculo = { ...base, from: () => ({ select: () => ({ eq: () => ({ limit: async () => ({ data: [{ organization_id: "o1" }] }) }) }) }) };
+    vi.mocked(createClient).mockResolvedValue(comVinculo as unknown as Awaited<ReturnType<typeof createClient>>);
+    vi.mocked(decidirConviteDoSignup).mockReturnValue({ tipo: "provisionar" });
+
+    const { POST } = await import("./route");
+    const ok = await POST(envio(`type=magiclink&token_hash=abc&next=${encodeURIComponent("/app/abrir-conversa?telefone=5513999991111")}`));
+    expect(destino(ok)).toBe("/app/abrir-conversa?telefone=5513999991111");
+
+    const fora = await POST(envio(`type=magiclink&token_hash=abc&next=${encodeURIComponent("/app/admin")}`));
+    expect(destino(fora)).toBe("/onboarding/welcome");
+  });
+
   it("sem convite em instalação com_aprovacao: e-mail confirmado, mas a empresa espera o pedido", async () => {
     // Recorte do PR #714 (migration 0383). O e-mail acabou de ser provado pelo
     // `verifyOtp` do provedor; a empresa só nasce na aprovação do administrador.

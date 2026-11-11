@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
     type: campo("type") as EmailOtpType | null,
     request,
     status: 303,
+    proximo: campo("next"),
   });
 }
 
@@ -121,12 +122,14 @@ async function confirmar({
   type,
   request,
   status,
+  proximo = null,
 }: {
   tokenHash: string | null;
   code: string | null;
   type: EmailOtpType | null;
   request: NextRequest;
   status: 303 | 307;
+  proximo?: string | null;
 }) {
   const requestId = request.headers.get("x-request-id");
 
@@ -210,6 +213,13 @@ async function confirmar({
 
   if (type === "recovery") {
     return redirectTo("/login/reset");
+  }
+
+  // Fork Sales: a entrada direta vinda do Sales pode pedir «abrir a conversa deste telefone». Só esse destino é aceito (lista fechada) e só para
+  // quem já é membro de uma organização; qualquer outra coisa segue o fluxo normal.
+  if (type === "magiclink" && proximo && /^\/app\/abrir-conversa\?telefone=\d{8,15}$/.test(proximo)) {
+    const { data: vinculos } = await supabase.from("user_organizations").select("organization_id").eq("user_id", usuario.id).limit(1);
+    if ((vinculos ?? []).length > 0) return redirectTo(proximo);
   }
 
   // Foi convidado? Então NÃO ganha organização própria. Sem esta bifurcação,
