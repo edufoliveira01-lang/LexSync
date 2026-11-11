@@ -122,7 +122,7 @@ export const crmRegistrarDadosDoCliente: McpToolDefinition<typeof dadosShape> = 
       const novos = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined)) as Partial<Record<CampoDoCliente, string>>;
       const gravado = Object.keys(novos).length ? await gravarDadosDoCliente(ctx.organizationId, contato, novos) : await lerDadosGravados(ctx.organizationId, contato);
       const falta = faltaParaOContrato(gravado);
-      return { ok: true, gravado, cpf_para_confirmar: cpfMascarado(gravado.cpf) || undefined, falta_obrigatorios_para_o_contrato: falta.obrigatorios, falta_recomendados: falta.recomendados, proximo_passo: "Não pergunte de novo o que já está em `gravado`. Pergunte só o que falta, uma coisa por vez." };
+      return { ok: true, gravado, cpf_para_confirmar: cpfMascarado(gravado.cpf) || undefined, falta_obrigatorios_para_o_contrato: falta.obrigatorios, falta_recomendados: falta.recomendados, proximo_passo: "Não pergunte de novo o que já está em `gravado`. Os campos em `falta_*` só se pedem na COLETA DE DADOS DO CONTRATO, depois que a pessoa aceitou a proposta: antes disso, não os peça (nem CPF, nem RG, nem endereço); apenas siga a conversa. Na coleta, uma pergunta por vez, em blocos curtos." };
     } catch (e) {
       return { ok: false, erro: e instanceof Error ? e.message : "não consegui gravar agora", proximo_passo: "Siga a conversa e registre uma nota com o dado, para a equipe." };
     }
@@ -149,7 +149,7 @@ export const crmConsultarBaseJuridica: McpToolDefinition<typeof baseShape> = {
     return {
       ok: true, cobertura: true, ficha,
       aviso: [vencida ? "A ficha passou da validade de revisão: responda com ressalva e diga que o advogado confirma." : null, ficha.status === "pendente_revisao" ? "Ficha ainda sem a conferência de um advogado: use, e diga que o advogado confirma pelo caso." : null].filter(Boolean),
-      proximo_passo: "Responda com segurança e em linguagem simples, com base na ficha; nunca prometa resultado; cite o prazo quando houver.",
+      proximo_passo: "Responda com segurança e em linguagem simples, com base na ficha; nunca prometa resultado; cite o prazo quando houver. As `perguntas_que_faltam` da ficha são só CANDIDATAS: escolha as mais decisivas, uma por vez, respeitando o limite de perguntas da triagem do atendimento; nunca faça todas. Se a pessoa claramente não cumpre um requisito, diga com cuidado que o advogado confirma, sem afirmar que ela atende.",
     };
   },
 };

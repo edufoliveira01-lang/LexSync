@@ -77,6 +77,7 @@ import { WahaChannelAdapter } from '../edge/channel/waha-adapter';
 // egress de canal — o envio em si vai pelo adapter (ChannelAdapter). Ver F2-25.
 import { applySendOutcome } from '../edge/crm/send-message';
 import { blocoDaRespostaFalada, resolverVozDoTurno } from './voz-do-turno';
+import { blocoDoOrcamentoDePerguntas, contarPerguntasDeTriagem, limiteDePerguntasDoTexto } from './orcamento-de-perguntas';
 import { textoParaFalar } from '@/lib/ai/voz/texto-falavel';
 import {
   LlmBudgetExceededError,
@@ -3152,6 +3153,30 @@ async function executarTurnoDoAgente(
   // o bloco vai NO FIM: o prefixo dos turnos em texto continua o mesmo.
   const blocoDaVoz = blocoDaRespostaFalada(vozParaEsteTurno);
   if (blocoDaVoz) blocosResidentes.push(blocoDaVoz);
+  // Fork Sales — o ORÇAMENTO DE PERGUNTAS da triagem, contado pelo sistema: o texto do agente diz "no máximo N perguntas por área" e o modelo não conta sozinho.
+  // O limite sai do próprio texto do agente (sem a regra, o contador fica desligado); só o modelo lê o bloco, o cliente nunca. Melhor esforço: falha aqui não derruba o turno.
+  if (!preview && agentConfig !== null) {
+    const limitePorArea = limiteDePerguntasDoTexto(agentConfig.systemPrompt);
+    if (limitePorArea !== null) {
+      try {
+        const historicoDaTriagem = await pool.query<{ direction: 'inbound' | 'outbound'; body: string; humana: boolean }>(
+          `select direction, body, sent_by_user_id is not null as humana from messages
+           where organization_id = $1 and conversation_id = $2 and body is not null
+           order by sent_at asc limit 400`,
+          [tenantId, input.conversationId],
+        );
+        const blocoDoOrcamento = blocoDoOrcamentoDePerguntas({
+          limitePorArea,
+          contagem: contarPerguntasDeTriagem(historicoDaTriagem.rows.map((m) => ({ direction: m.direction, body: m.body, humana: m.humana === true }))),
+        });
+        if (blocoDoOrcamento) blocosResidentes.push(blocoDoOrcamento);
+      } catch (err) {
+        runLog.warn('orçamento de perguntas: conversa indisponível — segue sem o bloco', {
+          error: (err instanceof Error ? err.message : String(err)).slice(0, 160),
+        });
+      }
+    }
+  }
   const system = blocosResidentes.join('\n\n');
 
   // Seam de canal (F2-25): o envio vai SÓ pela interface ChannelAdapter — o
