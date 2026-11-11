@@ -23,7 +23,7 @@ import { audit } from "@/lib/audit";
 import { loadAuthUser, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { codigoDoEscopo, mensagemDoEscopo, validarEscopoDaVersao } from "@/lib/ai/agents/escopo";
+import { codigoDoEscopo, mensagemDoEscopo, soFunisQueExistem, validarEscopoDaVersao } from "@/lib/ai/agents/escopo";
 import {
   agentMcpCreateSchema,
   agentMcpPatchSchema,
@@ -167,6 +167,9 @@ export async function saveAgentDraftAction(
   // O escopo aponta para coisas que EXISTEM nesta organização. Marcar um
   // material apagado (ou de outra organização) produz uma configuração muda: a
   // tela mostra a marcação, o assistente não acha nada, e ninguém vê erro.
+  // Funil apagado depois de marcado sai da lista em silêncio (ver `soFunisQueExistem`): antes, o id velho, invisível na tela, travava todo salvamento.
+  const funisValidos = await soFunisQueExistem(admin, activeOrg.orgId, v.pipeline_ids);
+  if (funisValidos) v.pipeline_ids = funisValidos;
   const escopo = await validarEscopoDaVersao(admin, activeOrg.orgId, {
     provider: v.provider,
     pipeline_ids: v.pipeline_ids,

@@ -16,6 +16,7 @@ vi.mock("@/lib/impersonate/support", () => ({
 vi.mock("@/lib/ai/agents/escopo", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/ai/agents/escopo")>()),
   validarEscopoDaVersao: vi.fn(async () => ({ ok: true as const })),
+  soFunisQueExistem: vi.fn(async (_s: unknown, _o: unknown, ids: string[] | undefined) => ids),
 }));
 vi.mock("@/lib/auth/require-role", () => ({ requireRole: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));

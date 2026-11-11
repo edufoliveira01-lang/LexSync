@@ -74,6 +74,7 @@ vi.mock("@/lib/auth/server", () => ({
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn() }));
 vi.mock("@/lib/ai/agents/escopo", () => ({
+  soFunisQueExistem: vi.fn(async (_s: unknown, _o: unknown, ids: string[] | undefined) => ids),
   validarEscopoDaVersao: vi.fn(async () => cena.escopo),
   mensagemDoEscopo: () => "Escopo inválido.",
   codigoDoEscopo: () => "validation_failed",
