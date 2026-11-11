@@ -65,7 +65,7 @@ import {
   removerRemotasOrfas,
   remotasOrfas,
 } from "@/lib/mcp/servidor-externo/escolha-do-editor";
-import { escolhasRemotas, type MarcaRemota } from "@/lib/mcp/servidor-externo/ids";
+import { escolhasRemotas, toolIdRemoto, type MarcaRemota } from "@/lib/mcp/servidor-externo/ids";
 import { TETO_TOOLS_POR_AGENTE } from "@/lib/mcp/tools/selecao-por-pacote";
 
 interface Props {
@@ -114,6 +114,22 @@ export function ServidorExternoNoAtendimento({
   // Órfã só se sabe com a listagem na mão: servidor fora do ar não transforma
   // escolha salva em órfã, e é isso que impede o erro de apagar o que existe.
   const orfas = ferramentas === null ? [] : remotasOrfas(toolIds, anunciadas);
+
+  /** Fork Sales: liga as consultas do Sales (somente leitura) sem precisar listar o servidor — registra o servidor do escritório e marca as cinco consultas nesta versão. */
+  const [ligandoSales, setLigandoSales] = useState(false);
+  async function ligarConsultasDoSales() {
+    setLigandoSales(true);
+    try {
+      const l = await apiClient.post<{ data: { ferramentas: string[] } }>("/api/v1/sales/agente-do-escritorio/ligar-consultas", {});
+      const novos = l.data.ferramentas.map((nome) => toolIdRemoto(nome, "leitura"));
+      onChangeToolIds([...new Set([...toolIds, ...novos])]);
+      toast.success(t("Consultas do Sales marcadas (somente leitura). Salve o agente e publique a versão."));
+    } catch (err) {
+      showApiError(err);
+    } finally {
+      setLigandoSales(false);
+    }
+  }
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -207,6 +223,12 @@ export function ServidorExternoNoAtendimento({
 
       {ligado ? (
         <div className="space-y-2 border-t border-border pt-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 p-2">
+            <p className="text-xs text-muted-foreground">{t("Consultas do Sales (cliente, andamento, compromissos, documentos e financeiro), só leitura.")}</p>
+            <Button variant="outline" size="sm" onClick={() => void ligarConsultasDoSales()} disabled={disabled || ligandoSales} data-testid="ligar-consultas-do-sales">
+              {ligandoSales ? t("Ligando…") : t("Ligar as consultas do Sales")}
+            </Button>
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h4 className="text-sm font-medium">{t("Ferramentas deste servidor")}</h4>
             <Button
