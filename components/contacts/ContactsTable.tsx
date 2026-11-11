@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useActiveOrg } from "@/hooks/auth/AuthProvider";
 import { useContactTagVocabulary } from "@/hooks/contacts/useContactTagVocabulary";
-import { useDeleteContact, mensagemDeBloqueioPorVinculo } from "@/hooks/contacts/useDeleteContact";
+import { useDeleteContact, mensagemDeBloqueioPorVinculo, mensagemDeNegociosJuntos } from "@/hooks/contacts/useDeleteContact";
 import type { ContactOrderBy } from "@/lib/schemas/contacts";
 import type { Contact } from "@/lib/types/contacts";
 import { rotuloParaAEquipe } from "@/lib/contacts/rotulo-do-contato";
@@ -175,7 +175,11 @@ export function ContactsTable({
     queryFn: async () => {
       if (!alvoId) return { vinculos: [], por_tabela: {} };
       const corpo = await apiClient.get<{
-        data?: { vinculos: string[]; por_tabela: Record<string, number> };
+        data?: {
+          vinculos: string[];
+          por_tabela: Record<string, number>;
+          negocios?: { total: number; abertos: number; ganhos: number; perdidos: number };
+        };
       }>(`/api/v1/contacts/${alvoId}/vinculos`);
       // O MESMO formato do `error.details` do 409: a frase da tela é uma só,
       // servida pela mesma função dos dois caminhos.
@@ -183,6 +187,10 @@ export function ContactsTable({
     },
   });
   const avisoDeVinculo = alvo ? mensagemDeBloqueioPorVinculo(vinculos.data, t) : null;
+  // Os cards do funil saem junto com o contato (abertos, ganhos e perdidos): o diálogo diz quantos, ANTES do clique.
+  const avisoDeNegocios = alvo
+    ? mensagemDeNegociosJuntos((vinculos.data as { negocios?: { total: number; abertos: number; ganhos: number; perdidos: number } } | undefined)?.negocios, t)
+    : null;
 
   async function iniciarConversa(c: Contact) {
     if (!c.phone_number || abrindo) return;
@@ -424,6 +432,11 @@ export function ContactsTable({
               (plural e chave vindos do servidor), e o link vai direto para a
               Agenda — é lá que o compromisso é cancelado.
             */}
+            {avisoDeNegocios ? (
+              <span data-testid="aviso-negocios-juntos" className="mt-2 block text-sm font-medium text-warning-fg">
+                {avisoDeNegocios}
+              </span>
+            ) : null}
             {avisoDeVinculo ? (
               <span className="mt-2 block text-sm font-medium text-warning-fg">
                 {avisoDeVinculo}{" "}

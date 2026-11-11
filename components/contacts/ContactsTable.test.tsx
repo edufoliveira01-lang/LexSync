@@ -26,6 +26,7 @@ vi.mock("@/components/channels/SeletorDeCanalParaConversa", () => ({
 vi.mock("@/hooks/contacts/useDeleteContact", () => ({
   useDeleteContact: () => ({ mutateAsync: vi.fn(), isPending: false }),
   mensagemDeBloqueioPorVinculo: vi.fn(() => "mensagem de bloqueio"),
+  mensagemDeNegociosJuntos: vi.fn(() => null),
 }));
 vi.mock("@/lib/api/client", () => ({
   apiClient: {
@@ -229,5 +230,19 @@ describe("ContactsTable — seleção múltipla (#2484, F3)", () => {
         expect(contrasteNoTema(borda, "surface", tema), `${borda} no ${tema}`).toBeGreaterThanOrEqual(3);
       }
     }
+  });
+});
+
+
+describe("diálogo Excluir contato — aviso dos negócios que saem junto (fork Sales)", () => {
+  afterEach(() => cleanup());
+
+  it("mostra quantos negócios do funil serão excluídos junto, antes do clique", async () => {
+    const mod = await import("@/hooks/contacts/useDeleteContact");
+    vi.mocked(mod.mensagemDeNegociosJuntos).mockReturnValue("Este contato tem 2 negócios no funil (1 em aberto, 1 ganho); eles também serão excluídos.");
+    renderTabela();
+    await userEvent.click(screen.getByRole("button", { name: "Excluir contato Web Speed" }));
+    expect(await screen.findByTestId("aviso-negocios-juntos")).toHaveTextContent("2 negócios no funil");
+    vi.mocked(mod.mensagemDeNegociosJuntos).mockReturnValue(null);
   });
 });

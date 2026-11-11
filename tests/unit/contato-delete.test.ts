@@ -51,6 +51,8 @@ interface OpcoesFake {
   rpcFalse?: boolean;
   /** Ids dos negócios ABERTOS do contato (fork Sales: saem junto com ele). */
   negociosAbertos?: string[];
+  /** Negócios de QUALQUER situação do contato (abertos, ganhos e perdidos saem junto com ele). */
+  negocios?: Array<{ id: string; status: "open" | "won" | "lost" }>;
 }
 
 function clienteFalso(opts?: OpcoesFake): unknown {
@@ -73,7 +75,11 @@ function clienteFalso(opts?: OpcoesFake): unknown {
           if (tabela === "crm_leads") {
             const lista: { eq: () => unknown; then: (r: (v: unknown) => unknown) => unknown } = {
               eq: () => lista,
-              then: (r) => r({ data: (opts?.negociosAbertos ?? []).map((id) => ({ id })), error: null }),
+              then: (r) =>
+                r({
+                  data: opts?.negocios ?? (opts?.negociosAbertos ?? []).map((id) => ({ id, status: "open" })),
+                  error: null,
+                }),
             };
             return lista;
           }
@@ -147,7 +153,27 @@ describe("deleteContactHandler", () => {
     const NEGOCIO = "c05e7a00-0000-4000-8000-0000000000d1";
     await deleteContactHandler(clienteFalso({ negociosAbertos: [NEGOCIO] }) as never, ctxFalso(), CONTATO);
     expect(chamadas).toEqual([{ tabela: "crm_leads", op: "delete" }]);
-    expect(ultimaAuditoria()?.metadata).toMatchObject({ negocios_abertos_removidos: 1 });
+    expect(ultimaAuditoria()?.metadata).toMatchObject({ negocios_removidos: 1 });
+  });
+
+  it("os negócios GANHOS e PERDIDOS também saem junto: o card do funil não sobra depois de excluir o contato", async () => {
+    const { deleteContactHandler } = await import("@/app/api/v1/contacts/_handler");
+    await deleteContactHandler(
+      clienteFalso({
+        negocios: [
+          { id: "c05e7a00-0000-4000-8000-0000000000d1", status: "open" },
+          { id: "c05e7a00-0000-4000-8000-0000000000d2", status: "won" },
+          { id: "c05e7a00-0000-4000-8000-0000000000d3", status: "lost" },
+        ],
+      }) as never,
+      ctxFalso(),
+      CONTATO,
+    );
+    expect(chamadas).toEqual([{ tabela: "crm_leads", op: "delete" }]);
+    expect(ultimaAuditoria()?.metadata).toMatchObject({
+      negocios_removidos: 3,
+      negocios_por_situacao: { abertos: 1, ganhos: 1, perdidos: 1 },
+    });
   });
 
   it("se a exclusão do contato FALHA, nenhum negócio é apagado", async () => {
@@ -288,5 +314,20 @@ describe("deleteContactHandler", () => {
     ).rejects.toMatchObject({ status: 404, code: "not_found" });
     expect(auditSpy).not.toHaveBeenCalled();
     expect(rpcs.some((r) => r.nome === FUNCAO)).toBe(false);
+  });
+});
+
+describe("aviso dos negócios que saem junto (diálogo Excluir contato)", () => {
+  it("diz quantos e em que situação, no singular e no plural; sem negócios, nenhum aviso", async () => {
+    const { mensagemDeNegociosJuntos } = await import("@/hooks/contacts/useDeleteContact");
+    const t = (x: string) => x;
+    expect(mensagemDeNegociosJuntos({ total: 0, abertos: 0, ganhos: 0, perdidos: 0 }, t)).toBeNull();
+    expect(mensagemDeNegociosJuntos(undefined, t)).toBeNull();
+    expect(mensagemDeNegociosJuntos({ total: 1, abertos: 0, ganhos: 1, perdidos: 0 }, t)).toBe(
+      "Este contato tem 1 negócio no funil (1 ganho); ele também será excluído.",
+    );
+    expect(mensagemDeNegociosJuntos({ total: 4, abertos: 2, ganhos: 1, perdidos: 1 }, t)).toBe(
+      "Este contato tem 4 negócios no funil (2 em aberto, 1 ganho, 1 perdido); eles também serão excluídos.",
+    );
   });
 });

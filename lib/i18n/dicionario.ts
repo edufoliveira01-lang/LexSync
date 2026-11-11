@@ -6899,6 +6899,12 @@ export const DICIONARIO: Traducoes = {
   "A data do atendimento não foi gravada: o negócio não existe mais nesta organização.": {
     es: "No se guardó la fecha de la cita: el negocio ya no existe en esta organización.",
   },
+  "ganho": { es: "ganado" },
+  "ganhos": { es: "ganados" },
+  "perdido": { es: "perdido" },
+  "perdidos": { es: "perdidos" },
+  "Este contato tem 1 negócio no funil ({detalhe}); ele também será excluído.": { es: "Este contacto tiene 1 negocio en el embudo ({detalhe}); también se eliminará." },
+  "Este contato tem {n} negócios no funil ({detalhe}); eles também serão excluídos.": { es: "Este contacto tiene {n} negocios en el embudo ({detalhe}); también se eliminarán." },
   "Nenhuma condição completa: roda em todo evento": { es: "Ninguna condición completa: se ejecuta en todo evento" },
   "A IA decide": { es: "La IA decide" },
   "Hoje este passo só se edita pela API": { es: "Hoy este paso solo se edita por la API" },

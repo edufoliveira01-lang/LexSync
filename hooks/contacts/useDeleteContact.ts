@@ -29,6 +29,31 @@ export function mensagemDeBloqueioPorVinculo(
       );
 }
 
+/**
+ * O aviso dos negócios (cards do funil) que saem junto com o contato (fork Sales): abertos, ganhos e perdidos. Devolve null sem negócios.
+ * O contrato e o financeiro de um negócio ganho vivem no Sales e não são apagados.
+ */
+export function mensagemDeNegociosJuntos(
+  negocios: { total?: number; abertos?: number; ganhos?: number; perdidos?: number } | undefined,
+  t: (texto: string) => string,
+): string | null {
+  const total = negocios?.total ?? 0;
+  if (total < 1) return null;
+  const partes: string[] = [];
+  const abertos = negocios?.abertos ?? 0;
+  const ganhos = negocios?.ganhos ?? 0;
+  const perdidos = negocios?.perdidos ?? 0;
+  if (abertos > 0) partes.push(`${abertos} ${t("em aberto")}`);
+  if (ganhos > 0) partes.push(`${ganhos} ${ganhos === 1 ? t("ganho") : t("ganhos")}`);
+  if (perdidos > 0) partes.push(`${perdidos} ${perdidos === 1 ? t("perdido") : t("perdidos")}`);
+  const detalhe = partes.join(", ");
+  return total === 1
+    ? t("Este contato tem 1 negócio no funil ({detalhe}); ele também será excluído.").replace("{detalhe}", detalhe)
+    : t("Este contato tem {n} negócios no funil ({detalhe}); eles também serão excluídos.")
+        .replace("{n}", String(total))
+        .replace("{detalhe}", detalhe);
+}
+
 function toastDeBloqueioPorVinculo(err: ApiError): boolean {
   const t = (s: string) => traduzir(s, idiomaAtual());
   const mensagem = mensagemDeBloqueioPorVinculo(err.details, t);

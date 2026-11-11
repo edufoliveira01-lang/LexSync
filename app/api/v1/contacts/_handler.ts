@@ -1148,13 +1148,35 @@ async function contarVinculosRestrict(
  * `VINCULOS_RESTRICT_NAO_APAGADOS`, o diálogo avisaria de um bloqueio que não
  * existe e ficaria quieto sobre outro.
  */
+/** Os negócios (cards do funil) do contato, por situação. Eles saem junto com o contato (fork Sales): a tela avisa antes de excluir. */
+export interface NegociosDoContato { total: number; abertos: number; ganhos: number; perdidos: number }
+
+async function contarNegociosDoContato(supabase: SB, ctx: HandlerCtx, contactId: string): Promise<NegociosDoContato> {
+  const { data } = await supabase
+    .from("crm_leads")
+    .select("status")
+    .eq("organization_id", ctx.organization_id)
+    .eq("contact_id", contactId);
+  const linhas = (data ?? []) as Array<{ status: string | null }>;
+  return {
+    total: linhas.length,
+    abertos: linhas.filter((l) => l.status === "open").length,
+    ganhos: linhas.filter((l) => l.status === "won").length,
+    perdidos: linhas.filter((l) => l.status === "lost").length,
+  };
+}
+
 export async function vinculosDoContatoHandler(
   supabase: SB,
   ctx: HandlerCtx,
   contactId: string,
-): Promise<{ vinculos: string[]; por_tabela: Record<string, number> }> {
+): Promise<{ vinculos: string[]; por_tabela: Record<string, number>; negocios: NegociosDoContato }> {
   await contatoExistente(supabase, ctx, contactId);
-  return contarVinculosRestrict(supabase, ctx, contactId);
+  const [vinculos, negocios] = await Promise.all([
+    contarVinculosRestrict(supabase, ctx, contactId),
+    contarNegociosDoContato(supabase, ctx, contactId),
+  ]);
+  return { ...vinculos, negocios };
 }
 
 export async function deleteContactHandler(
@@ -1210,19 +1232,23 @@ export async function deleteContactHandler(
   // terceiro (RFC 7009) — então revoga primeiro. A tabela é server-side only
   // (service role), filtrada pela organização do ctx. Melhor esforço: falha
   // do terceiro não barra a exclusão.
-  // OS NEGÓCIOS ABERTOS DA PESSOA SAEM COM ELA (fork Sales).
+  // OS NEGÓCIOS DA PESSOA SAEM COM ELA, de qualquer situação (fork Sales): abertos, ganhos e perdidos. A tela avisa a contagem antes do clique.
   //
   // `crm_leads.contact_id` é `ON DELETE SET NULL`: apagar o contato só SOLTAVA o vínculo, e o card ficava no quadro, sem dono. Quando a pessoa
   // escrevia de novo, nascia um contato NOVO e um card NOVO — e o funil mostrava os dois, duplicado. Os ids dos abertos são lidos ANTES (depois da
   // exclusão o vínculo já foi solto e não há mais como achá-los) e só são apagados DEPOIS que a exclusão do contato deu certo: se ela falhar,
-  // nenhum card é tocado. Os negócios já GANHOS ou PERDIDOS ficam: são histórico (e, no ganho, contrato e financeiro).
-  const { data: negociosAbertos } = await supabase
+  // nenhum card é tocado. O contrato e o financeiro de um negócio ganho vivem no Sales e NÃO são tocados por esta exclusão.
+  const { data: negociosDoContato } = await supabase
     .from("crm_leads")
-    .select("id")
+    .select("id, status")
     .eq("organization_id", ctx.organization_id)
-    .eq("contact_id", contactId)
-    .eq("status", "open");
-  const idsDosNegociosAbertos = (negociosAbertos ?? []).map((l) => l.id as string);
+    .eq("contact_id", contactId);
+  const idsDosNegociosAbertos = (negociosDoContato ?? []).map((l) => l.id as string);
+  const situacaoDosNegocios = {
+    abertos: (negociosDoContato ?? []).filter((l) => (l as { status?: string }).status === "open").length,
+    ganhos: (negociosDoContato ?? []).filter((l) => (l as { status?: string }).status === "won").length,
+    perdidos: (negociosDoContato ?? []).filter((l) => (l as { status?: string }).status === "lost").length,
+  };
 
   await revogarAcessosDoContato(createAdminClient(), ctx.organization_id, contactId).catch((err: unknown) => {
     logger.warn("revogacao dos acessos MCP do contato falhou antes da exclusao", {
@@ -1308,7 +1334,7 @@ export async function deleteContactHandler(
     resourceType: "contact",
     resourceId: contactId,
     requestId: ctx.requestId,
-    metadata: { ...a.metadataActor, negocios_abertos_removidos: negociosRemovidos },
+    metadata: { ...a.metadataActor, negocios_removidos: negociosRemovidos, negocios_por_situacao: situacaoDosNegocios },
   });
 
   return { id: contactId };
