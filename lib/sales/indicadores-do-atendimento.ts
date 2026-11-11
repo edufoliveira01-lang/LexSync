@@ -12,8 +12,8 @@ import { configDosContratos, enviarIndicadoresDoAtendimento } from "./contratos"
 
 export type Situacao = "desqualificado" | "sem_interesse" | "qualificado" | "em_andamento";
 export interface EtapaLida { id: string; name: string; is_lost: boolean; is_won: boolean; position: number | null }
-export interface LeadLido { created_at: string; status: string; stage_id: string }
-export interface MesDoRetrato { mes: string; novos: number; qualificados: number; desqualificados: number; sem_interesse: number; em_andamento: number }
+export interface LeadLido { created_at: string; status: string; stage_id: string; source?: string | null }
+export interface MesDoRetrato { mes: string; novos: number; qualificados: number; desqualificados: number; sem_interesse: number; em_andamento: number; fontes: Record<string, number> }
 
 const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 /** O mês (YYYY-MM) no horário de Brasília (UTC-3). */
@@ -29,7 +29,7 @@ export function situacaoDoLead(lead: Pick<LeadLido, "status">, etapa: Pick<Etapa
 }
 
 /** Os últimos `n` meses terminando em `ate` (YYYY-MM), do mais antigo ao mais novo. */
-export function ultimosMesesDoRetrato(ate: string, n = 6): string[] {
+export function ultimosMesesDoRetrato(ate: string, n = 12): string[] {
   const [a, m] = ate.split("-").map(Number) as [number, number];
   return Array.from({ length: n }, (_, i) => { const d = new Date(Date.UTC(a, m - 1 - (n - 1 - i), 1)); return d.toISOString().slice(0, 7); });
 }
@@ -37,11 +37,13 @@ export function ultimosMesesDoRetrato(ate: string, n = 6): string[] {
 export function montarRetrato(leads: readonly LeadLido[], abertos: readonly { stage_id: string }[], etapas: readonly EtapaLida[], agora = new Date()) {
   const porId = new Map(etapas.map((e) => [e.id, e]));
   const meses = ultimosMesesDoRetrato(mesDeBrasilia(agora.toISOString()));
-  const base = new Map<string, MesDoRetrato>(meses.map((m) => [m, { mes: m, novos: 0, qualificados: 0, desqualificados: 0, sem_interesse: 0, em_andamento: 0 }]));
+  const base = new Map<string, MesDoRetrato>(meses.map((m) => [m, { mes: m, novos: 0, qualificados: 0, desqualificados: 0, sem_interesse: 0, em_andamento: 0, fontes: {} }]));
   for (const l of leads) {
     const linha = base.get(mesDeBrasilia(l.created_at));
     if (!linha) continue;
     linha.novos++;
+    const fonte = String(l.source ?? "").trim().slice(0, 60);
+    if (fonte) linha.fontes[fonte] = (linha.fontes[fonte] ?? 0) + 1;
     const s = situacaoDoLead(l, porId.get(l.stage_id));
     if (s === "qualificado") linha.qualificados++; else if (s === "desqualificado") linha.desqualificados++; else if (s === "sem_interesse") linha.sem_interesse++; else linha.em_andamento++;
   }
@@ -72,7 +74,7 @@ export async function calcularRetratoDaOrganizacao(orgId: string, agora = new Da
   const meses = ultimosMesesDoRetrato(mesDeBrasilia(agora.toISOString()));
   const desde = new Date(Date.parse(`${meses[0]}-01T03:00:00Z`)).toISOString();
   const etapas = await lerTudo<EtapaLida>((de, ate) => admin.from("crm_stages").select("id, name, is_lost, is_won, position").eq("organization_id", orgId).range(de, ate));
-  const leads = await lerTudo<LeadLido>((de, ate) => admin.from("crm_leads").select("created_at, status, stage_id").eq("organization_id", orgId).gte("created_at", desde).order("created_at").range(de, ate));
+  const leads = await lerTudo<LeadLido>((de, ate) => admin.from("crm_leads").select("created_at, status, stage_id, source").eq("organization_id", orgId).gte("created_at", desde).order("created_at").range(de, ate));
   const abertos = await lerTudo<{ stage_id: string }>((de, ate) => admin.from("crm_leads").select("stage_id").eq("organization_id", orgId).eq("status", "open").range(de, ate), 5);
   return montarRetrato(leads, abertos, etapas, agora);
 }

@@ -18,6 +18,8 @@ export interface DadosDoContrato {
   variante?: "comum" | "representado" | "rogo";
   representante?: PessoaDoContrato; a_rogo?: PessoaDoContrato;
   campos?: Record<string, string>; modelo_honorarios?: string;
+  /** De onde o lead veio e quando entrou: o Sales guarda no negócio do cliente (tela Captação). */
+  fonte?: string; data_entrada?: string;
 }
 /** Quem assina no lugar do cliente: o representante (menor, incapaz) ou quem assina a rogo. */
 export interface PessoaDoContrato { nome?: string; nacionalidade?: string; estado_civil?: string; profissao?: string; rg?: string; cpf?: string; endereco?: string; qualidade?: string }

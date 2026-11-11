@@ -101,6 +101,22 @@ export async function slugDaOrg(orgId: string): Promise<string | null> {
 
 const CAMPOS_DO_NEGOCIO = ["cpf", "rg", "nacionalidade", "estado_civil", "profissao", "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "sexo"] as const;
 
+/** De onde o lead veio e quando entrou (o primeiro card do contato): vai com o contrato para o negócio do cliente no Sales. Nunca lança. */
+async function origemDoLead(orgId: string, conversationId: string): Promise<{ fonte?: string; data_entrada?: string }> {
+  try {
+    const admin = createAdminClient();
+    const { data: conv } = await admin.from("conversations").select("contact_id").eq("organization_id", orgId).eq("id", conversationId).maybeSingle();
+    const contactId = (conv as { contact_id?: string | null } | null)?.contact_id;
+    if (!contactId) return {};
+    const { data } = await admin.from("crm_leads").select("source, created_at").eq("organization_id", orgId).eq("contact_id", contactId).order("created_at", { ascending: true }).limit(1).maybeSingle();
+    const l = data as { source?: string | null; created_at?: string | null } | null;
+    return {
+      ...(l?.source ? { fonte: String(l.source).slice(0, 120) } : {}),
+      ...(l?.created_at ? { data_entrada: new Date(Date.parse(l.created_at) - 3 * 3_600_000).toISOString().slice(0, 10) } : {}),
+    };
+  } catch { return {}; }
+}
+
 export interface ContratoCriado { contrato: ContratoPedido; mensagem: string }
 
 /** Pede o contrato ao Sales, devolve os dados ao contato/negócio e registra "Contrato enviado" na conversa. Quem chama decide como o link chega ao cliente. */
@@ -109,7 +125,8 @@ export async function criarContratoNaConversa(p: {
   dados: DadosDoContrato & { nome: string }; aposAssinatura?: AposAssinatura | null;
 }): Promise<ContratoCriado> {
   const efetiva = escolhaEfetiva(await padraoDaOrg(p.orgId), p.aposAssinatura ?? null);
-  const r = await pedirContrato(p.slug, { ...p.dados, conversa_ref: p.conversationId, criado_por: p.nomeDeQuemPediu });
+  const origem = await origemDoLead(p.orgId, p.conversationId);
+  const r = await pedirContrato(p.slug, { ...p.dados, ...origem, conversa_ref: p.conversationId, criado_por: p.nomeDeQuemPediu });
   const paraOsCampos: Record<string, string> = Object.fromEntries(
     CAMPOS_DO_NEGOCIO.flatMap((k) => ((p.dados as unknown as Record<string, unknown>)[k] ? [[k, String((p.dados as unknown as Record<string, unknown>)[k])]] : [])),
   );

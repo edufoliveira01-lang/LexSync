@@ -37,7 +37,7 @@ describe("meses e retrato", () => {
   it("conta por coorte e mostra onde estão os que seguem em atendimento", () => {
     const agora = new Date("2026-11-11T15:00:00Z");
     const leads = [
-      { created_at: "2026-11-02T12:00:00Z", status: "open", stage_id: "e1" },
+      { created_at: "2026-11-02T12:00:00Z", status: "open", stage_id: "e1", source: "meta_ads" },
       { created_at: "2026-11-03T12:00:00Z", status: "open", stage_id: "e3" },
       { created_at: "2026-11-04T12:00:00Z", status: "lost", stage_id: "e6" },
       { created_at: "2026-11-05T12:00:00Z", status: "lost", stage_id: "e5" },
@@ -49,6 +49,7 @@ describe("meses e retrato", () => {
     expect(r.meses.find((m) => m.mes === "2026-10")).toMatchObject({ novos: 1, qualificados: 1 });
     expect(r.por_etapa.map((e) => `${e.nome}:${e.total}`)).toEqual(["Novo contato:2", "Em triagem:1", "Proposta enviada:1"]);
     expect(r.abertos).toBe(4);
-    expect(r.meses).toHaveLength(6);
+    expect(nov.fontes).toEqual({ meta_ads: 1 });
+    expect(r.meses).toHaveLength(12);
   });
 });
