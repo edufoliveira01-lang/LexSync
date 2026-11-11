@@ -1,5 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+
+import { definirCredencialArquivada } from "../_actions";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,6 +30,8 @@ import { AddCredentialDialog } from "./AddCredentialDialog";
 
 interface Props {
   initialData: CredentialRow[];
+  /** Fork Sales: ids das credenciais arquivadas (fora da lista principal, mas ainda valendo). */
+  arquivadas?: string[];
   canWrite: boolean;
   usageMap: Record<string, number>;
   /**
@@ -61,6 +67,7 @@ const PROVIDER_ORDER: (ProvedorComChave | ServiceProvider)[] = [
 
 export function CredentialsList({
   initialData,
+  arquivadas = [],
   canWrite,
   usageMap,
   jev = null,
@@ -69,8 +76,18 @@ export function CredentialsList({
   const t = useT();
   const { data } = useCredentialsList({ initialData });
   const [addOpen, setAddOpen] = useState(false);
+  const router = useRouter();
+  const [, iniciar] = useTransition();
 
+  // `credentials` segue sendo a lista COMPLETA (o Jev e os avisos olham todas); só a EXIBIÇÃO separa as arquivadas.
   const credentials = data ?? [];
+  const conjuntoArquivadas = new Set(arquivadas);
+  const arquivar = (id: string, valor: boolean) =>
+    iniciar(async () => {
+      const r = await definirCredencialArquivada(id, valor);
+      if (r.ok) { toast.success(valor ? t("Credencial arquivada.") : t("Credencial restaurada.")); router.refresh(); }
+      else toast.error(t("Não foi possível concluir. Tente de novo."));
+    });
 
   // Construído a partir da lista única: escrito à mão, o dia em que um
   // provedor novo entra é o dia em que as credenciais dele somem da tela sem
@@ -149,7 +166,7 @@ export function CredentialsList({
         // `?? []` porque a lista de provedores pode crescer sem que exista
         // credencial daquele provedor — o agrupamento só tem chave para quem
         // tem linha.
-        const rows = grouped[p] ?? [];
+        const rows = (grouped[p] ?? []).filter((r) => !conjuntoArquivadas.has(r.id));
         if (rows.length === 0) return null;
         return (
           <section key={p} className="space-y-2">
@@ -165,6 +182,7 @@ export function CredentialsList({
                     usageCount={usageMap[row.id] ?? 0}
                     usadaEm={row.id === doJev?.id ? jev?.tarefas : undefined}
                     avisoAoExcluir={row.id === doJev?.id ? avisoAoExcluirOJev : undefined}
+                    onArquivar={() => arquivar(row.id, true)}
                   />
                 </li>
               ))}
@@ -172,6 +190,22 @@ export function CredentialsList({
           </section>
         );
       })}
+
+      {credentials.some((c) => conjuntoArquivadas.has(c.id)) ? (
+        <details className="rounded-lg border border-border p-3">
+          <summary className="cursor-pointer text-sm font-medium text-muted-foreground">
+            {t("Credenciais arquivadas")} ({credentials.filter((c) => conjuntoArquivadas.has(c.id)).length})
+          </summary>
+          <p className="mt-2 text-xs text-muted-foreground">{t("Continuam valendo para os agentes que já as usam; só saíram da lista principal.")}</p>
+          <ul className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            {credentials.filter((c) => conjuntoArquivadas.has(c.id)).map((row) => (
+              <li key={row.id}>
+                <CredentialCard credential={row} canWrite={canWrite} usageCount={usageMap[row.id] ?? 0} onRestaurar={() => arquivar(row.id, false)} />
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
 
       <AddCredentialDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>

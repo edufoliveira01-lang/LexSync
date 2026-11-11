@@ -57,6 +57,11 @@ export default async function CredentialsPage() {
 
   const todas = (data ?? []) as CredentialRow[];
 
+  // Fork Sales: credenciais ARQUIVADAS (somem da lista principal, mas continuam funcionando para as versões que as usam).
+  const { data: orgDasArquivadas } = await createAdminClient().from("organizations").select("settings").eq("id", activeOrg.orgId).maybeSingle();
+  const brutas = (orgDasArquivadas as { settings?: { credenciais_arquivadas?: unknown } | null } | null)?.settings?.credenciais_arquivadas;
+  const arquivadas = Array.isArray(brutas) ? brutas.filter((x): x is string => typeof x === "string") : [];
+
   // O INTERRUPTOR DA INSTALAÇÃO (#1672, itens 6 e 9): desligado, a linha do
   // login por assinatura NÃO aparece aqui — nem no painel, nem na lista de
   // chaves. A leitura do banco continua acontecendo (a linha é da empresa,
@@ -245,6 +250,7 @@ export default async function CredentialsPage() {
       )}
       <CredentialsList
         initialData={credentials}
+        arquivadas={arquivadas}
         canWrite={canWrite}
         usageMap={usageMap}
         jev={jev}

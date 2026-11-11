@@ -41,6 +41,10 @@ import { descreverErroDeValidacao } from "@/lib/ai/credenciais/erro-de-validacao
 import { RotateCredentialDialog } from "./RotateCredentialDialog";
 
 interface Props {
+  /** Fork Sales: arquivar tira a credencial da lista principal sem excluí-la (ela segue valendo para o histórico de versões). */
+  onArquivar?: () => void;
+  /** Só nas arquivadas: devolve a credencial à lista principal. */
+  onRestaurar?: () => void;
   credential: CredentialRow;
   canWrite: boolean;
   usageCount: number;
@@ -69,7 +73,7 @@ const STATUS_VARIANT: Record<CredentialStatus, "default" | "secondary" | "destru
   inactive: "outline",
 };
 
-export function CredentialCard({ credential, canWrite, usageCount, usadaEm = [], avisoAoExcluir }: Props) {
+export function CredentialCard({ credential, canWrite, usageCount, usadaEm = [], avisoAoExcluir, onArquivar, onRestaurar }: Props) {
   const t = useT();
   const router = useRouter();
   const qc = useQueryClient();
@@ -239,6 +243,16 @@ export function CredentialCard({ credential, canWrite, usageCount, usadaEm = [],
           ) : (
             deleteButton
           )}
+          {onArquivar ? (
+            <Button variant="ghost" size="sm" onClick={onArquivar} disabled={isPending} title={t("Tira da lista sem excluir: continua valendo para os agentes que a usam.")}>
+              {t("Arquivar")}
+            </Button>
+          ) : null}
+          {onRestaurar ? (
+            <Button variant="ghost" size="sm" onClick={onRestaurar} disabled={isPending}>
+              {t("Restaurar")}
+            </Button>
+          ) : null}
         </div>
       )}
 
