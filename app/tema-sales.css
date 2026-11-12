@@ -6,40 +6,40 @@
    Este é o ÚNICO arquivo de estilo nosso (mais a fonte). O app o importa em app/layout.tsx, depois de globals.css, por isso
    tudo aqui vence em empate de especificidade. Regra do fork: não editar componentes do original; só estilizar por aqui, para
    as atualizações do DeskcommCRM (scripts/sales/sincronizar-upstream.sh) entrarem sem conflito.
-   Paleta e medidas vêm do DisparaZap (client/tailwind.config.js): zinc azul-acinzentado, acento roxo, cantos grandes, sombras suaves.
+   Paleta e medidas vêm do DisparaZap (client/tailwind.config.js): zinc azul-acinzentado, acento azul, cantos grandes, sombras suaves.
    ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */
 
 /* ============================== 1. Cores, cantos, sombras (claro) ============================== */
 :root {
-  --color-bg: #f6f7fb;
+  --color-bg: #f3f6fb;
   --color-surface: #ffffff;
-  --color-surface-elevated: #eef0f6;
+  --color-surface-elevated: #eaeff7;
   --color-overlay: rgba(16, 22, 38, 0.45);
 
-  --color-text: #182033;
+  --color-text: #111a2e;
   --color-text-muted: #505d75;
   --color-text-subtle: #647089;
 
   --color-border: #e1e5ef;
   --color-border-strong: #c7cedd;
 
-  --color-accent-50: #f3f0ff;
-  --color-accent-100: #e9e2ff;
-  --color-accent-200: #d6c8ff;
-  --color-accent-300: #bba2ff;
-  --color-accent-400: #a07aff;
-  --color-accent-500: #8556ee;
-  --color-accent-600: #7340d9;
-  --color-accent-700: #6030b9;
-  --color-accent-800: #502a97;
-  --color-accent-900: #432779;
-  --color-accent-950: #2b1655;
-  --color-accent: #7340d9;
+  --color-accent-50: #eff7ff;
+  --color-accent-100: #dcedfe;
+  --color-accent-200: #bfe0fd;
+  --color-accent-300: #93ccfb;
+  --color-accent-400: #5cb0f7;
+  --color-accent-500: #2f92ee;
+  --color-accent-600: #1678dc;
+  --color-accent-700: #1262b6;
+  --color-accent-800: #145093;
+  --color-accent-900: #154376;
+  --color-accent-950: #0e2a4c;
+  --color-accent: #1678dc;
   --color-accent-fg: #ffffff;
-  --color-accent-soft: #f3f0ff;
-  --color-accent-hover: #6030b9;
+  --color-accent-soft: #eaf4ff;
+  --color-accent-hover: #1262b6;
 
-  --color-neutral-50: #f6f7fb;
+  --color-neutral-50: #f3f6fb;
   --color-neutral-100: #eef0f6;
   --color-neutral-200: #e1e5ef;
   --color-neutral-300: #c7cedd;
@@ -47,9 +47,9 @@
   --color-neutral-500: #647089;
   --color-neutral-600: #505d75;
   --color-neutral-700: #39455d;
-  --color-neutral-800: #252e43;
-  --color-neutral-900: #182033;
-  --color-neutral-950: #101626;
+  --color-neutral-800: #1c2840;
+  --color-neutral-900: #111a2e;
+  --color-neutral-950: #0b1220;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -84,22 +84,22 @@
 
 /* ============================== 2. Cores (escuro) ============================== */
 [data-theme="dark"] {
-  --color-bg: #101626;
-  --color-surface: #182033;
-  --color-surface-elevated: #202a3f;
-  --color-overlay: rgba(6, 9, 18, 0.6);
+  --color-bg: #0b1220;
+  --color-surface: #111a2e;
+  --color-surface-elevated: #1c2840;
+  --color-overlay: rgba(4, 8, 16, 0.62);
 
   --color-text: #eef0f6;
   --color-text-muted: #c7cedd;
   --color-text-subtle: #8993aa;
 
-  --color-border: #252e43;
-  --color-border-strong: #39455d;
+  --color-border: #1c2840;
+  --color-border-strong: #2a3a58;
 
-  --color-accent: #7340d9;
+  --color-accent: #1678dc;
   --color-accent-fg: #ffffff;
-  --color-accent-soft: rgba(133, 86, 238, 0.18);
-  --color-accent-hover: #8556ee;
+  --color-accent-soft: rgba(47, 146, 238, 0.18);
+  --color-accent-hover: #2f92ee;
 
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 2px 10px -4px rgba(0, 0, 0, 0.45);
@@ -135,17 +135,17 @@ body {
 button, input, select, textarea { font-family: inherit; }
 
 body {
-  background-image: radial-gradient(1100px 520px at 100% -8%, rgba(133, 86, 238, 0.09), transparent 60%),
-    radial-gradient(900px 480px at -10% 105%, rgba(115, 64, 217, 0.05), transparent 60%);
+  background-image: radial-gradient(1100px 520px at 100% -8%, rgba(47, 146, 238, 0.09), transparent 60%),
+    radial-gradient(900px 480px at -10% 105%, rgba(22, 120, 220, 0.05), transparent 60%);
   background-attachment: fixed;
 }
 [data-theme="dark"] body {
-  background-image: radial-gradient(1100px 520px at 100% -8%, rgba(133, 86, 238, 0.14), transparent 60%),
-    radial-gradient(900px 480px at -10% 105%, rgba(115, 64, 217, 0.1), transparent 60%);
+  background-image: radial-gradient(1100px 520px at 100% -8%, rgba(47, 146, 238, 0.14), transparent 60%),
+    radial-gradient(900px 480px at -10% 105%, rgba(22, 120, 220, 0.1), transparent 60%);
 }
 
-::selection { background: #d6c8ff; color: #2b1655; }
-[data-theme="dark"] ::selection { background: #502a97; color: #f3f0ff; }
+::selection { background: #bfe0fd; color: #0e2a4c; }
+[data-theme="dark"] ::selection { background: #145093; color: #eff7ff; }
 
 h1, h2, h3 { letter-spacing: -0.015em; }
 
@@ -162,7 +162,7 @@ aside.sticky.shrink-0.flex-col nav { padding: 6px 10px; }
 aside.sticky.shrink-0.flex-col nav > div { padding-top: 6px; }
 aside.sticky.shrink-0.flex-col nav > div + div { border-top: 1px solid var(--color-border); margin-top: 6px; }
 
-/* itens: compactos, arredondados; ativo em lilás */
+/* itens: compactos, arredondados; ativo em azul */
 aside.sticky.shrink-0.flex-col nav a {
   position: relative;
   border-radius: 10px;
@@ -179,7 +179,7 @@ aside.sticky.shrink-0.flex-col nav a[aria-current="page"] {
 }
 [data-theme="dark"] aside.sticky.shrink-0.flex-col nav a[aria-current="page"] { color: var(--color-accent-300); }
 aside.sticky.shrink-0.flex-col nav a svg { color: currentColor; opacity: 0.9; }
-/* contadores: pílulas cinza-lilás, como na referência (o ativo fica roxo) */
+/* contadores: pílulas cinza-azuladas, como na referência (o ativo fica azul) */
 aside.sticky.shrink-0.flex-col nav a span.rounded-full[class*="bg-accent"] {
   background: var(--color-surface-elevated);
   color: var(--color-text-muted);
@@ -215,10 +215,10 @@ input, select, textarea { border-radius: var(--radius-md); }
 input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: none;
   border-color: var(--color-accent-400);
-  box-shadow: 0 0 0 3px rgba(133, 86, 238, 0.22);
+  box-shadow: 0 0 0 3px rgba(47, 146, 238, 0.22);
 }
-button[class*="bg-primary"], a[class*="bg-primary"] { font-weight: 600; box-shadow: 0 6px 16px -8px rgba(115, 64, 217, 0.65); }
-button[class*="bg-primary"]:hover, a[class*="bg-primary"]:hover { box-shadow: 0 8px 20px -8px rgba(115, 64, 217, 0.8); }
+button[class*="bg-primary"], a[class*="bg-primary"] { font-weight: 600; box-shadow: 0 6px 16px -8px rgba(22, 120, 220, 0.65); }
+button[class*="bg-primary"]:hover, a[class*="bg-primary"]:hover { box-shadow: 0 8px 20px -8px rgba(22, 120, 220, 0.8); }
 * { scrollbar-width: thin; scrollbar-color: rgba(100, 112, 137, 0.35) transparent; }
 
 /* ============================== 7. Inbox: colunas de ponta a ponta (como nas referências) ============================== */
@@ -248,7 +248,7 @@ main:has([data-realtime-status]) { padding: 0; overflow: hidden; }
 [data-testid="filtros-avancados"] > div.flex.flex-wrap { gap: 6px; }
 [data-testid="filtros-avancados"] button { height: 28px; padding-inline: 12px; }
 [data-testid="filtros-avancados"] > div.flex { gap: 6px; }
-/* abas: uma linha só, rolagem sem barra; sublinhado roxo na ativa */
+/* abas: uma linha só, rolagem sem barra; sublinhado azul na ativa */
 [role="tablist"] ~ span.w-4, span.w-4.shrink-0[aria-hidden] { display: none; }
 [role="tablist"] {
   flex-wrap: nowrap !important;
@@ -278,14 +278,14 @@ button[data-conversation-id][aria-current="true"] > span.absolute.inset-y-0.left
 button[data-conversation-id] .h-10.w-10,
 button[data-conversation-id] .h-10.w-10 > * { border-radius: 13px; }
 /* iniciais em cores pastel que se alternam */
-div.relative.flex.w-full.items-start.border-b:nth-child(6n+1) .h-10.w-10 > span { background: #e9e2ff; color: #6030b9; }
+div.relative.flex.w-full.items-start.border-b:nth-child(6n+1) .h-10.w-10 > span { background: #dcedfe; color: #1262b6; }
 div.relative.flex.w-full.items-start.border-b:nth-child(6n+2) .h-10.w-10 > span { background: #fde2f1; color: #b4307a; }
 div.relative.flex.w-full.items-start.border-b:nth-child(6n+3) .h-10.w-10 > span { background: #ffe8d2; color: #b25a12; }
 div.relative.flex.w-full.items-start.border-b:nth-child(6n+4) .h-10.w-10 > span { background: #d9f4e6; color: #1f7a4d; }
 div.relative.flex.w-full.items-start.border-b:nth-child(6n+5) .h-10.w-10 > span { background: #dcecff; color: #2a5fb0; }
 div.relative.flex.w-full.items-start.border-b:nth-child(6n) .h-10.w-10 > span { background: #e7e9f0; color: #505d75; }
 [data-theme="dark"] div.relative.flex.w-full.items-start.border-b .h-10.w-10 > span { filter: saturate(0.85) brightness(0.8); }
-button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10px -4px rgba(115, 64, 217, 0.6); }
+button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10px -4px rgba(22, 120, 220, 0.6); }
 
 /* ============================== 8. Conversa: cabeçalho, fundo, balões e caixa de resposta (modelo: referência 1) ============================== */
 [data-realtime-status] > div:nth-child(2) > div:first-child.border-b { background: var(--color-surface); border-color: var(--color-border); }
@@ -305,7 +305,7 @@ button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10p
   color: var(--color-text);
   border-bottom-right-radius: 6px;
 }
-[data-theme="dark"] [data-testid="message-bubble"].bg-primary { background: rgba(133, 86, 238, 0.3); color: #f6f7fb; }
+[data-theme="dark"] [data-testid="message-bubble"].bg-primary { background: rgba(47, 146, 238, 0.3); color: #f6f7fb; }
 
 [data-testid="composer"] {
   margin: 0 16px 16px;
@@ -332,7 +332,7 @@ button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10p
 [data-theme="dark"] [data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > button.bg-accent { color: var(--color-accent-300); }
 [data-testid="composer"] textarea { border: 0; background: transparent; box-shadow: none; outline: none; padding-inline: 4px; }
 [data-testid="composer"] textarea:focus { box-shadow: none; outline: none; }
-button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px rgba(115, 64, 217, 0.75); }
+button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px rgba(22, 120, 220, 0.75); }
 
 /* ============================== 9. Cabeçalho da conversa enxuto + menu "Mais ações" ============================== */
 .cabecalho-conversa {
@@ -362,7 +362,7 @@ button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px r
 .cabecalho-conversa [data-testid="canal-da-conversa"] { display: none; }
 .acoes-da-conversa > button.border { border-color: var(--color-border-strong); }
 .acoes-da-conversa > button[aria-label] { width: 34px; padding: 0; }
-.acoes-da-conversa > button.bg-accent { box-shadow: 0 8px 18px -10px rgba(115, 64, 217, 0.7); }
+.acoes-da-conversa > button.bg-accent { box-shadow: 0 8px 18px -10px rgba(22, 120, 220, 0.7); }
 
 .mais-acoes {
   border-radius: 16px;
