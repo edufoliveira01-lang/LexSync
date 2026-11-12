@@ -95,3 +95,21 @@ export function validateOutboundMedia(mime: string, sizeBytes: number): Ok | Fai
   if (kind) return { ok: true, kind };
   return { ok: false, code: "unsupported_media_type", message: "Tipo de arquivo não suportado." };
 }
+
+/**
+ * Nome de arquivo que o cliente vê no WhatsApp quando o remetente informa um (ex.: «Boleto-Maria-Parcela-1.pdf»).
+ * O nome é o último segmento do caminho no Storage, então precisa ser ASCII simples: sem acento, espaço ou símbolo.
+ * Devolve `null` quando nada de aproveitável sobra (o chamador mantém o nome gerado).
+ */
+export function nomeDeArquivoSeguro(bruto: unknown, ext: string): string | null {
+  if (typeof bruto !== "string") return null;
+  const base = bruto
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/\.[A-Za-z0-9]{1,5}$/, "")
+    .replace(/[^A-Za-z0-9._-]+/g, "-")
+    .replace(/^[-._]+|[-._]+$/g, "")
+    .replace(/-{2,}/g, "-")
+    .slice(0, 100);
+  return base.length > 0 ? `${base}.${ext}` : null;
+}

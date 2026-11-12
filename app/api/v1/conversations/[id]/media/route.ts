@@ -12,7 +12,7 @@ import { fail, ok } from "@/lib/api/wrappers";
 import { resolveAuthDual, tetoDeEscritaDoToken } from "@/lib/api/auth-dual";
 import { IDIOMA_PADRAO } from "@/lib/i18n/idiomas";
 import { extFromMime, MAX_MEDIA_BYTES } from "@/lib/messaging/media/types";
-import { validateOutboundMedia } from "@/lib/messaging/media/upload-validation";
+import { nomeDeArquivoSeguro, validateOutboundMedia } from "@/lib/messaging/media/upload-validation";
 import { transcodificarNotaDeVoz } from "@/lib/messaging/media/voice-transcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { traduzir } from "@/lib/i18n/dicionario";
@@ -111,7 +111,11 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const mimeFinal = audio.mime;
   const buffer = audio.buffer;
 
-  const storagePath = `${activeOrg.orgId}/${conversationId}/out-${randomUUID()}.${extFromMime(mimeFinal)}`;
+  // Nome opcional que o cliente verá (o canal usa o último segmento do caminho como nome do arquivo). Sem ele, segue o nome gerado.
+  const nomeAmigavel = nomeDeArquivoSeguro(form?.get("nome_arquivo"), extFromMime(mimeFinal));
+  const storagePath = nomeAmigavel
+    ? `${activeOrg.orgId}/${conversationId}/out-${randomUUID()}/${nomeAmigavel}`
+    : `${activeOrg.orgId}/${conversationId}/out-${randomUUID()}.${extFromMime(mimeFinal)}`;
   const admin = createAdminClient();
   const { error: upErr } = await admin.storage
     .from("whatsapp-media")
