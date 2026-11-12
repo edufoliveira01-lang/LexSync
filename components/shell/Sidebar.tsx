@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useT } from "@/hooks/i18n/useT";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { ArrowRight, BookOpen, CaretDoubleLeft, CaretDoubleRight, CaretDown, Gear } from "@/lib/ui/icons";
+import { ArrowRight, BookOpen, CaretDoubleLeft, CaretDoubleRight, Gear } from "@/lib/ui/icons";
 import { cn } from "@/lib/utils";
 import { toggleSidebar } from "@/app/actions/shell/toggleSidebar";
 import { useAuth } from "@/hooks/auth/AuthProvider";
@@ -345,7 +345,8 @@ export function SidebarContent({
           const tituloId = `nav-grupo-${group.id}`;
           // Recolhido o sidebar inteiro (rail de 64px), o grupo sempre mostra
           // seus itens — não há onde desenhar cabeçalho nem seta para fechá-lo.
-          const aberto = collapsed || !gruposFechados.has(group.id);
+          // Como no Sales, os grupos ficam sempre abertos: o título é só um rótulo.
+          const aberto = true;
           return (
             <div key={group.id} className="space-y-1">
               {/* Colapsado, o sidebar tem 64px: seis rótulos ali seriam ilegíveis.
@@ -353,24 +354,11 @@ export function SidebarContent({
               {collapsed ? (
                 <div aria-hidden className="mx-2 border-t first:hidden" />
               ) : (
-                <h2 id={tituloId}>
-                  <button
-                    type="button"
-                    onClick={() => toggleGrupo(group.id)}
-                    aria-expanded={aberto}
-                    className="flex w-full items-center justify-between rounded-md px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
-                  >
-                    {t(group.label)}
-                    <CaretDown
-                      size={12}
-                      weight="bold"
-                      className={cn(
-                        "shrink-0 text-text-subtle transition-transform",
-                        !aberto && "-rotate-90",
-                      )}
-                      aria-hidden
-                    />
-                  </button>
+                <h2
+                  id={tituloId}
+                  className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.1em] text-text-subtle"
+                >
+                  {t(group.label)}
                 </h2>
               )}
               {aberto && (

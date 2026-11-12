@@ -18,9 +18,9 @@ export function verificarRequisicao(segredo: string, d: DadosDaRequisicao, ts: s
 
 /** Chave própria de cada escritório para a entrada direta: o sistema do escritório nunca recebe o segredo geral. */
 export const chaveSso = (segredo: string, slug: string) => hmac(segredo, `sso:${slug}`);
-export interface TokenSso { slug: string; email: string; exp: number; jti: string }
-export function emitirTokenSso(chave: string, d: { slug: string; email: string }, agora = Math.floor(Date.now() / 1000), validadeS = 60): string {
-  const carga = b64u(JSON.stringify({ slug: d.slug, email: d.email, exp: agora + validadeS, jti: randomUUID() } satisfies TokenSso));
+export interface TokenSso { slug: string; email: string; exp: number; jti: string; src?: string }
+export function emitirTokenSso(chave: string, d: { slug: string; email: string; src?: string }, agora = Math.floor(Date.now() / 1000), validadeS = 60): string {
+  const carga = b64u(JSON.stringify({ slug: d.slug, email: d.email, ...(d.src ? { src: d.src } : {}), exp: agora + validadeS, jti: randomUUID() } satisfies TokenSso));
   return `${carga}.${hmac(chave, carga)}`;
 }
 export function lerTokenSso(segredo: string, token: string, agora = Math.floor(Date.now() / 1000)): TokenSso | null {

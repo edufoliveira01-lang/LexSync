@@ -41,7 +41,10 @@ export function criarServidor(db: Cliente, cfg: ConfigServidor, agora: () => num
           if (e.org_status !== "active") return pagina(res, 403, "<p>O atendimento deste escritório está suspenso. Fale com o administrador do sistema.</p>");
           // Só um destino fixo é aceito (abrir a conversa de um telefone); qualquer outra coisa cai em /app.
           const pedido = url.searchParams.get("next") || "";
-          const destinoDepois = /^\/app\/abrir-conversa\?telefone=\d{8,15}$/.test(pedido) ? pedido : "/app";
+          const destinoFinal = /^\/app\/abrir-conversa\?telefone=\d{8,15}$/.test(pedido) ? pedido : "/app";
+          // O endereço do sistema do escritório vem ASSINADO no token; o atendimento o guarda para o botão "Sistema" voltar para lá.
+          const origem = typeof t.src === "string" && /^https:\/\/[a-z0-9.-]+(:\d+)?$/.test(t.src) ? t.src : "";
+          const destinoDepois = origem ? `/app/sistema-origem?de=${encodeURIComponent(origem)}&para=${encodeURIComponent(destinoFinal)}` : destinoFinal;
           const destino = `${cfg.urlPublica.replace(/\/$/, "")}/auth/confirm`;
           // Formulário que se envia sozinho; o botão cobre quem tem scripts bloqueados.
           return pagina(res, 200, `<form id="f" method="post" action="${esc(destino)}"><input type="hidden" name="token_hash" value="${esc(e.token_hash)}"><input type="hidden" name="type" value="magiclink"><input type="hidden" name="next" value="${esc(destinoDepois)}"><p>Entrando no atendimento…</p><noscript><button type="submit">Continuar</button></noscript></form><script>document.getElementById('f').submit()</script>`);
