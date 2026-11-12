@@ -154,6 +154,9 @@ export const PUBLIC_PATHS: RegExp[] = [
   // LISTAR OS NÚMEROS DE WHATSAPP SERVER-TO-SERVER (o Sales escolhe por qual enviar): sessão OU Bearer
   // `dsk_…` com `mcp:read`, resolvidos DENTRO da rota. O POST (conectar número) segue só admin de sessão.
   /^\/api\/v1\/channel-sessions$/,
+  // HISTÓRICO DE MENSAGENS POR TOKEN (o Sales confere respostas e leitura): sessão OU Bearer `dsk_…`
+  // com `mcp:read`, resolvidos DENTRO da rota.
+  /^\/api\/v1\/conversations\/[0-9a-f-]{36}\/messages$/i,
   // CRIAÇÃO DE RASCUNHO SUGERIDO SERVER-TO-SERVER (issue #1611). Mesma
   // dualidade da linha acima: sessão OU Bearer `dsk_…` com escopo `mcp:write`,
   // resolvida por `lib/api/auth-dual.ts` DENTRO da rota
