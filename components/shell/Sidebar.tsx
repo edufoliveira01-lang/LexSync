@@ -22,6 +22,7 @@ import { LogotipoDoProduto, SimboloDoProduto } from "@/components/branding/Marca
 import { marcaEhADoProduto } from "@/lib/branding";
 import { useMarcaDaInstalacao } from "@/lib/branding/contexto";
 import { GRUPO_NO_RODAPE, sidebarGroups } from "@/lib/navigation/registry";
+import { ehTelaDeConfiguracoes } from "@/lib/navigation/configuracoes";
 import { usePrefetchPorIntencao } from "@/hooks/navigation/prefetchPorIntencao";
 
 const CHAVE_GRUPOS_FECHADOS = "sidebar-grupos-fechados";
@@ -49,6 +50,7 @@ export function SidebarContent({
   // escolha de idioma virar algo visível no primeiro clique.
   const t = useT();
   const pathname = usePathname();
+  const emConfiguracoes = ehTelaDeConfiguracoes(pathname);
   const [isPending, startTransition] = useTransition();
   const { user, activeOrg } = useAuth();
   /**
@@ -376,7 +378,7 @@ export function SidebarContent({
                   className="space-y-1"
                 >
                   {items.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    const isActive = !emConfiguracoes && (pathname === item.href || pathname.startsWith(item.href + "/"));
                     const Icon = item.icon;
                     return (
                       <li key={item.href}>
@@ -450,11 +452,11 @@ export function SidebarContent({
             href={rodape.href}
             {...intencao(rodape.href)}
             title={collapsed ? t(rodape.label) : undefined}
-            aria-current={pathname.startsWith(rodape.href) ? "page" : undefined}
+            aria-current={emConfiguracoes || pathname.startsWith(rodape.href) ? "page" : undefined}
             onClick={onNavigate}
             className={cn(
               "mb-0.5 flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
-              pathname.startsWith(rodape.href)
+              emConfiguracoes || pathname.startsWith(rodape.href)
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
               collapsed && "justify-center px-2",
