@@ -14,7 +14,24 @@ import { lembrarSistema, origemDoSistema, sistemaLembrado } from "@/lib/auth/end
 export function AlternadorDeSistema({ recolhido }: { recolhido?: boolean }) {
   const t = useT();
   const [origem, setOrigem] = useState<string | null>(null);
-  useEffect(() => setOrigem(sistemaLembrado()), []);
+  useEffect(() => {
+    setOrigem(sistemaLembrado());
+    // O servidor sabe o endereço do escritório (o mesmo desenho do painel); vale mais que o que ficou guardado no navegador.
+    let vivo = true;
+    fetch("/api/v1/sales/sistema-url", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { data?: { url?: string | null } } | null) => {
+        const o = origemDoSistema(j?.data?.url ?? "");
+        if (vivo && o) {
+          lembrarSistema(o);
+          setOrigem(o);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   const irParaOSistema = () => {
     let destino = origem;

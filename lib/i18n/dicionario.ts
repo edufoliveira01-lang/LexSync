@@ -11082,6 +11082,12 @@ export const DICIONARIO: Traducoes = {
 
   // ─── Auth: login, cadastro, recuperação de senha, MFA, códigos de recuperação ───
   "Entrar": { es: "Entrar" },
+  "Minha conta": { es: "Mi cuenta" },
+  "Aparência": { es: "Apariencia" },
+  "Claro": { es: "Claro" },
+  "Escuro": { es: "Oscuro" },
+  "Automático (segue o computador)": { es: "Automático (sigue al equipo)" },
+  "Operador de IA": { es: "Operador de IA" },
   "Entrar com o sistema do escritório": { es: "Entrar con el sistema de la oficina" },
   "Endereço do sistema do escritório": { es: "Dirección del sistema de la oficina" },
   "Continuar no sistema": { es: "Continuar en el sistema" },

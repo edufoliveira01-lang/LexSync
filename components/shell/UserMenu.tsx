@@ -1,22 +1,20 @@
 "use client";
 import { useTransition } from "react";
 import { useUser, useAuth } from "@/hooks/auth/AuthProvider";
+import { useHotkeys } from "react-hotkeys-hook";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { SeletorDeIdioma } from "@/components/shell/SeletorDeIdioma";
+import { useTheme, type Theme } from "@/lib/theme";
 import { useT } from "@/hooks/i18n/useT";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SignOut, ShieldCheck } from "@/lib/ui/icons";
+import { Check, Gear, MonitorPlay, Moon, ShieldCheck, SignOut, Sun, UserCircle } from "@/lib/ui/icons";
+import { cn } from "@/lib/utils";
 
 function initials(name: string | null, email: string): string {
   if (name && name.trim()) {
@@ -25,35 +23,88 @@ function initials(name: string | null, email: string): string {
   return email.slice(0, 2).toUpperCase();
 }
 
-export function UserMenu({ noMenuLateral = false }: { noMenuLateral?: boolean } = {}) {
+const PAPEIS: Record<string, string> = {
+  admin: "Administrador",
+  manager: "Gestor",
+  agent: "Atendente",
+  ai_operator: "Operador de IA",
+  viewer: "Consulta",
+};
+
+const TEMAS: Array<{ modo: Theme; texto: string; Icone: typeof Sun }> = [
+  { modo: "light", texto: "Claro", Icone: Sun },
+  { modo: "dark", texto: "Escuro", Icone: Moon },
+  { modo: "system", texto: "Automático (segue o computador)", Icone: MonitorPlay },
+];
+
+/**
+ * O avatar do topo, como no Sales: nome e papel, Minha conta, Configurações, Aparência (claro, escuro, automático), Sair.
+ * O parâmetro `noMenuLateral` é mantido só para quem ainda o passa; o menu é o mesmo em todo lugar.
+ */
+export function UserMenu(_props: { noMenuLateral?: boolean } = {}) {
   const t = useT();
   const user = useUser();
-  const { signOut } = useAuth();
+  const { activeOrg, signOut } = useAuth();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { theme, setTheme } = useTheme();
+  const nome = user.full_name?.trim() || user.email;
+  const papel = activeOrg?.role ? PAPEIS[activeOrg.role] : null;
+
+  // O atalho que antes morava no botão de tema do topo.
+  useHotkeys(
+    "mod+shift+l",
+    () => setTheme(theme === "light" ? "dark" : theme === "dark" ? "system" : "light"),
+    { preventDefault: true },
+    [theme],
+  );
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Fork Sales: no menu lateral o idioma sai (fica em Configurações → Perfil) e o tema vem logo ao lado. */}
-      {!noMenuLateral && <SeletorDeIdioma />}
-      {!noMenuLateral && <ThemeToggle />}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full" aria-label={`${t("Menu do usuário")}: ${initials(user.full_name, user.email)}`}>
-            <Avatar className="h-8 w-8">
-              {user.avatar_url && <AvatarImage src={user.avatar_url} alt="" />}
-              <AvatarFallback>{initials(user.full_name, user.email)}</AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align={noMenuLateral ? "start" : "end"} side={noMenuLateral ? "top" : "bottom"} className="min-w-[220px]">
-          <DropdownMenuLabel>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">{user.full_name ?? user.email}</span>
-              <span className="truncate text-xs text-muted-foreground">{user.email}</span>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={`${t("Menu do usuário")}: ${initials(user.full_name, user.email)}`}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-100 text-[12px] font-semibold text-accent-700 ring-2 ring-transparent transition hover:ring-accent-300 focus-visible:outline-none focus-visible:ring-accent"
+        >
+          {initials(user.full_name, user.email)}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[220px] rounded-xl p-1.5">
+        <div className="px-3 pb-2 pt-1.5">
+          <p className="truncate text-sm font-semibold text-foreground">{nome}</p>
+          <p className="truncate text-xs text-muted-foreground">{papel ? t(papel) : user.email}</p>
+        </div>
+        <DropdownMenuItem asChild>
+          <Link href="/app/settings/profile" className="gap-3 rounded-lg px-3 py-2 text-[13px]">
+            <UserCircle size={16} aria-hidden /> {t("Minha conta")}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/app/settings" className="gap-3 rounded-lg px-3 py-2 text-[13px]">
+            <Gear size={16} aria-hidden /> {t("Configurações")}
+          </Link>
+        </DropdownMenuItem>
+        <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-text-subtle">
+          {t("Aparência")}
+        </p>
+        {TEMAS.map(({ modo, texto, Icone }) => (
+          <DropdownMenuItem
+            key={modo}
+            role="menuitemradio"
+            aria-checked={theme === modo}
+            onSelect={(e) => {
+              e.preventDefault();
+              setTheme(modo);
+            }}
+            className={cn("gap-3 rounded-lg px-3 py-2 text-[13px]", theme === modo && "dz-ativo-suave font-semibold")}
+          >
+            <Icone size={16} aria-hidden />
+            <span className="flex-1">{t(texto)}</span>
+            {theme === modo && <Check size={16} aria-hidden />}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
           {/*
             A PORTA DO MODO ADMINISTRADOR.
 
@@ -132,12 +183,15 @@ export function UserMenu({ noMenuLateral = false }: { noMenuLateral?: boolean } 
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuItem disabled={isPending} onClick={() => startTransition(async () => { await signOut(); })}>
-            <SignOut size={16} className="mr-2" aria-hidden />
+          <DropdownMenuItem
+            disabled={isPending}
+            onClick={() => startTransition(async () => { await signOut(); })}
+            className="gap-3 rounded-lg px-3 py-2 text-[13px] text-destructive"
+          >
+            <SignOut size={16} aria-hidden />
             {t("Sair")}
           </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

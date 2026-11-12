@@ -6,7 +6,7 @@ import { SearchTrigger } from "./SearchTrigger";
 import { TenantSwitcher } from "./TenantSwitcher";
 import { UserMenu } from "./UserMenu";
 
-/** Barra do topo no desenho do Sales: busca larga à esquerda; notificações, tema e menu da pessoa à direita. Em todas as larguras. */
+/** Barra do topo no desenho do Sales: busca larga à esquerda; notificações e menu da pessoa à direita. Em todas as larguras. */
 export function TopBar() {
   return (
     <header className="dz-topbar sticky top-[var(--faixas-de-cima,0px)] z-20 flex h-14 items-center justify-between gap-3 border-b bg-background/90 px-3 backdrop-blur-xl md:h-16 md:px-6 xl:px-8">
