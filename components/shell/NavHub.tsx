@@ -112,12 +112,9 @@ export function NavHub({
               return (
                 <Link key={item.href} href={item.href} className="block">
                   <Card className="flex h-full gap-3 p-4 transition-colors hover:border-border-strong">
-                    <Icon
-                      size={20}
-                      weight="regular"
-                      aria-hidden
-                      className="mt-0.5 shrink-0 text-muted-foreground"
-                    />
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                      <Icon size={20} weight="regular" aria-hidden />
+                    </span>
                     <div>
                       <h3 className="text-sm font-semibold">{traduzir(item.label, locale)}</h3>
                       <p className="mt-1 text-xs text-muted-foreground">
