@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 const buttonVariants = cva(
   [
     "inline-flex items-center justify-center gap-2 whitespace-nowrap",
-    "rounded-sm font-medium",
+    "rounded-xl font-medium",
     // `transform` SAIU da lista, e `translate` não entrou no lugar.
     //
     // O recuo do toque é `active:translate-y-px`, lá embaixo. No Tailwind 4 essa
@@ -41,8 +41,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-accent text-accent-foreground hover:bg-accent-hover shadow-xs",
-        default: "bg-accent text-accent-foreground hover:bg-accent-hover shadow-xs",
+        primary: "bg-accent text-accent-foreground hover:bg-accent-hover shadow-sm shadow-accent/20",
+        default: "bg-accent text-accent-foreground hover:bg-accent-hover shadow-sm shadow-accent/20",
         secondary:
           "bg-surface-elevated text-text border border-border hover:border-accent hover:text-accent",
         outline:
@@ -58,11 +58,11 @@ const buttonVariants = cva(
       // globalmente pro app inteiro em telas grandes infla a densidade sem
       // necessidade nenhuma. `lg` já nascia com 44px e não precisou mudar.
       size: {
-        sm: "h-11 px-3 text-xs lg:h-8",
-        default: "h-11 px-4 text-sm lg:h-9",
-        md: "h-11 px-4 text-sm lg:h-9",
+        sm: "h-11 px-3 text-xs lg:h-9",
+        default: "h-11 px-4 text-[13px]",
+        md: "h-11 px-4 text-[13px]",
         lg: "h-11 px-6 text-sm",
-        icon: "h-11 w-11 lg:h-9 lg:w-9",
+        icon: "h-11 w-11 lg:h-10 lg:w-10",
       },
     },
     defaultVariants: {
