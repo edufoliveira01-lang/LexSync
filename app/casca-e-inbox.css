@@ -30,10 +30,11 @@ aside.sticky.shrink-0.flex-col nav > div + div { border-top: 1px solid var(--col
 /* itens: compactos, arredondados; ativo em azul */
 aside.sticky.shrink-0.flex-col nav a {
   position: relative;
-  border-radius: 10px;
+  border-radius: 8px;
+  min-height: 36px;
   padding-block: 6px;
   color: var(--color-text-muted);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
 }
 aside.sticky.shrink-0.flex-col nav a:hover { background: var(--color-surface-elevated); color: var(--color-text); }
@@ -43,6 +44,26 @@ aside.sticky.shrink-0.flex-col nav a[aria-current="page"] {
   font-weight: 600;
 }
 [data-theme="dark"] aside.sticky.shrink-0.flex-col nav a[aria-current="page"] { color: var(--color-accent-300); }
+/* barra de 3px à esquerda do item ativo, como no Sales */
+aside.sticky.shrink-0.flex-col nav a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-accent);
+}
+aside.sticky.shrink-0.flex-col nav { padding-inline: 10px; }
+/* rodapé em cartão, como no Sales */
+aside.sticky.shrink-0.flex-col > div.border-t {
+  margin: 8px 10px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-elevated);
+}
+aside.sticky.shrink-0.flex-col > div.border-t a { padding-inline: 10px; }
 aside.sticky.shrink-0.flex-col nav a svg { color: currentColor; opacity: 0.9; }
 /* contadores: pílulas cinza-azuladas, como na referência (o ativo fica azul) */
 aside.sticky.shrink-0.flex-col nav a span.rounded-full[class*="bg-accent"] {
