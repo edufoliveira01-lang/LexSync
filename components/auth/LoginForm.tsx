@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInWithPassword } from "@/app/actions/auth/signInWithPassword";
 import { Eye, EyeSlash } from "@/lib/ui/icons";
+import { EntrarComOSistema } from "@/components/auth/EntrarComOSistema";
 import { AvisoSemResposta, useEnvioComTeto } from "@/components/auth/teto-da-espera";
 
 export function LoginForm({ next, email }: { next?: string; email?: string }) {
@@ -61,6 +62,7 @@ export function LoginForm({ next, email }: { next?: string; email?: string }) {
   };
 
   return (
+    <div className="space-y-5">
     <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div className="space-y-1.5">
         <Label htmlFor="email">{t("Email")}</Label>
@@ -123,5 +125,7 @@ export function LoginForm({ next, email }: { next?: string; email?: string }) {
         {isPending ? t("Entrando...") : t("Entrar")}
       </Button>
     </form>
+    <EntrarComOSistema />
+    </div>
   );
 }

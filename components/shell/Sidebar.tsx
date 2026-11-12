@@ -12,6 +12,7 @@ import { ContadorDeCasos } from "@/components/shell/ContadorDeCasos";
 import { ContadorDaFila } from "@/components/shell/ContadorDaFila";
 import { ContadorDeTarefas } from "@/components/shell/ContadorDeTarefas";
 import { VersionFooter } from "@/components/shell/VersionFooter";
+import { AlternadorDeSistema } from "./AlternadorDeSistema";
 import { SearchTrigger } from "./SearchTrigger";
 import { AlertsBell } from "./AlertsBell";
 import { TenantSwitcher } from "./TenantSwitcher";
@@ -262,6 +263,7 @@ export function SidebarContent({
           </div>
         )}
       </div>
+      <AlternadorDeSistema recolhido={collapsed} />
       {/* Fork Sales: busca global (⌘K) no topo do menu. */}
       <div className={cn("px-3 pt-3", collapsed && "px-2")}>
         <SearchTrigger noMenu recolhido={collapsed} />

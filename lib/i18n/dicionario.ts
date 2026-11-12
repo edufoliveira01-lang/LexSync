@@ -11082,6 +11082,12 @@ export const DICIONARIO: Traducoes = {
 
   // ─── Auth: login, cadastro, recuperação de senha, MFA, códigos de recuperação ───
   "Entrar": { es: "Entrar" },
+  "Entrar com o sistema do escritório": { es: "Entrar con el sistema de la oficina" },
+  "Endereço do sistema do escritório": { es: "Dirección del sistema de la oficina" },
+  "Continuar no sistema": { es: "Continuar en el sistema" },
+  "Informe o endereço do sistema do seu escritório, por exemplo: sistema.seuescritorio.com.br": { es: "Indica la dirección del sistema de tu oficina, por ejemplo: sistema.tuoficina.com" },
+  "Você entra com a senha do sistema e volta aqui já conectado. A senha não passa por este site.": { es: "Entras con la contraseña del sistema y vuelves aquí ya conectado. La contraseña no pasa por este sitio." },
+  "Endereço do sistema do seu escritório (ex.: sistema.seuescritorio.com.br)": { es: "Dirección del sistema de tu oficina (ej.: sistema.tuoficina.com)" },
   "Criar conta": { es: "Crear cuenta" },
   "Senha": { es: "Contraseña" },
   "Confirmar senha": { es: "Confirmar contraseña" },
