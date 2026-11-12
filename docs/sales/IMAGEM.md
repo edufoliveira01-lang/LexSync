@@ -1,6 +1,6 @@
 # Imagem própria do Deskcomm (Sales & Associados)
 
-O LexSync é o DeskcommCRM original + a nossa aparência (`app/tema-sales.css`) + a ponte. Cada push na `main` que mude o app
+O LexSync é o DeskcommCRM original + a nossa aparência (`app/casca-e-inbox.css` e `app/globals.css`) + a ponte. Cada push na `main` que mude o app
 constrói a imagem do APP e a publica em `ghcr.io/edufoliveira01-lang/deskcomm-sales:<versão-do-original>-sales.<n>`
 (workflow **Imagem do Deskcomm**). O worker e o scheduler continuam sendo as imagens do original.
 

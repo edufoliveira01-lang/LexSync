@@ -36,7 +36,7 @@ export default async function LoginPage({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1.5 text-center">
+      <div className="space-y-1.5">
         <h1 className="text-2xl font-semibold tracking-tight">{t("Entrar")}</h1>
         <p className="text-sm text-muted-foreground">{marca.nome}</p>
       </div>
@@ -147,14 +147,6 @@ export default async function LoginPage({
       <LoginForm next={next} email={convite?.email} />
       <EntrarComGoogle next={next} />
       <div className="space-y-2 text-center text-sm">
-        <p>
-          <Link
-            href="/login/forgot"
-            className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
-          >
-            {t("Esqueci minha senha")}
-          </Link>
-        </p>
         <p className="text-muted-foreground">
           {t("Não tem conta?")}{" "}
           <Link

@@ -671,7 +671,9 @@ const schema = z.object({
    * `healthy` com 100% das requisições em 500. Uma var de COR não pode ter esse
    * poder; a validação do valor é do resolvedor, que degrada e diz o motivo.
    */
-  APP_ACCENT_HEX: z.string().optional().default(""),
+  // Padrão do Sales & Associados: o azul de ação do sistema Sales (a marca derivada vem do resolvedor, com contraste garantido).
+  // Vazio no `.env` (APP_ACCENT_HEX=) devolve à cor de fábrica do produto.
+  APP_ACCENT_HEX: z.string().optional().default("#1678dc"),
 
   /**
    * Com o que a instalação NASCE quanto a cadastro: `aberto` (padrão),

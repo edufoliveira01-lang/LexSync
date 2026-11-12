@@ -28,7 +28,7 @@ import { Providers } from "./providers";
 import { PublicEnvScript } from "./public-env-script";
 import { EstiloDoTemaDaPlataforma } from "./tema-da-plataforma";
 import "./globals.css";
-import "./tema-sales.css"; // aparência Sales & Associados (fork): único ponto de contato com o layout do original
+import "./casca-e-inbox.css"; // layout da casca e do inbox (ver o cabeçalho do arquivo)
 
 // Fontes versionadas em app/fonts/ (origem e licença no README de lá): o
 // next/font/google as baixava durante o build, e o build caía quando o Google
@@ -49,6 +49,12 @@ const atkinson = localFont({
   ],
   display: "swap",
   variable: "--font-atkinson",
+});
+
+const inter = localFont({
+  src: [{ path: "./fonts/inter-variable-latin.woff2", weight: "100 900", style: "normal" }],
+  display: "swap",
+  variable: "--font-inter",
 });
 
 const plexMono = localFont({
@@ -338,7 +344,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       lang="pt-BR"
       data-theme="light"
       suppressHydrationWarning
-      className={`${atkinson.variable} ${plexMono.variable}`}
+      className={`${inter.variable} ${atkinson.variable} ${plexMono.variable}`}
     >
       <head>
         {/* Primeiro de tudo: a cor da instalação, antes do CSS e do script de tema. */}

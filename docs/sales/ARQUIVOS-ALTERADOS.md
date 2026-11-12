@@ -1,6 +1,6 @@
 # Arquivos do DeskcommCRM que o fork altera
 
-Regra: o visual vive em `app/tema-sales.css`. Estes são os únicos arquivos do original que mexemos (para o script de atualização,
+Regra: o visual vive em `app/casca-e-inbox.css` e `app/globals.css`. Estes são os únicos arquivos do original que mexemos (para o script de atualização,
 `scripts/sales/sincronizar-upstream.sh`, saber onde pode haver conflito). Marcamos cada trecho nosso com "Fork Sales".
 
 | Arquivo | O que mudou |
@@ -25,7 +25,7 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 
 - `components/inbox/InboxLayout.tsx`: atributo `data-painel-recolhido` na grade; aba IA vazia quando a organização não tem agente no ar (`tabToFilter`).
 - `app/api/v1/conversations/counts/route.ts`: contador da aba IA = 0 sem agente no ar.
-- `app/tema-sales.css`: colunas fixas 344/320, trilho de 44px quando o painel está recolhido, divisórias arrastáveis ocultas.
+- `app/casca-e-inbox.css` e `app/globals.css`: colunas fixas 344/320, trilho de 44px quando o painel está recolhido, divisórias arrastáveis ocultas.
 
 ## Refinos (sales.12)
 
@@ -41,7 +41,7 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 
 ## Painel de detalhes do contato (sales.15)
 
-- `components/inbox/CRMSidePanel.tsx`: título "Detalhes do contato" na faixa do alto e avatar grande no cartão do contato (o resto do visual é CSS em `app/tema-sales.css`, seção 14).
+- `components/inbox/CRMSidePanel.tsx`: título "Detalhes do contato" na faixa do alto e avatar grande no cartão do contato (o resto do visual é CSS em `app/casca-e-inbox.css` e `app/globals.css`, seção 14).
 - Cabeçalho da conversa: a identidade encolhe (reticências) em vez de empurrar os botões para uma segunda linha.
 
 ## Funil para advocacia (um clique)
@@ -102,3 +102,10 @@ Ao sincronizar com o original, se esses arquivos conflitarem: mantenha a versão
 - Roteiro: ação em formato CURTO `[[Etapa: Novo contato]]` (o bloco longo antigo ainda é lido), uma COR por tipo de ação, registro único de ações (`chips-do-roteiro.ts`) com renda, consultas do cliente, base jurídica e agenda; legenda de como executar mantida automaticamente no texto do agente só para as ações usadas; aviso na etiqueta quando a ferramenta da ação está desligada; editor com negrito, itálico e itens (Markdown); menu @ com Cancelar, Esc e clique fora.
 - MÁSCARAS dos campos (`lib/campos/mascaras.ts`): CPF, CNPJ, CEP, telefone, data, nº de processo (CNJ) ou padrão próprio (0 = número, A = letra, * = qualquer); campo "Máscara" na tela dos campos do funil; o campo de texto formata ao digitar (valor antigo abre formatado sem reescrever); a Lígia grava já formatado pela máscara do campo; o contrato sempre leva CPF e CEP no formato padrão.
 - Tela "Etapas do funil" compacta: cada etapa em uma linha enxuta, com a janela de esfriamento, o aviso na Central, a autoria e os fluxos recolhidos em "Mais opções" (resumo em etiquetas: passo do assistente, avisa a Central, janela); cada campo do funil com as regras (obrigatoriedade, condição, a quem pertence, máscara) recolhidas em "Regras do campo" com resumo.
+
+## Visual próprio (sem arquivo de tema)
+O arquivo `app/tema-sales.css` foi extinto: o Deskcomm passa a ser desenhado no próprio código, no mesmo padrão do sistema Sales.
+- `app/globals.css`: neutros e superfícies azulados do Sales (claro e escuro), cantos maiores (10/12/16/20 px) e fonte Inter. O azul de ação vem da marca da instalação (`APP_ACCENT_HEX`, padrão `#1678dc` em `lib/env.ts`), que o produto já deriva em rampa com contraste garantido.
+- `app/casca-e-inbox.css`: só layout/acabamento da casca e do inbox (colunas, painel recolhido, balões). Cada regra sai daqui quando a tela correspondente é redesenhada no componente.
+- `app/(public)/layout.tsx`, `app/(public)/login/page.tsx`, `components/auth/LoginForm.tsx`: telas de acesso no padrão do Sales (painel de marca + cartão, «Esqueci minha senha» ao lado da senha).
+- Testes de contraste/régua recalibrados para a paleta nova (`tests/unit/branding-contraste.test.ts`, `branding-pares-pintados.test.ts`, `branding-rampa`: sem mudança) e `lib/branding/regua-do-produto.ts` regenerado.

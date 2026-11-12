@@ -4,6 +4,8 @@ import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
+import { traduzir } from "@/lib/i18n/dicionario";
+import { ChatsCircle } from "@/lib/ui/icons";
 
 /**
  * A casca das telas de acesso — login, cadastro, recuperação, MFA, confirmar acesso.
@@ -59,7 +61,31 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <IdiomaProvider locale={locale}>
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="grid min-h-screen bg-background lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        {/* Painel de marca (só em telas largas): mesmo desenho da tela de entrada do Sales. */}
+        <aside
+          aria-hidden="true"
+          className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-accent-500 via-accent-700 to-accent-900 p-10 text-white lg:flex"
+        >
+          <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] [background-size:44px_44px]" />
+          <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+          <div className="relative flex items-center gap-3">
+            <span className="flex size-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur">
+              <ChatsCircle size={24} weight="fill" aria-hidden />
+            </span>
+            <span className="text-lg font-semibold tracking-tight">{marca.nome}</span>
+          </div>
+          <div className="relative max-w-md space-y-3">
+            <p className="text-3xl font-semibold leading-tight tracking-tight">
+              {traduzir("Conversas, clientes e processos no mesmo lugar.", locale)}
+            </p>
+            <p className="text-sm text-white/80">
+              {traduzir("Cada pessoa acessa apenas as áreas autorizadas pela equipe.", locale)}
+            </p>
+          </div>
+          <p className="relative text-xs text-white/60">{marca.nome}</p>
+        </aside>
+        <main className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-6">
           {marca.logoUrl || marca.logoDarkUrl ? (
             <div className="flex justify-center">
@@ -113,12 +139,13 @@ export default async function PublicLayout({ children }: { children: React.React
               </div>
             </div>
           ) : marcaEhADoProduto({ name: marca.nome, logoUrl: null }) ? (
-            <div className="flex justify-center">
+            <div className="flex justify-center lg:hidden">
               <LogotipoDoProduto nome={marca.nome} className="h-12 w-auto" />
             </div>
           ) : null}
-          {children}
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">{children}</div>
         </div>
+        </main>
       </div>
     </IdiomaProvider>
   );

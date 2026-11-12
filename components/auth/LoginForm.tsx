@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useT } from "@/hooks/i18n/useT";
@@ -76,7 +77,15 @@ export function LoginForm({ next, email }: { next?: string; email?: string }) {
         )}
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="password">{t("Senha")}</Label>
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="password">{t("Senha")}</Label>
+          <Link
+            href="/login/forgot"
+            className="text-xs font-medium text-accent underline-offset-4 hover:underline"
+          >
+            {t("Esqueci minha senha")}
+          </Link>
+        </div>
         <div className="relative">
           <Input
             id="password"
@@ -110,7 +119,7 @@ export function LoginForm({ next, email }: { next?: string; email?: string }) {
         </div>
       )}
       {semResposta && <AvisoSemResposta />}
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" size="lg" className="w-full" disabled={isPending}>
         {isPending ? t("Entrando...") : t("Entrar")}
       </Button>
     </form>
