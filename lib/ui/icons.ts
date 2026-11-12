@@ -147,6 +147,9 @@ export {
   // navegação agrupada (registro em lib/navigation/registry.ts)
   Funnel,
   BookOpen,
+  SidebarSimple,
+  Headset,
+  SquaresFour,
   Key,
   UserCircle,
   ClockCounterClockwise,

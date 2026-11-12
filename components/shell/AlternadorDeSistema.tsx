@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useT } from "@/hooks/i18n/useT";
 import { cn } from "@/lib/utils";
+import { Headset, SquaresFour } from "@/lib/ui/icons";
 import { lembrarSistema, origemDoSistema, sistemaLembrado } from "@/lib/auth/enderecoDoSistema";
 
 /**
@@ -28,19 +29,17 @@ export function AlternadorDeSistema({ recolhido }: { recolhido?: boolean }) {
   };
 
   if (recolhido) return null;
+  const base =
+    "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
   return (
-    <div className="px-3 pt-3">
-      <div role="group" aria-label={t("Ambiente")} className="grid grid-cols-2 rounded-lg bg-surface-elevated p-0.5 text-xs font-semibold">
-        <span aria-current="true" className="rounded-md bg-surface py-1.5 text-center text-accent shadow-sm">
-          {t("Atendimento")}
-        </span>
-        <button
-          type="button"
-          onClick={irParaOSistema}
-          className={cn("rounded-md py-1.5 text-center text-muted-foreground transition-colors hover:text-foreground")}
-        >
-          {t("Sistema")}
+    <div className="dz-copy px-3 pb-2 pt-1" role="group" aria-label={t("Ambiente")}>
+      <div className="flex rounded-xl bg-surface-elevated p-1">
+        <button type="button" onClick={irParaOSistema} className={cn(base, "text-muted-foreground hover:text-foreground")}>
+          <SquaresFour size={14} aria-hidden /> {t("Sistema")}
         </button>
+        <span aria-current="true" className={cn(base, "bg-surface text-accent shadow-sm")}>
+          <Headset size={14} aria-hidden /> {t("Atendimento")}
+        </span>
       </div>
     </div>
   );
