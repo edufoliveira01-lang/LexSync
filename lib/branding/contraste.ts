@@ -795,8 +795,28 @@ function cssDoSoft(tema: TemaDaRegua, rampa: Rampa, deslocamento: number): strin
   return `rgba(${r}, ${g}, ${b}, ${tema.alfaDoSoft})`;
 }
 
-function derivarTema(tema: TemaDaRegua, rampa: Rampa): { tokens: TokensDoTema; motivos: Motivo[] } {
-  const escolha = escolherAccent(rampa, tema);
+/**
+ * O azul do sistema Sales (#1678dc) com a rampa EXATA do Sales (accent-50..950 de `client/tailwind.config`).
+ * É a identidade dos dois sistemas lado a lado: o botão do Deskcomm precisa ser o mesmo azul do botão do Sales.
+ * Essa rampa põe o #1678dc no grau 600 (contraste 4,4:1 com o texto branco — o mesmo do Sales), e por isso
+ * é usada SEM deslocamento: a régua escurecia o botão para #1a5faa e as duas telas deixavam de combinar.
+ */
+export const AZUL_DO_SALES = "#1678dc";
+export const RAMPA_DO_SALES: Rampa = [
+  "#eff7ff", "#dcedfe", "#bfe0fd", "#93ccfb", "#5cb0f7", "#2f92ee", "#1678dc", "#1262b6", "#145093", "#154376", "#0e2a4c",
+];
+
+function derivarTema(
+  tema: TemaDaRegua,
+  rampa: Rampa,
+  semDeslocar = false,
+): { tokens: TokensDoTema; motivos: Motivo[] } {
+  const escolha: EscolhaDeAccent = semDeslocar
+    ? (() => {
+        const pares = medirPares(tema, rampa, 0);
+        return { deslocamento: 0, grauDoAccent: grauEm(tema.indices.accent), pares, reprovas: [], motivo: null };
+      })()
+    : escolherAccent(rampa, tema);
   const d = escolha.deslocamento;
   const accent = stop(rampa, tema.indices.accent + d);
   const reconciliacao = reconciliarSemanticas(accent, tema.semanticas);
@@ -874,10 +894,11 @@ export function derivarMarca(semente: string, regua: Regua): Marca {
   const marca = normalizarHex(semente);
   const { C } = hexParaOklch(marca);
   const acromatica = C < LIMIAR_ACROMATICO;
-  const rampa = acromatica ? regua.rampaDoProduto : rampaDeSemente(marca);
+  const doSales = !acromatica && marca === AZUL_DO_SALES;
+  const rampa = acromatica ? regua.rampaDoProduto : doSales ? RAMPA_DO_SALES : rampaDeSemente(marca);
 
-  const claro = derivarTema(regua.claro, rampa);
-  const escuro = derivarTema(regua.escuro, rampa);
+  const claro = derivarTema(regua.claro, rampa, doSales);
+  const escuro = derivarTema(regua.escuro, rampa, doSales);
   const motivos: Motivo[] = [...claro.motivos, ...escuro.motivos];
 
   if (acromatica) {
