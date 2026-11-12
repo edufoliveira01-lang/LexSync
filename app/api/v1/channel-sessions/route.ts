@@ -18,6 +18,7 @@ import { loadAuthUser } from "@/lib/auth/server";
 import { orgAtivaDaApi, requireRole } from "@/lib/auth/require-role";
 import { ARCHIVED_AT, queryTolerantToMissingArchived } from "@/lib/channels/archived";
 import { PROVIDERS_DE_MENSAGEM } from "@/lib/channels/capabilities";
+import { resolveAuthDual } from "@/lib/api/auth-dual";
 import { createChannelSchema } from "@/lib/schemas/channels";
 import { createClient } from "@/lib/supabase/server";
 import { getWahaClient } from "@/lib/waha/client";
@@ -29,21 +30,31 @@ export const dynamic = "force-dynamic";
 export const CHANNEL_COLUMNS =
   "id, provider, waha_session_name, display_name, phone_number, status, status_reason, last_health_check_at, last_status_change_at, daily_message_limit, is_warmup_complete, created_at, metadata";
 
-export async function GET(): Promise<Response> {
+export async function GET(req?: NextRequest): Promise<Response> {
   const requestId = randomUUID();
-  const user = await loadAuthUser();
-  if (!user) return fail("unauthenticated", "Auth required.", 401, { requestId });
-  const ativa = await orgAtivaDaApi(user, requestId);
-  if (!ativa.ok) return ativa.response;
-  const activeOrg = ativa.org;
-  if (!activeOrg) return fail("forbidden_tenant", "Nenhuma organização ativa.", 403, { requestId });
-
-  const supabase = await createClient();
+  // Sessão de navegador OU token de servidor (`dsk_…` com `mcp:read`): o Sales lista os números
+  // conectados para o escritório escolher por qual deles enviar. O token só enxerga a própria organização.
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  let organizationId: string;
+  if (req && req.headers.get("authorization")) {
+    const authz = await resolveAuthDual(req, { requestId, resource: "channel_sessions", role: "agent", scope: "mcp:read" });
+    if (!authz.ok) return authz.response;
+    supabase = authz.supabase as typeof supabase;
+    organizationId = authz.organizationId;
+  } else {
+    const user = await loadAuthUser();
+    if (!user) return fail("unauthenticated", "Auth required.", 401, { requestId });
+    const ativa = await orgAtivaDaApi(user, requestId);
+    if (!ativa.ok) return ativa.response;
+    if (!ativa.org) return fail("forbidden_tenant", "Nenhuma organização ativa.", 403, { requestId });
+    supabase = await createClient();
+    organizationId = ativa.org.orgId;
+  }
   const base = () =>
     supabase
       .from("channel_sessions")
       .select(CHANNEL_COLUMNS)
-      .eq("organization_id", activeOrg.orgId)
+      .eq("organization_id", organizationId)
       // Só canal de MENSAGEM. A linha de chamada de voz (spec 18) mora na mesma
       // tabela, tem card próprio em Conexões e não tem `waha_session_name` nem
       // telefone: entrando aqui, ela vira um número a mais no seletor do inbox e
