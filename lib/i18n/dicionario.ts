@@ -2473,6 +2473,7 @@ export const DICIONARIO: Traducoes = {
   "Sua conta": { es: "Tu cuenta" },
   "Sua empresa": { es: "Tu empresa" },
   "Dados e acesso": { es: "Datos y acceso" },
+  "Avançado": { es: "Avanzado" },
   Segurança: { es: "Seguridad" },
   Notificações: { es: "Notificaciones" },
   Equipe: { es: "Equipo" },

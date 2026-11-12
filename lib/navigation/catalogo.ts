@@ -1097,7 +1097,7 @@ export const NAV_CATALOG = [
       "Devolver ao anúncio as vendas que ele trouxe, e marcar a origem de quem chega pelo site.",
     icon: "ChartLineUp",
     group: "organizacao",
-    section: "Sua empresa",
+    section: "Avançado",
     // `admin` pelo mesmo critério das vizinhas: o token grava na conta de
     // anúncios da empresa, e quem o troca decide para onde vai o dinheiro de
     // mídia. Um `manager` ficaria acima de billing na mesma prancheta.
@@ -1116,7 +1116,7 @@ export const NAV_CATALOG = [
     description: "Conectar a conta de anúncios para ler o desempenho das campanhas.",
     icon: "Megaphone",
     group: "organizacao",
-    section: "Sua empresa",
+    section: "Avançado",
     // `admin` pelo mesmo critério da vizinha, mesmo o token sendo só de
     // leitura: ele expõe orçamento e performance da conta inteira, e quem
     // apenas LÊ a tela (`manager`) não precisa poder trocar a credencial.
@@ -1145,7 +1145,7 @@ export const NAV_CATALOG = [
     description: "Pagamento, troca de plano e faturas da sua empresa.",
     icon: "Receipt",
     group: "organizacao",
-    section: "Sua empresa",
+    section: "Avançado",
     minRole: "admin",
   },
   {
@@ -1163,7 +1163,7 @@ export const NAV_CATALOG = [
     description: "Chaves para outro sistema conversar com o seu CRM.",
     icon: "Lock",
     group: "organizacao",
-    section: "Dados e acesso",
+    section: "Avançado",
     minRole: "admin",
   },
   {
@@ -1172,7 +1172,7 @@ export const NAV_CATALOG = [
     description: "Credenciais do provedor SIP para chamadas de voz por IA.",
     icon: "Phone",
     group: "organizacao",
-    section: "Dados e acesso",
+    section: "Avançado",
     minRole: "admin",
   },
   {
@@ -1198,7 +1198,7 @@ export const NAV_CATALOG = [
     description: "O endereço e a chave do sistema de fora que a IA da empresa pode consultar.",
     icon: "Plugs",
     group: "organizacao",
-    section: "Dados e acesso",
+    section: "Avançado",
     minRole: "admin",
   },
   {
@@ -1208,7 +1208,7 @@ export const NAV_CATALOG = [
       "Guias instalados para orientar o trabalho no CRM, com permissões e estado visíveis.",
     icon: "PuzzlePiece",
     group: "organizacao",
-    section: "Sua empresa",
+    section: "Avançado",
   },
   {
     // A porta da fonte de dados externa (migration 0372). Fica em "Dados e
