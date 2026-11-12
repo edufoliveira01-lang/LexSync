@@ -94,7 +94,7 @@ export function SettingsNav({
               aria-current={emVisaoGeral ? "page" : undefined}
               className={cn(
                 "flex items-center rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
-                emVisaoGeral ? "bg-accent-soft text-accent" : "text-text hover:bg-surface-elevated",
+                emVisaoGeral ? "dz-ativo-suave" : "text-text hover:bg-surface-elevated",
               )}
             >
               {rotuloVisaoGeral}
@@ -115,7 +115,7 @@ export function SettingsNav({
                         className={cn(
                           "block truncate rounded-md px-3 py-1.5 text-sm transition-colors",
                           ativo(i.href)
-                            ? "bg-accent-soft font-semibold text-accent"
+                            ? "dz-ativo-suave font-semibold"
                             : "text-muted-foreground hover:bg-surface-elevated hover:text-text",
                         )}
                       >
