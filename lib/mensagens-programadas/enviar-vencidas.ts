@@ -38,8 +38,51 @@ export interface ResultadoDaRodada {
   falhas: number;
 }
 
+/**
+ * O cliente respondeu ANTES do horário? Quem programou com "cancelar se o cliente responder" não precisa esperar a hora marcada para
+ * ver o cancelamento: a cada rodada (minuto a minuto) as pendentes dessa opção são conferidas e canceladas na hora, com o evento na
+ * conversa. Devolve quantas foram canceladas.
+ */
+async function cancelarAsQueOClienteRespondeu(admin: ReturnType<typeof createAdminClient>): Promise<number> {
+  const { data, error } = await admin
+    .from("scheduled_messages")
+    .select("id, organization_id, conversation_id, created_at")
+    .eq("status", "pending")
+    .eq("cancel_on_reply", true)
+    .limit(200);
+  if (error || !data || data.length === 0) return 0;
+  const linhas = data as Array<{ id: string; organization_id: string; conversation_id: string; created_at: string }>;
+  const { data: conversas } = await admin
+    .from("conversations")
+    .select("id, last_inbound_at")
+    .in("id", [...new Set(linhas.map((l) => l.conversation_id))]);
+  const ultima = new Map(((conversas ?? []) as Array<{ id: string; last_inbound_at: string | null }>).map((c) => [c.id, c.last_inbound_at]));
+  let canceladas = 0;
+  for (const l of linhas) {
+    if (!deveCancelarPorResposta({ cancelOnReply: true, createdAt: l.created_at, lastInboundAt: ultima.get(l.conversation_id) ?? null })) continue;
+    const { data: cancelada } = await admin
+      .from("scheduled_messages")
+      .update({ status: "canceled", canceled_reason: "cliente_respondeu", processed_at: new Date().toISOString() })
+      .eq("id", l.id)
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle();
+    if (!cancelada) continue; // outra rodada (ou uma pessoa) já mexeu nela
+    void registrarEventoNaConversa({
+      organizationId: l.organization_id,
+      conversationId: l.conversation_id,
+      userId: null,
+      acao: "programada_cancelada",
+      detalhe: "o cliente respondeu antes do horário",
+    });
+    canceladas += 1;
+  }
+  return canceladas;
+}
+
 export async function enviarMensagensProgramadasVencidas(requestId: string): Promise<ResultadoDaRodada> {
   const admin = createAdminClient();
+  const canceladasAntes = await cancelarAsQueOClienteRespondeu(admin).catch(() => 0);
   const agora = new Date().toISOString();
   const { data, error } = await admin
     .from("scheduled_messages")
@@ -55,7 +98,7 @@ export async function enviarMensagensProgramadasVencidas(requestId: string): Pro
   }
 
   let enviadas = 0;
-  let canceladas = 0;
+  let canceladas = canceladasAntes;
   let falhas = 0;
 
   for (const m of (data ?? []) as Vencida[]) {

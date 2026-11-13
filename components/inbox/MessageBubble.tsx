@@ -391,7 +391,7 @@ export function MessageBubble({
                   // a setinha é o único caminho para "Responder a esta mensagem".
                   "pointer-coarse:before:absolute pointer-coarse:before:-inset-3.5 pointer-coarse:before:content-['']",
                   "opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100",
-                  isOutbound ? "text-primary-foreground hover:bg-primary-foreground/15" : "text-muted-foreground hover:bg-background/70",
+                  "text-foreground/70 hover:bg-background/70 hover:text-foreground",
                 )}>
                 <CaretDown size={16} weight="bold" aria-hidden />
               </button>
@@ -622,7 +622,7 @@ export function MessageBubble({
             // O carimbo acompanha o FUNDO: numa bolha apagada (cinza) o
             // `primary-foreground` do envio sumiria — hora e check invisíveis
             // numa bolha que existe justamente para deixar registro.
-            apagada || !isOutbound ? "text-muted-foreground" : "text-primary-foreground",
+            "text-foreground/65",
           )}
         >
           {editada && (
