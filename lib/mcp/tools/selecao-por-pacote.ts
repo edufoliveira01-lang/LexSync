@@ -79,8 +79,15 @@ import { entraPorPacote, type ToolBundle, type ToolRisk } from "./pacotes";
  * argumento (a heurística de degradação) que ninguém mediu, que é exatamente o
  * que o bloco ⚠️ acima diz. O dia em que o `evoluir` exigir 28, o passo volta a
  * ser ele.
+ *
+ * ═══ 27 → 40: decisão do dono (2026-11-13) ═══════════════════════════════════════
+ *
+ * O dono do escritório bateu em "27 de 27 capacidades ligadas" e precisa de mais funcionalidades no mesmo agente (jurídico: consulta
+ * do cliente, contrato, agenda, CRM). Subiu-se para 40: cabe o `vender` inteiro (24) mais um segundo pacote médio, e o mesmo número
+ * vale na tela e no servidor. O risco do bloco ⚠️ acima continua de pé: se o agente começar a escolher a ferramenta errada, o
+ * caminho é voltar a este número ou dividir em dois agentes.
  */
-export const TETO_TOOLS_POR_AGENTE = 27;
+export const TETO_TOOLS_POR_AGENTE = 40;
 
 /** O mínimo que a regra precisa saber de uma capacidade. */
 export interface CapacidadeSelecionavel {
