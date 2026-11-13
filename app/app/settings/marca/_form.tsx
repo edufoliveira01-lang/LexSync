@@ -312,8 +312,11 @@ export function FormularioDaMarcaDaOrganizacao({ gravada, instalacao, ambiente, 
     });
   }
 
+  const corDaMarca = resolvida.cor?.derivada ? resolvida.cor.semente : undefined;
+
   return (
-    <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
+    <form onSubmit={handleSubmit} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="min-w-0 space-y-6">
       <Card className="space-y-4 p-6">
         <h2 className="text-base font-semibold tracking-tight text-text">
           {t("Como sua empresa aparece")}
@@ -653,6 +656,41 @@ export function FormularioDaMarcaDaOrganizacao({ gravada, instalacao, ambiente, 
           {isPending ? t("Salvando…") : t("Salvar")}
         </Button>
       </div>
+      </div>
+
+      <aside className="h-fit space-y-4 xl:sticky xl:top-24" aria-label={t("Pré-visualização")}>
+        <Card className="space-y-4 p-5">
+          <h2 className="text-base font-semibold tracking-tight text-text">{t("Pré-visualização")}</h2>
+          <p className="text-xs text-muted-foreground">{t("Assim a equipe vê o sistema com o que está nos campos ao lado.")}</p>
+          <div className="space-y-4 rounded-md border border-border bg-surface p-4">
+            <div className="flex items-center gap-3">
+              {resolvida.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={resolvida.logoUrl} alt="" className="h-10 w-10 rounded-md border border-border bg-white object-contain p-1" />
+              ) : (
+                <span
+                  className="flex h-10 w-10 items-center justify-center rounded-md text-sm font-semibold text-white"
+                  style={{ background: corDaMarca }}
+                >
+                  {resolvida.initial}
+                </span>
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{resolvida.name}</p>
+                <p className="text-xs text-muted-foreground">{t("Menu lateral")}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md px-4 py-2 text-[13px] font-semibold text-white" style={{ background: corDaMarca }}>
+                {t("Botão principal")}
+              </span>
+              <span className="rounded-full border px-3 py-1 text-xs font-semibold" style={{ borderColor: corDaMarca, color: corDaMarca }}>
+                {t("Item ativo")}
+              </span>
+            </div>
+          </div>
+        </Card>
+      </aside>
     </form>
   );
 }
