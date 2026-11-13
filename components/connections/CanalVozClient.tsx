@@ -142,14 +142,22 @@ export function CanalVozClient({ wacallsConfigured }: { wacallsConfigured: boole
 
   if (!wacallsConfigured) {
     return (
-      <div className="rounded-md border border-warning bg-warning-bg p-4 text-sm text-warning-fg">
-        <p className="font-medium">{t("A chamada de voz não está configurada.")}</p>
-        <p className="mt-1">
-          {t("Falta o endereço do serviço (")}
-          <code>WACALLS_API_BASE_URL</code>
-          {t(") nas variáveis de ambiente desta instalação.")}
-        </p>
-      </div>
+      <Card className="flex flex-col gap-5 p-6">
+        <CabecalhoDeCanal
+          icone={<Phone size={20} aria-hidden />}
+          titulo={t("Chamada de voz por WhatsApp")}
+          descricao={t("Ligar e atender chamadas do WhatsApp direto pelo sistema.")}
+          estado={<Badge variant="neutral">{t("Indisponível")}</Badge>}
+        />
+        <div className="rounded-md border border-warning bg-warning-bg p-4 text-sm text-warning-fg">
+          <p className="font-medium">{t("A chamada de voz não está configurada.")}</p>
+          <p className="mt-1">
+            {t("Falta o endereço do serviço (")}
+            <code>WACALLS_API_BASE_URL</code>
+            {t(") nas variáveis de ambiente desta instalação.")}
+          </p>
+        </div>
+      </Card>
     );
   }
 
