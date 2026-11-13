@@ -18,6 +18,7 @@ import { documentoDoPagador } from "@/lib/cobranca/documento";
 import { ROTULO_DO_ESTADO } from "@/lib/cobranca/rotulos";
 import type { EstadoDaAssinatura } from "@/lib/cobranca/vocabulario";
 import { useIdioma } from "@/lib/i18n/IdiomaProvider";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 export interface PlanoDoCard {
   id: string;
@@ -296,7 +297,7 @@ export function CardDeCobranca({
             <>
               <div className="space-y-1">
                 <Label htmlFor="prazo-ate">{t("Dar prazo até")}</Label>
-                <Input id="prazo-ate" type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} />
+                <CampoDeData id="prazo-ate" type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} />
               </div>
               <Button
                 variant="outline"

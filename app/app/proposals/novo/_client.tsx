@@ -30,6 +30,7 @@ import { diaDeHojeLocal } from "@/lib/ai/pacing-knobs";
 import { apiClient } from "@/lib/api/client";
 import type { ApiSuccess } from "@/lib/api/wrappers";
 import { rotuloDoContato } from "@/lib/contacts/rotulo-do-contato";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 export interface LeadOption {
   id: string;
@@ -247,7 +248,7 @@ export function NewProposalClient({
             {/* Data de Validade */}
             <div className="space-y-2">
               <Label htmlFor="valid-until-input">{t("Validade da proposta")}</Label>
-              <Input
+              <CampoDeData
                 id="valid-until-input"
                 type="date"
                 value={validUntil}

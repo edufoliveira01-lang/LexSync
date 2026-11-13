@@ -33,6 +33,7 @@ import {
 import { useWebhookSources } from "@/hooks/webhooks/useWebhookSources";
 import { CapturaDetail } from "./CapturaDetail";
 import { useT } from "@/hooks/i18n/useT";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 const TODAS = "__todas__";
 
@@ -179,13 +180,13 @@ export function CapturasTab() {
             <label className="block text-xs text-muted-foreground" htmlFor="captura-de">
               {t("De")}
             </label>
-            <Input id="captura-de" type="datetime-local" value={de} onChange={(e) => setDe(e.target.value)} />
+            <CampoDeData id="captura-de" type="datetime-local" value={de} onChange={(e) => setDe(e.target.value)} />
           </div>
           <div className="space-y-1">
             <label className="block text-xs text-muted-foreground" htmlFor="captura-ate">
               {t("Até")}
             </label>
-            <Input id="captura-ate" type="datetime-local" value={ate} onChange={(e) => setAte(e.target.value)} />
+            <CampoDeData id="captura-ate" type="datetime-local" value={ate} onChange={(e) => setAte(e.target.value)} />
           </div>
         </div>
       )}

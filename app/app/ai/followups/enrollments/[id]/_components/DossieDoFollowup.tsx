@@ -45,6 +45,7 @@ import { useCancelFollowupEnrollment } from "@/hooks/followup/useFollowupQueue";
 import { useT } from "@/hooks/i18n/useT";
 
 import { PlanoDeTempoBloco } from "./PlanoDeTempo";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 interface Props {
   id: string;
@@ -393,7 +394,7 @@ export function DossieDoFollowup({ id, canWrite }: Props) {
           </DialogHeader>
           <div className="flex flex-col gap-2">
             <Label htmlFor="adiar-quando">{t("Novo horário")}</Label>
-            <Input
+            <CampoDeData
               id="adiar-quando"
               type="datetime-local"
               value={quando}

@@ -11,6 +11,7 @@ import { configuracaoDoServicoSchema, type ConfiguracaoDoServico as Config, type
 import type { DadosDoServico, DisponibilidadeDoServico } from "@/lib/agenda/servicos/consulta";
 import { MOTIVOS_DO_SERVICO } from "@/lib/agenda/servicos/motivos";
 import { instanteDe, diaLocalISO } from "@/lib/agenda/fuso";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 type Resource = { id: string; name: string; capacity: number; is_active: boolean; revision: number };
 type Calendar = { id: string; name: string; account_email: string; user_id: string; available: boolean; can_read: boolean; can_write: boolean };
@@ -134,7 +135,7 @@ export function ConfiguracaoDoServico({ typeId, name, pessoas, onClose, onEditTy
           <summary className="cursor-pointer break-words font-medium">{row.on_date ?? days[row.weekday ?? 1]} · {hhmm(row.start_minute)}{row.timing_kind === "window" && `–${hhmm(row.end_minute ?? 1080)}`} · {row.duration_minutes ?? data.service.duration_minutes} {t("min")} · {draft.booking_mode === "individual" ? t("Individual por profissional") : row.capacity_rule === "unlimited" || (row.capacity_rule === "inherit" && draft.booking_mode === "collective_unlimited") ? t("Sem limite automático") : row.capacity_rule === "limited" ? row.capacity_limit : draft.service_capacity}</summary>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <label className="block space-y-1">{t("Quando")}<select aria-label={t("Quando")} className={field} data-config-field="on_date" value={row.on_date ? "date" : "weekly"} onChange={(e) => rowChange(i, e.target.value === "date" ? { on_date: day, weekday: null } : { on_date: null, weekday: 1 })}><option value="weekly">{t("Toda semana")}</option><option value="date">{t("Somente nesta data")}</option></select></label>
-          {row.on_date ? <label className="block space-y-1">{t("Data")}<input className={field} type="date" data-config-field="on_date" value={row.on_date} onChange={(e) => rowChange(i, { on_date: e.target.value })}/></label>
+          {row.on_date ? <label className="block space-y-1">{t("Data")}<CampoDeData className={field} type="date" data-config-field="on_date" value={row.on_date} onChange={(e) => rowChange(i, { on_date: e.target.value })}/></label>
             : <label className="block space-y-1">{t("Dia da semana")}<select aria-label={t("Dia da semana")} className={field} value={row.weekday ?? 1} onChange={(e) => rowChange(i, { weekday: Number(e.target.value) })}>{days.map((label, n) => <option key={label} value={n}>{label}</option>)}</select></label>}
           <label className="block space-y-1">{t("Horário ou faixa")}<select aria-label={t("Horário ou faixa")} className={field} value={row.timing_kind} onChange={(e) => rowChange(i, { timing_kind: e.target.value as HorarioDoServico["timing_kind"], end_minute: e.target.value === "window" ? Math.min(1440, row.start_minute + 120) : null })}><option value="fixed">{t("Horário fixo")}</option><option value="window">{t("Faixa de atendimento")}</option></select></label>
           <label className="block space-y-1">{t("Início")}<input className={field} type="time" value={hhmm(row.start_minute)} onChange={(e) => rowChange(i, { start_minute: minute(e.target.value) })}/></label>
@@ -159,7 +160,7 @@ export function ConfiguracaoDoServico({ typeId, name, pessoas, onClose, onEditTy
       </fieldset>
     </form>
     {message && <p role="status" className="break-words rounded-md bg-surface-elevated p-3">{message}</p>}
-    <div data-service-panel="hours" hidden={tab !== "hours"} className="space-y-2 border-t pt-3"><h3 className="font-medium">{t("Conferir horários salvos")}</h3><label className="block space-y-1">{t("Data")}<input className={field} type="date" value={day} onChange={(e) => setDay(e.target.value)}/></label><Button disabled={busy} variant="outline" onClick={() => void execute(async () => {
+    <div data-service-panel="hours" hidden={tab !== "hours"} className="space-y-2 border-t pt-3"><h3 className="font-medium">{t("Conferir horários salvos")}</h3><label className="block space-y-1">{t("Data")}<CampoDeData className={field} type="date" value={day} onChange={(e) => setDay(e.target.value)}/></label><Button disabled={busy} variant="outline" onClick={() => void execute(async () => {
       await apiClient.post("/api/v1/agenda/servicos", { action: "refresh", event_type_id: typeId });
       const start = new Date(`${day}T00:00:00Z`), de = new Date(start.getTime() - 14 * 3600000), ate = new Date(start.getTime() + 38 * 3600000);
       const result = (await apiClient.get<{ data: Data }>(`/api/v1/agenda/servicos?event_type_id=${typeId}&de=${encodeURIComponent(de.toISOString())}&ate=${encodeURIComponent(ate.toISOString())}`)).data;

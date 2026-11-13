@@ -44,6 +44,7 @@ import {
   LIMITE_MINIMO_DO_PESO_DA_MEMORIA,
   LIMITE_RECOMENDADO_DO_PESO_DA_MEMORIA,
 } from "@/lib/schemas/settings";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 interface Props {
   initialState: OrgMemoryState;
@@ -493,7 +494,7 @@ export function OrgMemoryClient({ initialState, hoje, limiteDoAviso, podeEditarO
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="entry-valid-until">{t("Vale até (opcional)")}</Label>
-                <Input
+                <CampoDeData
                   id="entry-valid-until"
                   type="date"
                   value={validUntil}

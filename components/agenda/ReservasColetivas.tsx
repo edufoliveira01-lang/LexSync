@@ -10,6 +10,7 @@ import { apiClient } from "@/lib/api/client";
 import { instanteDe } from "@/lib/agenda/fuso";
 import type { AgendamentoListado } from "@/lib/agenda/consulta";
 import { DetalheDoCompromisso } from "./DetalheDoCompromisso";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 const PUBLICATION: Record<string, string> = { not_configured: "Somente no CRM", pending: "Publicação pendente", synced: "Publicado no Google", failed: "Falha de publicação", conflict: "Conflito com o Google", removed: "Remoção confirmada no Google" };
 const field = "rounded-md border border-border bg-surface-elevated p-2 text-sm";
@@ -34,7 +35,7 @@ export function ReservasColetivas({ today, zone, canWrite }: { today: string; zo
   async function execute(action: () => Promise<unknown>) { setBusy(true); try { await action(); setEditing(null); await query.refetch(); void qc.invalidateQueries({ queryKey: ["agenda"] }); } catch (e) { showApiError(e); } finally { setBusy(false); } }
   return <details className="shrink-0 rounded-md border border-border p-3" open={opened} onToggle={(e) => setOpened(e.currentTarget.open)}>
     <summary className="cursor-pointer font-medium">{t("Turmas e reservas coletivas")}</summary>
-    {opened && <div className="max-h-80 space-y-3 overflow-y-auto pt-3"><label className="block space-y-1">{t("Semana a partir de")} <input className={field} type="date" value={day} onChange={(e) => e.target.value && setDay(e.target.value)}/></label>
+    {opened && <div className="max-h-80 space-y-3 overflow-y-auto pt-3"><label className="block space-y-1">{t("Semana a partir de")} <CampoDeData className={field} type="date" value={day} onChange={(e) => e.target.value && setDay(e.target.value)}/></label>
       <p className="text-xs text-text-muted">{t("Cada pessoa tem sua reserva. Remarcar ou cancelar aqui afeta somente a pessoa escolhida.")}</p>
       {query.isError && <div role="alert"><p>{t("Não foi possível ler as reservas coletivas.")}</p><Button variant="outline" onClick={() => void query.refetch()}>{t("Tentar novamente")}</Button></div>}
       {query.isLoading && <p>{t("Carregando…")}</p>}

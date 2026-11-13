@@ -26,6 +26,7 @@ import { diaDeHojeLocal, valorDeOverride } from "@/lib/ai/pacing-knobs";
 import { ApiError } from "@/lib/api/types";
 import { nomeDoCanal } from "@/lib/channels/estado";
 import { useT } from "@/hooks/i18n/useT";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 interface Props {
   item: PacingKnobsItem | null;
@@ -239,7 +240,7 @@ export function AntiBanSheet({ item, canWrite, onClose }: Props) {
         <div className="flex flex-col gap-5 px-4 py-2" data-testid="anti-ban-form">
           <fieldset className="flex flex-col gap-2" data-testid="aquecimento">
             <Label htmlFor="numero-em-uso-desde">{t("Este número é usado desde")}</Label>
-            <Input
+            <CampoDeData
               id="numero-em-uso-desde"
               type="date"
               // O dia LOCAL, que é o que este campo fala. Com o dia UTC, às 21h

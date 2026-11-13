@@ -18,6 +18,7 @@ import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { apiClient } from "@/lib/api/client";
 import { MOEDA_PADRAO, formatCents, parseReaisToCents } from "@/lib/money";
 import { randomId } from "@/lib/random-id";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 type Parcela = {
   id: string;
@@ -219,7 +220,7 @@ function FormularioDeParcela({
 
       <label className="flex flex-col gap-1 text-xs text-text-muted">
         {t("Vencimento")}
-        <input
+        <CampoDeData
           type="date"
           value={vencimento}
           data-testid="parcela-vencimento"

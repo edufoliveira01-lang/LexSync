@@ -29,6 +29,7 @@ import { formatCents } from "@/lib/money";
 
 import { ListaDeLancamentos, type Conta, type Lancamento } from "./_lancamentos";
 import { rotuloDoMembro } from "@/lib/users/rotulo-do-atendente";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 type Forma = { nome: string; quantidade: number; total_cents: number };
 type Profissional = { attendant_user_id: string | null; itens: number; comissao_cents: number };
@@ -198,7 +199,7 @@ export function Faturamento({
       <form className="flex flex-wrap items-end gap-2">
         <label className="flex flex-col gap-1 text-xs text-text-muted">
           {t("De")}
-          <input
+          <CampoDeData
             type="date"
             value={de}
             data-testid="periodo-de"
@@ -208,7 +209,7 @@ export function Faturamento({
         </label>
         <label className="flex flex-col gap-1 text-xs text-text-muted">
           {t("Até")}
-          <input
+          <CampoDeData
             type="date"
             value={ate}
             data-testid="periodo-ate"

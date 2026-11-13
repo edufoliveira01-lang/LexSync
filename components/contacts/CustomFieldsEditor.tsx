@@ -34,6 +34,7 @@ import { camposVisiveis, type MostrarQuando } from "@/lib/schemas/mostrar-quando
 import { mensagemDoCampo } from "@/lib/leads/padrao-do-campo";
 
 import { FileUploadCustomField } from "@/components/kanban/FileUploadCustomField";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 export type CustomFieldType =
   | "text"
@@ -258,7 +259,7 @@ export function CustomFieldsEditor({ fields, value, onChange, mode, disabled, cl
             return (
               <div key={f.key} className="space-y-2">
                 {labelEl}
-                <Input
+                <CampoDeData
                   id={id}
                   type="date"
                   value={typeof v === "string" ? v : ""}

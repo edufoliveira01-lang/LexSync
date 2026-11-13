@@ -12,6 +12,7 @@ import { formatCents } from "@/lib/money";
 import type { ProposalStatus } from "@/lib/propostas/tipos";
 import { AssistantPanel } from "./_components/AssistantPanel";
 import { DocumentoCanvas } from "./_components/DocumentoCanvas";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 interface ProposalItem {
   id?: string;
@@ -462,7 +463,7 @@ export function ProposalEditorClient({ id, podeEditar, podeRevisar = false }: { 
 
       <div className="space-y-2">
         <label className="block text-sm font-medium">{t("Válido até")}</label>
-        <input
+        <CampoDeData
           type="date"
           className="w-full rounded-md border p-2 text-sm disabled:bg-muted"
           value={proposta.valid_until ?? ""}

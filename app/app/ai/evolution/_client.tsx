@@ -22,6 +22,7 @@ import { EvolutionTimeline } from "@/components/ai/EvolutionTimeline";
 import { useEvolution } from "@/hooks/ai/useEvolution";
 import type { EvolutionPayload } from "@/lib/ai/evolution/aggregate";
 import { useT } from "@/hooks/i18n/useT";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 /**
  * O painel responde UMA pergunta do dono do negócio: "o que meu agente aprendeu
@@ -363,7 +364,7 @@ export function EvolutionClient({ defaultRange }: { defaultRange: { from: string
             <Label htmlFor="evolution-de" className="text-xs text-text-muted">
               {t("De")}
             </Label>
-            <Input
+            <CampoDeData
               id="evolution-de"
               type="date"
               value={from}
@@ -375,7 +376,7 @@ export function EvolutionClient({ defaultRange }: { defaultRange: { from: string
             <Label htmlFor="evolution-ate" className="text-xs text-text-muted">
               {t("Até")}
             </Label>
-            <Input
+            <CampoDeData
               id="evolution-ate"
               type="date"
               value={to}

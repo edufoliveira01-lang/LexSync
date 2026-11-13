@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useT } from "@/hooks/i18n/useT";
 import { diaDeHojeLocal } from "@/lib/ai/pacing-knobs";
 import { formatCents, parseReaisToCents } from "@/lib/money";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 export type Lancamento = {
   id: string;
@@ -153,7 +154,7 @@ export function ListaDeLancamentos({
 
           <label className="flex flex-col gap-1 text-xs text-text-muted">
             {t("Data")}
-            <input
+            <CampoDeData
               type="date"
               value={data}
               data-testid="lancamento-data"

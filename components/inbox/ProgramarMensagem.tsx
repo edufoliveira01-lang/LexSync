@@ -12,6 +12,7 @@ import { useMensagensProgramadas } from "@/hooks/inbox/useMensagensProgramadas";
 import { useT } from "@/hooks/i18n/useT";
 import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { problemaDoHorario, TAMANHO_MAXIMO_DO_TEXTO } from "@/lib/mensagens-programadas/regras";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 import { Clock, Trash } from "@/lib/ui/icons";
 
 /** `datetime-local` quer "yyyy-MM-ddTHH:mm" na hora LOCAL. */
@@ -109,13 +110,12 @@ function ProgramarMensagemComDados({ conversationId }: { conversationId: string 
           <label htmlFor="programar-quando" className="text-xs font-medium">
             {t("Enviar em")}
           </label>
-          <input
+          <CampoDeData
             id="programar-quando"
             type="datetime-local"
             value={quando}
             min={paraCampo(new Date(Date.now() + 60_000))}
             onChange={(e) => setQuando(e.target.value)}
-            className="h-9 w-full rounded-md border border-border bg-surface px-3 text-sm"
           />
           <div className="flex flex-wrap gap-1.5">
             {atalhos.map((a) => (

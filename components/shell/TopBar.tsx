@@ -2,6 +2,7 @@
 import { AlertsBell } from "./AlertsBell";
 import { AvisoDePropostaEmDestaque } from "./AvisoDePropostaEmDestaque";
 import { MobileSidebar } from "./MobileSidebar";
+import { RelogioCalendario } from "./RelogioCalendario";
 import { SearchTrigger } from "./SearchTrigger";
 import { TenantSwitcher } from "./TenantSwitcher";
 import { UserMenu } from "./UserMenu";
@@ -28,6 +29,8 @@ export function TopBar() {
         <AlertsBell />
         <AvisoDePropostaEmDestaque />
         <UserMenu />
+        <span aria-hidden className="mx-1 h-6 w-px bg-border" />
+        <RelogioCalendario />
       </div>
     </header>
   );

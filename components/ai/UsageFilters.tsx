@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useT } from "@/hooks/i18n/useT";
 import { PONTO_POR_ID } from "@/lib/ai/pontos/registro";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 export interface UsageFiltersAgent {
   id: string;
@@ -121,7 +122,7 @@ export function UsageFilters({ agents, kinds, initial }: Props) {
         <Label htmlFor="usage-from" className="text-xs text-muted-foreground">
           {t("De")}
         </Label>
-        <Input
+        <CampoDeData
           id="usage-from"
           type="date"
           value={from}
@@ -133,7 +134,7 @@ export function UsageFilters({ agents, kinds, initial }: Props) {
         <Label htmlFor="usage-to" className="text-xs text-muted-foreground">
           {t("Até")}
         </Label>
-        <Input
+        <CampoDeData
           id="usage-to"
           type="date"
           value={to}

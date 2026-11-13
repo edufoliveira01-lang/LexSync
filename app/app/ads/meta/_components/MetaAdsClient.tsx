@@ -19,6 +19,7 @@ import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import type { Idioma } from "@/lib/i18n/idiomas";
 
 import { TabelaDeCampanhas } from "./TabelaDeCampanhas";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 /**
  * O corpo da tela: escolher conta, escolher período, atualizar, ler.
@@ -192,7 +193,7 @@ export function MetaAdsClient({ contaPadrao }: Props) {
           <>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="de">{t("De")}</Label>
-              <Input
+              <CampoDeData
                 id="de"
                 type="date"
                 className="w-40"
@@ -203,7 +204,7 @@ export function MetaAdsClient({ contaPadrao }: Props) {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="ate">{t("Até")}</Label>
-              <Input
+              <CampoDeData
                 id="ate"
                 type="date"
                 className="w-40"

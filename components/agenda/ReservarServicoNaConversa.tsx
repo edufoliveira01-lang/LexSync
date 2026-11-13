@@ -11,6 +11,7 @@ import { apiClient } from "@/lib/api/client";
 import { diaLocalISO } from "@/lib/agenda/fuso";
 import { MOTIVOS_DO_SERVICO } from "@/lib/agenda/servicos/motivos";
 import type { DisponibilidadeDoServico } from "@/lib/agenda/servicos/consulta";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 type Service = { id: string; name: string; service_enabled?: boolean; requires_confirmation: boolean; booking_mode?: string };
 type Receipt = { id: string; status: string; starts_at: string; ends_at: string; time_zone: string; participant_name: string | null; google_publication: string; human_confirmation: string; deduplicated?: boolean };
@@ -52,7 +53,7 @@ export function ReservarServicoNaConversa({ contactId, conversationId, contactNa
       <div className="space-y-4 py-4"><p>{t("Contato responsável:")} {contactName}</p><p className="text-sm text-text-muted">{t("Consultar não reserva. Reservar não envia mensagem nem comprova publicação Google.")}</p>
         {services.length === 0 ? <p>{t("Nenhum serviço com programação ativa. Configure em Configurações da Agenda.")}</p> : <>
           <label className="block space-y-1">{t("Serviço")}<select aria-label={t("Serviço")} className={field} value={typeId} onChange={(e) => { setTypeId(e.target.value); setAvailability(null); setSelected(null); setReceipts(null); }}>{services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
-          <label className="block space-y-1">{t("Data")}<input className={field} type="date" value={day} onChange={(e) => { setDay(e.target.value); setAvailability(null); setSelected(null); setReceipts(null); }}/></label>
+          <label className="block space-y-1">{t("Data")}<CampoDeData className={field} type="date" value={day} onChange={(e) => { setDay(e.target.value); setAvailability(null); setSelected(null); setReceipts(null); }}/></label>
           <Button variant="outline" disabled={busy} onClick={() => void execute(consult)}>{t("Consultar horários")}</Button>
           {availability && <div role="group" aria-label={t("Horários do serviço")} className="space-y-2">{availability.map((s) => <Button key={s.starts_at} className="h-auto w-full justify-start whitespace-normal py-3" variant={selected?.starts_at === s.starts_at ? "default" : "outline"} disabled={!s.available || busy} onClick={() => setSelected(s)}>
             {new Date(s.starts_at).toLocaleTimeString(locale, { timeZone: zone, hour: "2-digit", minute: "2-digit" })} · {s.available ? s.booking_mode === "individual" ? t("Individual por profissional") : s.capacity_limit == null ? t("Sem limite automático") : `${s.remaining_capacity} ${t("vagas restantes")}` : t(MOTIVOS_DO_SERVICO[s.reason ?? ""] ?? "Não disponível")}

@@ -30,6 +30,7 @@ import type {
   Tarefa,
 } from "@/lib/tarefas/tipos";
 import { rotuloDoMembro } from "@/lib/users/rotulo-do-atendente";
+import { CampoDeData } from "@/components/ui/campo-de-data";
 
 interface Props {
   aberto: boolean;
@@ -188,7 +189,7 @@ export function FormularioDeTarefa({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="tarefa-dia">{t("Prazo")}</Label>
-              <Input
+              <CampoDeData
                 id="tarefa-dia"
                 type="date"
                 value={dia}
