@@ -274,7 +274,7 @@ export function ConversationListItem({
   return (
     <div
       className={cn(
-        "group/linha relative flex w-full items-start border-b border-border/70",
+        "group/linha relative flex w-full items-start border-b border-border/60 bg-surface transition-colors",
         selecionado && "bg-accent-soft",
       )}
     >
@@ -330,7 +330,7 @@ export function ConversationListItem({
         <span className="absolute inset-y-0 left-0 w-0.5 bg-accent" aria-hidden />
       )}
       <div className="relative shrink-0">
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-11 w-11">
           {/* Só monta a <img> quando existe arquivo: sem isso o browser pediria
               a rota para TODO contato da lista e levaria 404 em cada um sem
               foto — que é a maioria. O AvatarFallback do Radix já cobre o caso
@@ -346,16 +346,7 @@ export function ConversationListItem({
             {initials(displayName, phoneFallback)}
           </AvatarFallback>
         </Avatar>
-        <span
-          className={cn(
-            "absolute -bottom-0.5 -left-0.5 h-3 w-3 rounded-full border-2 border-background",
-            dot,
-          )}
-          role="img"
-          aria-label={rotuloDoComando}
-          title={rotuloDoComando}
-        />
-        <ChannelLogo channel={canal} size={16} className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-background ring-2 ring-background" />
+        <ChannelLogo channel={canal} size={16} className="absolute -bottom-0.5 -right-0.5 h-[18px] w-[18px] rounded-full bg-background ring-2 ring-background" />
       </div>
 
       <div className="min-w-0 flex-1">
@@ -430,8 +421,21 @@ export function ConversationListItem({
           )}
         </div>
 
-        {temSelos && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+        {/* Quem está com a conversa: uma pílula com a cor e a palavra (antes era uma bolinha sobre o avatar, que escondia a foto e
+            brigava com a caixa de seleção). O papel `img` e o nome acessível continuam os mesmos. */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1">
+          <span
+            role="img"
+            aria-label={rotuloDoComando}
+            title={rotuloDoComando}
+            className="inline-flex h-5 items-center gap-1.5 rounded-full border border-border bg-surface px-2 text-[11px] font-medium text-text-muted"
+          >
+            <span className={cn("h-1.5 w-1.5 rounded-full", dot)} aria-hidden />
+            <span aria-hidden>{rotuloDoComando}</span>
+          </span>
+          {temSelos && (
+            <>
+
             {/* O SELO DO EXEMPLO vem ANTES das etiquetas de propósito: a faixa
                 mostra no máximo 2 etiquetas e as que sobram viram "+N". Um
                 estado que decide se a conversa entra na base de conhecimento
@@ -479,8 +483,9 @@ export function ConversationListItem({
                 {t("Anonimizado")}
               </Badge>
             )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
       </button>
       {/*
