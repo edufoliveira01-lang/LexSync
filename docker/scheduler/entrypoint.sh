@@ -63,6 +63,9 @@ CRONS="
 * * * * *|45|api/v1/cron/webhook-replay
 */5 * * * *|25|api/v1/cron/storage-redaction?limit=50
 */5 * * * *|25|api/v1/cron/snooze-watcher
+# AS MENSAGENS PROGRAMADAS do Inbox (migration 9109). Minuto a minuto: o que ela decide é a hora ESCOLHIDA POR UMA PESSOA para uma mensagem
+# ao cliente; uma varredura a cada 5 minutos atrasaria o envio em até 5. Barata: só olha as pendentes vencidas (índice parcial).
+* * * * *|50|api/v1/cron/scheduled-messages
 */5 * * * *|60|api/v1/cron/handoff-devolucao
 */5 * * * *|60|api/v1/cron/rodizio-devolucao
 # A FOTO GUARDADA SEM DESCRIÇÃO (MEDIA_VISION_WITHOUT_READER=defer). De 5 em 5

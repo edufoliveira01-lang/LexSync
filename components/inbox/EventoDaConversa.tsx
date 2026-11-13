@@ -12,10 +12,11 @@ import type { Note } from "@/lib/types/messaging";
  *   azul = assumiu · roxo = transferiu · âmbar = liberou/devolveu à fila · cinza = fechou/arquivou · verde = reabriu/contrato assinado
  *   índigo = contrato enviado · rosa = automático · verde-água = a IA mexeu no funil (classificou / moveu o negócio) · azul-céu = follow-up (entrou, enviou, respondeu, concluiu).
  */
-export type TipoDeEvento = "followup" | "crm" | "assumiu" | "transferiu" | "liberou" | "encerrou" | "reabriu" | "contrato_enviado" | "contrato_assinado" | "automatico" | "outro";
+export type TipoDeEvento = "programada" | "followup" | "crm" | "assumiu" | "transferiu" | "liberou" | "encerrou" | "reabriu" | "contrato_enviado" | "contrato_assinado" | "automatico" | "outro";
 
 export function tipoDoEvento(texto: string): TipoDeEvento {
   const t = texto.toLowerCase();
+  if (/programou|programada/.test(t)) return "programada";
   if (/^follow-up/.test(t)) return "followup";
   if (/moveu o neg[óo]cio|marcou o atendimento|atualizou o estado do atendimento/.test(t)) return "crm";
   if (/contrato.*assinad|assinou/.test(t)) return "contrato_assinado";
@@ -30,6 +31,7 @@ export function tipoDoEvento(texto: string): TipoDeEvento {
 }
 
 const COR: Record<TipoDeEvento, string> = {
+  programada: "border-orange-300 bg-orange-50 text-orange-700",
   followup: "border-sky-300 bg-sky-50 text-sky-700",
   crm: "border-teal-300 bg-teal-50 text-teal-700",
   assumiu: "border-accent-300 bg-accent-50 text-accent-700",
@@ -44,6 +46,7 @@ const COR: Record<TipoDeEvento, string> = {
 };
 
 const PONTO: Record<TipoDeEvento, string> = {
+  programada: "bg-orange-500",
   followup: "bg-sky-500",
   crm: "bg-teal-500",
   assumiu: "bg-accent",

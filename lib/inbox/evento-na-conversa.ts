@@ -23,7 +23,7 @@ async function nomeDe(admin: ReturnType<typeof createAdminClient>, userId: strin
   }
 }
 
-export type AcaoDoEvento = "contrato_enviado" | "contrato_assinado" | "assumiu" | "transferiu" | "liberou" | "fechou" | "reabriu" | "arquivou" | "pausou_ia";
+export type AcaoDoEvento = "programou_mensagem" | "programada_cancelada" | "programada_enviada" | "programada_falhou" | "contrato_enviado" | "contrato_assinado" | "assumiu" | "transferiu" | "liberou" | "fechou" | "reabriu" | "arquivou" | "pausou_ia";
 
 export async function registrarEventoNaConversa(p: {
   organizationId: string;
@@ -49,6 +49,10 @@ export async function registrarEventoNaConversa(p: {
       reabriu: `${nome} reabriu a conversa`,
       arquivou: `${nome} arquivou a conversa`,
       pausou_ia: `${nome} assumiu e pausou a IA`,
+      programou_mensagem: `${nome} programou uma mensagem`,
+      programada_cancelada: "Mensagem programada cancelada",
+      programada_enviada: "Mensagem programada enviada",
+      programada_falhou: "Mensagem programada não foi enviada",
       contrato_enviado: "Contrato enviado para assinatura",
       contrato_assinado: "Contrato assinado",
     };

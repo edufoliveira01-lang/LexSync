@@ -58,6 +58,7 @@ import {
   type MencaoEscolhida,
 } from "@/lib/notifications/mentions";
 import { cn } from "@/lib/utils";
+import { ProgramarMensagem } from "./ProgramarMensagem";
 import { resolveSharedContact } from "@/lib/messaging/contact-card";
 import { BarraDeRecursos } from "@/components/inbox/composer/BarraDeRecursos";
 import { type Recurso } from "@/lib/inbox/recursos";
@@ -1144,7 +1145,10 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
             {t("Nota interna")}
           </button>
         </div>
-          <div id="slot-acoes-da-conversa" className="ml-auto flex flex-wrap items-center justify-end gap-1" />
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
+            <div id="slot-acoes-da-conversa" className="flex flex-wrap items-center justify-end gap-1" />
+            {mode === "reply" ? <ProgramarMensagem conversationId={conversationId} /> : null}
+          </div>
         </div>
         {/*
           A FAIXA DA CITAÇÃO — o que o atendente escolheu responder.
