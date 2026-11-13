@@ -41,8 +41,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-accent text-accent-foreground hover:bg-accent-hover shadow-sm shadow-accent/20",
-        default: "bg-accent text-accent-foreground hover:bg-accent-hover shadow-sm shadow-accent/20",
+        primary: "bg-accent font-semibold text-accent-foreground hover:bg-accent-hover shadow-sm shadow-accent/20",
+        default: "bg-accent font-semibold text-accent-foreground hover:bg-accent-hover shadow-sm shadow-accent/20",
         secondary:
           "bg-surface-elevated text-text border border-border hover:border-accent hover:text-accent",
         outline:

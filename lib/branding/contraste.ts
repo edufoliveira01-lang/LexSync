@@ -871,7 +871,8 @@ function derivarTema(
       grauDoAccent: escolha.grauDoAccent,
       deslocamento: d,
       accent,
-      accentFg: melhorFrenteSobre(accent),
+      // O azul do Sales leva texto BRANCO no tema claro, como no Sales (a régua escolheria preto: 4,76:1 contra 4,41:1 do branco).
+      accentFg: semDeslocar && tema.nome === "claro" ? "#ffffff" : melhorFrenteSobre(accent),
       accentHover: stop(rampa, tema.indices.hover + d),
       accentSoft: cssDoSoft(tema, rampa, d),
       semanticas: reconciliacao.cores,

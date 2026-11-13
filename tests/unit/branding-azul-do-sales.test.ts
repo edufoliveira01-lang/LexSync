@@ -11,6 +11,8 @@ describe("azul do Sales", () => {
     expect(m.claro.accent.toLowerCase()).toBe("#1678dc");
     expect(m.claro.accentHover.toLowerCase()).toBe("#1262b6");
     expect(m.claro.deslocamento).toBe(0);
+    // Texto branco no botão, como no Sales.
+    expect(m.claro.accentFg.toLowerCase()).toBe("#ffffff");
   });
   it("qualquer outra cor continua passando pela régua de contraste", () => {
     const m = derivarMarca("#249715", regua);
