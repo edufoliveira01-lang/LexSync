@@ -54,6 +54,11 @@ export async function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const isAdminSurface = host.startsWith("admin.") || pathname.startsWith("/admin");
 
+  // Preview de desenvolvimento (app/dev-preview): fora da autenticação, e só fora de produção (em produção a rota responde 404).
+  if (process.env.NODE_ENV !== "production" && pathname.startsWith("/dev-preview")) {
+    return response;
+  }
+
   if (isPublicPath(pathname)) {
     return response;
   }

@@ -39,7 +39,7 @@ import { EmptyContacts } from "@/components/empty";
 import type { ContactOrderBy } from "@/lib/schemas/contacts";
 
 const ROTULO_DA_ORDEM: Partial<Record<ContactOrderBy, string>> = {
-  last_activity_at: "Última atividade",
+  last_activity_at: "Recentes",
   display_name: "Nome",
   email: "Email",
   phone_number: "Telefone",
@@ -362,7 +362,7 @@ export function ContactsListClient() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full justify-between font-normal sm:w-[190px]">
-              <span className="truncate">{t("Ordenar")}: {t(ROTULO_DA_ORDEM[orderBy] ?? "Última atividade")}</span>
+              <span className="truncate">{t("Ordenar")}: {t(ROTULO_DA_ORDEM[orderBy] ?? "Recentes")}</span>
               <CaretDown size={16} aria-hidden className="shrink-0 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>

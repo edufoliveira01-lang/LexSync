@@ -208,35 +208,40 @@ export function ContactsTable({
                   </button>
                 </div>
               )}
-              <AvatarDoContato id={c.id} nome={nome} />
               <Link
                 href={`/app/contacts/${c.id}`}
-                className="grid min-w-0 flex-1 gap-0.5 sm:grid-cols-[1.4fr_1fr_1fr] sm:items-center sm:gap-4"
+                className="grid min-w-0 flex-1 grid-cols-[40px_minmax(0,1fr)] items-center gap-x-3 gap-y-0.5 sm:grid-cols-[40px_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.2fr)] sm:gap-x-4"
               >
+                <AvatarDoContato id={c.id} nome={nome} className="row-span-2 sm:row-span-1" />
                 <span role="cell" className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-foreground">{nome}</span>
                   <span className="block truncate text-xs text-muted-foreground">
                     {c.last_activity_at ? formatUltimaAtividade(c.last_activity_at, localeDaData) : t("Sem atividade")}
                   </span>
                 </span>
-                <span role="cell" className="truncate text-sm text-foreground/80">
+                <span role="cell" className="col-start-2 truncate text-xs text-foreground/80 sm:col-start-auto sm:text-sm">
                   {c.phone_number ? phoneForDisplay(c.phone_number) : "—"}
                 </span>
                 <span role="cell" className="hidden truncate text-sm text-muted-foreground sm:block">
                   {c.email ?? "—"}
                 </span>
               </Link>
-              <span role="cell" className="hidden flex-wrap items-center justify-end gap-1.5 md:flex">
-                {c.tags.map((tag) => (
+              <span role="cell" className="hidden w-56 shrink-0 flex-wrap items-center justify-end gap-1.5 md:flex">
+                {c.tags.slice(0, 2).map((tag) => (
                   <ChipDeEtiqueta key={tag} tag={tag} />
                 ))}
+                {c.tags.length > 2 && (
+                  <span className="text-xs text-muted-foreground" title={c.tags.slice(2).join(", ")}>
+                    +{c.tags.length - 2}
+                  </span>
+                )}
                 {c.is_anonymized && <Badge variant="destructive">{t("Anonimizado")}</Badge>}
                 {c.is_blocked && <Badge variant="warning">{t("Bloqueado")}</Badge>}
                 {c.is_personal && <Badge variant="secondary">{t("Pessoal")}</Badge>}
                 {clientesLigado && c.first_service_at && <Badge variant="secondary">{t("Cliente")}</Badge>}
                 {!c.is_anonymized && !c.is_blocked && !c.is_personal && <Badge variant="success">{t("Ativo")}</Badge>}
               </span>
-              <span role="cell" className="flex shrink-0 items-center gap-0.5">
+              <span role="cell" className="flex w-[6.75rem] shrink-0 items-center justify-end gap-0.5">
                 {c.conversa ? (
                   <Button variant="ghost" size="icon" className="h-9 w-9 text-emerald-600" asChild>
                     <Link

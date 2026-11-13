@@ -155,7 +155,8 @@ export function SidebarContent({
   // é a condição de `lib/branding.ts`, avaliada sobre o que a barra vai mostrar.
   const marcaDoProduto = marcaEhADoProduto({ name: nome, logoUrl: logo ?? null });
 
-  const versao = useSystemVersion().data?.current_version?.replace(/^v/i, "") ?? "";
+  // Só a versão do original (1.101.0); o número do build (-sales.N) não cabe no cartão e quem precisa dele olha em Configurações › Atualização.
+  const versao = (useSystemVersion().data?.current_version?.replace(/^v/i, "") ?? "").split("-")[0] ?? "";
   const nomeDaPessoa = user.full_name?.trim() || user.email;
   const iniciais = (user.full_name?.trim()
     ? user.full_name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join("")
