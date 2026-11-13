@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useT } from "@/hooks/i18n/useT";
-import { Plus, DownloadSimple, DotsThree, MagnifyingGlass, UploadSimple, UsersThree, ArrowsClockwise } from "@/lib/ui/icons";
+import { CaretDown, Plus, DownloadSimple, DotsThree, MagnifyingGlass, UploadSimple, UsersThree, ArrowsClockwise } from "@/lib/ui/icons";
 import { CabecalhoDaPagina } from "@/components/ui/cabecalho-da-pagina";
 import { PainelDeNumeros } from "@/components/ui/painel-de-numeros";
 import { useContactResumo } from "@/hooks/contacts/useContactResumo";
@@ -37,6 +37,13 @@ import { useActiveOrg, usePermission } from "@/hooks/auth/AuthProvider";
 import { MergeDialog } from "@/components/contacts/MergeDialog";
 import { EmptyContacts } from "@/components/empty";
 import type { ContactOrderBy } from "@/lib/schemas/contacts";
+
+const ROTULO_DA_ORDEM: Partial<Record<ContactOrderBy, string>> = {
+  last_activity_at: "Última atividade",
+  display_name: "Nome",
+  email: "Email",
+  phone_number: "Telefone",
+};
 
 export function ContactsListClient() {
   const t = useT();
@@ -175,13 +182,13 @@ export function ContactsListClient() {
         descricao={t("A lista única de pessoas que falaram com o escritório: telefone, etiquetas, conversas e histórico. Os atendimentos e avisos usam estes cadastros.")}
         acoes={
           <>
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus size={16} weight="bold" aria-hidden />
-              <span>{t("Novo contato")}</span>
-            </Button>
             <Button variant="outline" onClick={() => setImportOpen(true)}>
               <UploadSimple size={16} weight="bold" aria-hidden />
               <span>{t("Importar CSV")}</span>
+            </Button>
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus size={16} weight="bold" aria-hidden />
+              <span>{t("Novo contato")}</span>
             </Button>
             {/* Duplicados, Sincronizar agenda e Exportar moram no "⋯", como no Sales: trabalho de vez em quando, não de todo dia. */}
             <DropdownMenu>
@@ -214,6 +221,26 @@ export function ContactsListClient() {
         }
       />
 
+      <div role="tablist" aria-label={t("Contatos")} className="inline-flex rounded-xl bg-surface-elevated p-1 text-sm font-semibold">
+        {[
+          { chave: "ativos", rotulo: t("Contatos"), ativo: !soPessoais },
+          { chave: "pessoais", rotulo: t("Pessoais"), ativo: soPessoais },
+        ].map((aba) => (
+          <button
+            key={aba.chave}
+            type="button"
+            role="tab"
+            aria-selected={aba.ativo}
+            data-testid={aba.chave === "pessoais" ? "filtro-pessoais" : undefined}
+            aria-pressed={aba.chave === "pessoais" ? aba.ativo : undefined}
+            onClick={() => setSoPessoais(aba.chave === "pessoais")}
+            className={`rounded-lg px-5 py-2.5 transition-colors ${aba.ativo ? "bg-surface text-accent shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {aba.rotulo}
+          </button>
+        ))}
+      </div>
+
       <PainelDeNumeros
         itens={[
           {
@@ -230,35 +257,26 @@ export function ContactsListClient() {
               setSearch("");
             },
           },
-          ...(clientesLigado
-            ? [
-                {
-                  chave: "clientes",
-                  rotulo: t("Clientes"),
-                  valor: resumo.data?.clientes,
-                  ativo: !soPessoais && tags.length === 1 && tags[0] === TAG_DE_CLIENTE,
-                  aoClicar: () => {
-                    setSoPessoais(false);
-                    setTagMode(undefined);
-                    setTags(tags.length === 1 && tags[0] === TAG_DE_CLIENTE ? [] : [TAG_DE_CLIENTE]);
-                  },
+          clientesLigado
+            ? {
+                chave: "clientes",
+                rotulo: t("Clientes"),
+                valor: resumo.data?.clientes,
+                ativo: !soPessoais && tags.length === 1 && tags[0] === TAG_DE_CLIENTE,
+                aoClicar: () => {
+                  setSoPessoais(false);
+                  setTagMode(undefined);
+                  setTags(tags.length === 1 && tags[0] === TAG_DE_CLIENTE ? [] : [TAG_DE_CLIENTE]);
                 },
-              ]
-            : []),
-          {
-            chave: "pessoais",
-            rotulo: t("Pessoais"),
-            valor: resumo.data?.pessoais,
-            ativo: soPessoais,
-            testId: "filtro-pessoais",
-            aoClicar: () => setSoPessoais((v) => !v),
-          },
+              }
+            : { chave: "clientes", rotulo: t("Clientes"), valor: resumo.data?.clientes },
           { chave: "novos", rotulo: t("Novos nos últimos 7 dias"), valor: resumo.data?.novos_7_dias },
+          { chave: "pessoais", rotulo: t("Pessoais"), valor: resumo.data?.pessoais },
         ]}
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-full min-w-0 sm:flex-1">
+      <div className="grid gap-3 sm:grid-cols-[1fr_190px_190px]">
+        <div className="relative min-w-0">
           <MagnifyingGlass
             size={16}
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -272,19 +290,19 @@ export function ContactsListClient() {
             className="w-full pl-9"
           />
         </div>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[10rem] justify-between" disabled={tagOptions.length === 0}>
+            <Button variant="outline" className="w-full justify-between font-normal sm:w-[190px]" disabled={tagOptions.length === 0}>
               {tags[0] ? <PontoDaEtiqueta tag={tags[0]} className="mr-2" /> : null}
               {/* Resumo, e não a lista inteira: o gatilho tem a largura do filtro de
                   origem ao lado. Uma etiqueta mostra o nome; duas mostram a
                   primeira e o resto em contagem. */}
-              {tags.length === 0
+              <span className="truncate">{tags.length === 0
                 ? `${t("Tag")}: ${t("todas")}`
                 : tags.length === 1
                   ? `${t("Tag")}: ${tags[0]}`
-                  : `${t("Tag")}: ${tags[0]} +${tags.length - 1}`}
+                  : `${t("Tag")}: ${tags[0]} +${tags.length - 1}`}</span>
+              <CaretDown size={16} aria-hidden className="shrink-0 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -341,7 +359,27 @@ export function ContactsListClient() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {(search || tags.length > 0 || source || soPessoais) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full justify-between font-normal sm:w-[190px]">
+              <span className="truncate">{t("Ordenar")}: {t(ROTULO_DA_ORDEM[orderBy] ?? "Última atividade")}</span>
+              <CaretDown size={16} aria-hidden className="shrink-0 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuRadioGroup value={orderBy} onValueChange={(v) => handleSort(v as ContactOrderBy)}>
+              {(Object.keys(ROTULO_DA_ORDEM) as ContactOrderBy[]).map((k) => (
+                <DropdownMenuRadioItem key={k} value={k}>
+                  {t(ROTULO_DA_ORDEM[k] ?? k)}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      {(search || tags.length > 0 || source) && (
+        <div className="-mt-2">
+        {(search || tags.length > 0 || source) && (
           <Button
             variant="ghost"
             size="sm"
@@ -357,7 +395,8 @@ export function ContactsListClient() {
             {t("Limpar filtros")}
           </Button>
         )}
-      </div>
+        </div>
+      )}
 
       {podeAgirEmLote && (
         <BarraDeContatosEmLote
