@@ -1,5 +1,7 @@
 "use client";
 
+import { CabecalhoDaPagina } from "@/components/ui/cabecalho-da-pagina";
+
 import { useT } from "@/hooks/i18n/useT";
 import * as React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -319,8 +321,13 @@ export function TemplatesClient({ canShare, currentUserId }: Props) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+    <div className="space-y-5">
+      <CabecalhoDaPagina
+        area={t("Atendimento")}
+        titulo={t("Respostas rápidas")}
+        descricao={t("Scripts salvos para responder mais rápido; pessoais ou compartilhados com a equipe.")}
+        acoes={
+          <>
         {/* A ação principal vem PRIMEIRO: o grupo é opcional, e quem chega à
             tela procurando "criar" acha a resposta rápida antes do grupo. */}
         <Button type="button" onClick={openNew} className="w-full sm:w-auto">
@@ -338,7 +345,9 @@ export function TemplatesClient({ canShare, currentUserId }: Props) {
             <Plus /> {t("Novo grupo")}
           </Button>
         )}
-      </div>
+          </>
+        }
+      />
       {!templates?.length ? (
         <p className="text-sm text-muted-foreground">{t("Nenhuma resposta rápida ainda.")}</p>
       ) : (
