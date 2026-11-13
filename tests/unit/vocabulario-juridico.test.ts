@@ -18,6 +18,9 @@ describe("vocabulário de escritório de advocacia", () => {
     expect(v("Sem vendedor dono")).toBe("Sem responsável dono");
     expect(v("responder sobre o seu negócio")).toBe("responder sobre o seu escritório");
   });
+  it("jargão técnico vira português do escritório", () => {
+    expect(v("Gestão de membros, roles e atendimento do tenant.")).toBe("Gestão de membros, papéis e atendimento do escritório.");
+  });
   it("não mexe no que não é do comércio", () => {
     expect(v("Preço por 1 milhão de tokens")).toBe("Preço por 1 milhão de tokens");
     expect(v("Contatos")).toBe("Contatos");

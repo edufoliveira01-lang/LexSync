@@ -82,6 +82,9 @@ const PALAVRAS: Array<[RegExp, string | ((m: string, ...g: string[]) => string)]
   [/\bna comanda\b/gi, "no lançamento"],
   [/\bcomandas\b/gi, "lançamentos"],
   [/\bcomanda\b/gi, "lançamento"],
+  // jargão técnico → português do escritório
+  [/\btenant\b/gi, "escritório"],
+  [/\broles\b/gi, "papéis"],
   // leads → contatos
   [/\bleads\b/gi, "contatos"],
 ];
