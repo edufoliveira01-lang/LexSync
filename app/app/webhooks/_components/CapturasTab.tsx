@@ -90,6 +90,7 @@ export function CapturasTab() {
   const [de, setDe] = React.useState("");
   const [ate, setAte] = React.useState("");
   const [aberta, setAberta] = React.useState<LeadCaptureRow | null>(null);
+  const [periodoAberto, setPeriodoAberto] = React.useState(false);
 
   const { data: fontesRes } = useWebhookSources();
   const fontes = fontesRes?.data ?? [];
@@ -112,88 +113,82 @@ export function CapturasTab() {
 
   return (
     <div className="space-y-4 pt-4">
-      <Card className="p-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
-          <div className="space-y-1">
-            <label className="block text-xs text-muted-foreground" htmlFor="captura-busca">
-              {t("Nome, telefone ou e-mail")}
-            </label>
-            <div className="flex gap-2">
-              <Input
-                id="captura-busca"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") setBuscaAplicada(busca.trim());
-                }}
-                placeholder={t("quem você procura")}
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon"
-                aria-label={t("Buscar")}
-                onClick={() => setBuscaAplicada(busca.trim())}
-              >
-                <MagnifyingGlass />
-              </Button>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="block text-xs text-muted-foreground">{t("Fonte")}</label>
-            <Select value={fonte} onValueChange={setFonte}>
-              <SelectTrigger aria-label={t("Filtrar por fonte")}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={TODAS}>{t("Todas as fontes")}</SelectItem>
-                {fontes.map((f) => (
-                  <SelectItem key={f.id} value={f.id}>
-                    {f.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label className="block text-xs text-muted-foreground">{t("Resultado")}</label>
-            <Select value={desfecho} onValueChange={setDesfecho}>
-              <SelectTrigger aria-label={t("Filtrar por resultado")}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={TODAS}>{t("Todos")}</SelectItem>
-                <SelectItem value="criado">{t(DESFECHO_LABEL.criado)}</SelectItem>
-                <SelectItem value="duplicado">{t(DESFECHO_LABEL.duplicado)}</SelectItem>
-                <SelectItem value="atualizado">{t(DESFECHO_LABEL.atualizado)}</SelectItem>
-                <SelectItem value="recusado">{t(DESFECHO_LABEL.recusado)}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Uma barra só: busca, fonte e resultado em fichas (o que mais se troca), e o período numa linha que abre sob demanda. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1 basis-64 sm:max-w-sm">
+          <MagnifyingGlass size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Input
+            id="captura-busca"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            onBlur={() => setBuscaAplicada(busca.trim())}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setBuscaAplicada(busca.trim());
+            }}
+            placeholder={t("Nome, telefone ou e-mail")}
+            aria-label={t("Nome, telefone ou e-mail")}
+            className="rounded-full pl-9"
+          />
+        </div>
+        <Select value={fonte} onValueChange={setFonte}>
+          <SelectTrigger aria-label={t("Filtrar por fonte")} className="w-full rounded-full sm:w-52">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={TODAS}>{t("Todas as fontes")}</SelectItem>
+            {fontes.map((f) => (
+              <SelectItem key={f.id} value={f.id}>
+                {f.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => setPeriodoAberto((v) => !v)} aria-expanded={periodoAberto}>
+          {t("Período")}
+          {de || ate ? <span className="ml-1 h-1.5 w-1.5 rounded-full bg-accent" aria-hidden /> : null}
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-2" role="group" aria-label={t("Filtrar por resultado")}>
+        {[
+          { v: TODAS, r: t("Todos") },
+          { v: "criado", r: t(DESFECHO_LABEL.criado) },
+          { v: "duplicado", r: t(DESFECHO_LABEL.duplicado) },
+          { v: "atualizado", r: t(DESFECHO_LABEL.atualizado) },
+          { v: "recusado", r: t(DESFECHO_LABEL.recusado) },
+        ].map((o) => (
+          <button
+            key={o.v}
+            type="button"
+            aria-pressed={desfecho === o.v}
+            onClick={() => setDesfecho(o.v)}
+            className={
+              desfecho === o.v
+                ? "rounded-full border border-accent bg-accent-50 px-3 py-1 text-xs font-semibold text-accent-700"
+                : "rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-accent-300"
+            }
+          >
+            {o.r}
+          </button>
+        ))}
+      </div>
+
+      {periodoAberto && (
+        <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-surface p-4 sm:max-w-xl sm:grid-cols-2">
           <div className="space-y-1">
             <label className="block text-xs text-muted-foreground" htmlFor="captura-de">
               {t("De")}
             </label>
-            <Input
-              id="captura-de"
-              type="datetime-local"
-              value={de}
-              onChange={(e) => setDe(e.target.value)}
-            />
+            <Input id="captura-de" type="datetime-local" value={de} onChange={(e) => setDe(e.target.value)} />
           </div>
           <div className="space-y-1">
             <label className="block text-xs text-muted-foreground" htmlFor="captura-ate">
               {t("Até")}
             </label>
-            <Input
-              id="captura-ate"
-              type="datetime-local"
-              value={ate}
-              onChange={(e) => setAte(e.target.value)}
-            />
+            <Input id="captura-ate" type="datetime-local" value={ate} onChange={(e) => setAte(e.target.value)} />
           </div>
         </div>
-      </Card>
+      )}
 
       {isLoading ? (
         <div className="space-y-2">
@@ -229,7 +224,7 @@ export function CapturasTab() {
                 {temFiltro
                   ? t("Nenhuma captação com esses filtros. Tente ampliar o período.")
                   : t(
-                      "Ninguém preencheu seus formulários ainda. Assim que o primeiro envio chegar, ele aparece aqui — com os dados, o horário e a origem.",
+                      "Ninguém preencheu os formulários do escritório ainda. Assim que o primeiro envio chegar, ele aparece aqui — com os dados, o horário e a origem.",
                     )}
               </p>
             </CardContent>

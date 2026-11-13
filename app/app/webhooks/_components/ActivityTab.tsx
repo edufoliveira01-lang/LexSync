@@ -12,7 +12,6 @@ import { formatDistanceToNowStrict } from "date-fns";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Check,
@@ -462,16 +461,44 @@ export function ActivityTab() {
   const t = useT();
   const { data, isLoading, refetch, isRefetching } = useAutomationRuns();
   const runs = data?.data ?? [];
+  const [filtro, setFiltro] = React.useState("todas");
+
+  const contagem = (st: string) => runs.filter((r) => r.status === st).length;
+  const filtros: { v: string; r: string; n: number }[] = [
+    { v: "todas", r: t("Todas"), n: runs.length },
+    { v: "success", r: t("Sucesso"), n: contagem("success") },
+    { v: "failed", r: t("Falhou"), n: contagem("failed") },
+    { v: "adiado", r: t("Aguardando envio"), n: contagem("adiado") },
+    { v: "partial", r: t("Parcial"), n: contagem("partial") },
+  ];
+  const visiveis = filtro === "todas" ? runs : runs.filter((r) => r.status === filtro);
 
   return (
-    <div className="space-y-4 pt-4">
-      <div className="flex sm:justify-end">
+    <div className="space-y-5 pt-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t("Filtrar por resultado")}>
+          {filtros.map((f) => (
+            <button
+              key={f.v}
+              type="button"
+              aria-pressed={filtro === f.v}
+              onClick={() => setFiltro(f.v)}
+              className={
+                filtro === f.v
+                  ? "rounded-full border border-accent bg-accent-50 px-3 py-1 text-xs font-semibold text-accent-700"
+                  : "rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-accent-300"
+              }
+            >
+              {f.r} <span className="tabular-nums opacity-70">{f.n}</span>
+            </button>
+          ))}
+        </div>
         <Button
           type="button"
-          variant="secondary"
+          variant="outline"
           onClick={() => refetch()}
           disabled={isRefetching}
-          className="w-full sm:w-auto"
+          className="ml-auto w-full sm:w-auto"
         >
           <ArrowsClockwise className={cn(isRefetching && "animate-spin")} /> {t("Atualizar")}
         </Button>
@@ -483,34 +510,32 @@ export function ActivityTab() {
           <Skeleton className="h-24 w-full" />
         </div>
       ) : runs.length === 0 ? (
-        <div className="flex justify-center pt-10">
-          <Card className="max-w-md">
-            <CardContent className="pt-6 text-center text-sm text-muted-foreground">
-              {t(
-                "Nenhuma automação rodou ainda. Assim que uma regra ligada disparar, o histórico aparece aqui.",
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        <section className="rounded-md border border-border bg-surface p-8 text-center">
+          <ClockCountdown className="mx-auto mb-3 h-8 w-8 text-accent" aria-hidden />
+          <p className="text-sm font-medium">{t("Nenhuma automação rodou ainda.")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t("Assim que uma regra ligada disparar, o histórico aparece aqui.")}
+          </p>
+        </section>
+      ) : visiveis.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("Nenhuma execução com esse resultado.")}</p>
       ) : (
-        <div className="space-y-3">
-          {runs.map((run) => (
-            <Card key={run.id}>
-              <CardHeader className="space-y-1">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="truncate text-sm">
-                    {run.automation_rules?.name ?? t("Automação removida")}
-                  </CardTitle>
-                  <Badge variant={statusBadgeVariant(run.status)}>{statusBadgeLabel(run.status, t)}</Badge>
+        <div className="grid gap-3 lg:grid-cols-2">
+          {visiveis.map((run) => (
+            <article key={run.id} className="flex flex-col rounded-md border border-border bg-surface shadow-xs">
+              <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+                <div className="min-w-0">
+                  <h3 className="truncate text-sm font-semibold">{run.automation_rules?.name ?? t("Automação removida")}</h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{relativeCreatedAt(run.created_at, localeDaData)}</p>
                 </div>
-                <p className="text-xs text-muted-foreground">{relativeCreatedAt(run.created_at, localeDaData)}</p>
-              </CardHeader>
-              <CardContent className="space-y-2">
+                <Badge variant={statusBadgeVariant(run.status)}>{statusBadgeLabel(run.status, t)}</Badge>
+              </header>
+              <div className="space-y-2 p-4">
                 {run.actions_result.map((action, idx) => (
                   <ActionLine key={idx} action={action} run={run} />
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </article>
           ))}
         </div>
       )}
