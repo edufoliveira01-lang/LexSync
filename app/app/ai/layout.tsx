@@ -5,9 +5,6 @@
  * é o hub em `/app/ai`, alcançável pelo sidebar.
  */
 export default function AiLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex h-full flex-col">
-      <div className="min-h-0 flex-1">{children}</div>
-    </div>
-  );
+  // Sem div em volta: o filho direto do <main> é a própria página, e a margem de página (28/40px) vem só da casca.
+  return <>{children}</>;
 }

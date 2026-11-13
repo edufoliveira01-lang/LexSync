@@ -513,3 +513,6 @@ main[style*="--area"] h1.text-2xl::before {
   background: var(--color-accent-soft);
   color: var(--color-accent-300);
 }
+
+/* Página dentro de um invólucro da casca (Configurações): o respiro de página vem da casca, não repete. */
+.dz-pagina > .p-6, .dz-pagina > .md\:p-6 { padding: 0; }

@@ -42,7 +42,7 @@ export async function ConfiguracoesShell({
         rotuloIrPara={traduzir("Ir para", idioma)}
         rotuloNada={traduzir("Nada encontrado.", idioma)}
       />
-      <div className="min-w-0">{children}</div>
+      <div className="dz-pagina min-w-0">{children}</div>
     </div>
   );
 }

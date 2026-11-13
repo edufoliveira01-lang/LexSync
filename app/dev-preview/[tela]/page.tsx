@@ -7,6 +7,8 @@ import { AgendaClient } from "@/app/app/agenda/_client";
 import { PipelinePageClient } from "@/app/app/pipelines/[id]/_client";
 import { RespostasRapidasTela } from "@/app/app/templates/_components/RespostasRapidasTela";
 import { TarefasClient } from "@/app/app/tasks/_components/TarefasClient";
+import { NavHub } from "@/components/shell/NavHub";
+import { AgentsList } from "@/app/app/ai/agents/_components/AgentsList";
 import { RadarTela } from "@/app/app/radar/_components/RadarTela";
 
 /** Telas disponíveis no preview. Cada uma é o componente REAL da tela; os dados vêm do mock de rede. */
@@ -29,9 +31,24 @@ const AGENDAMENTOS = [
   { id: "a3", titulo: "Perícia — Ana Costa", quemSeraAtendido: "Ana Costa", responsavelId: "u1", comeca: dia(1, 10, 30), termina: dia(1, 11, 30), tipo: "Perícia", origem: "google_sync", situacao: "confirmed" },
 ] as never[];
 
+const AGENTES = [
+  { id: "g1", organization_id: "o", name: "Atendimento inicial", description: "Qualifica quem chega pelo WhatsApp.", model: "claude-sonnet-5-5", system_prompt: "", is_active: true, is_default: true, kind: "atendimento", priority: 1, published_version_id: "v1", paused_at: null, operation_mode: "auto", operation_revision: 1, archived_at: null, config: {}, guardrails: {}, active_kb_version_id: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), versao_publicada: { provider: "anthropic", model: "claude-sonnet-5-5" } },
+  { id: "g2", organization_id: "o", name: "Cobrança amigável", description: "Lembra parcelas em atraso.", model: "claude-haiku-5-5", system_prompt: "", is_active: false, is_default: false, kind: "followup", priority: 2, published_version_id: null, paused_at: null, operation_mode: "auto", operation_revision: 1, archived_at: null, config: {}, guardrails: {}, active_kb_version_id: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), versao_publicada: null },
+] as never[];
+
 const TELAS: Record<string, () => React.ReactNode> = {
   contacts: () => <ContactsListClient />,
   radar: () => <RadarTela />,
+  "ai-agents": () => (
+    <div className="flex h-full flex-col gap-6">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight">Agentes de IA</h1>
+        <p className="text-sm text-muted-foreground">Configure o comportamento dos agentes que respondem no WhatsApp.</p>
+      </header>
+      <AgentsList initialData={AGENTES} canWrite />
+    </div>
+  ),
+  crm: () => <NavHub group="crm" isPlatformAdmin={false} role="admin" modulosLigados={[]} title="CRM" subtitle="Contatos, funis e tarefas: tudo sobre quem você atende." />,
   tasks: () => <TarefasClient podeEditar minhasDeInicio={false} funis={[{ id: "f1", name: "Captação" }]} />,
   templates: () => <RespostasRapidasTela canShare currentUserId="00000000-0000-4000-8000-000000000001" />,
   quadro: () => (
