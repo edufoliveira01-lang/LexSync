@@ -137,7 +137,7 @@ export function ContactsTable({
           <li
             role="row"
             key={c.id}
-            className="rounded-md border border-border bg-surface shadow-xs"
+            className="rounded-md border border-border bg-surface shadow-xs transition hover:border-accent-300 hover:shadow-sm"
           >
             <div className="flex items-center gap-3 px-4 py-3">
               {onAlternarSelecao && modoSelecao && (

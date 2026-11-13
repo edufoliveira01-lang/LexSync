@@ -1,3 +1,4 @@
+import { VOCABULARIO_LIGADO, vocabularioJuridico } from "./vocabulario-juridico";
 /**
  * Os textos das telas que a equipe usa todo dia.
  *
@@ -19848,6 +19849,7 @@ export const DICIONARIO: Traducoes = {
  * tradução parcial não pode deixar a tela PIOR do que estava.
  */
 export function traduzir(texto: string, idioma: Idioma): string {
-  if (idioma === "pt-BR") return texto;
+  // Português: o vocabulário de escritório de advocacia (lib/i18n/vocabulario-juridico.ts) em vez de "venda", "loja", "produto".
+  if (idioma === "pt-BR") return VOCABULARIO_LIGADO ? vocabularioJuridico(texto) : texto;
   return DICIONARIO[texto]?.[idioma] ?? entradaDoCatalogo(idioma, texto) ?? texto;
 }
