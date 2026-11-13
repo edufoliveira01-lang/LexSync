@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { QueryClientContext } from "@tanstack/react-query";
 import { useContext, useState } from "react";
 
@@ -146,6 +147,10 @@ function ProgramarMensagemComDados({ conversationId }: { conversationId: string 
         <Button className="w-full" disabled={!podeSalvar} onClick={programar}>
           {criar.isPending ? t("Programando…") : t("Programar mensagem")}
         </Button>
+
+        <Link href="/app/mensagens-programadas" className="block text-center text-xs font-semibold text-accent underline-offset-4 hover:underline">
+          {t("Ver o controle de mensagens programadas")}
+        </Link>
 
         {(programadas.length > 0 || falhas.length > 0) && (
           <div className="space-y-2 border-t border-border pt-3">
