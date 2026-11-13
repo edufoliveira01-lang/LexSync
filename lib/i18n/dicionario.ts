@@ -11083,6 +11083,7 @@ export const DICIONARIO: Traducoes = {
 
   // ─── Auth: login, cadastro, recuperação de senha, MFA, códigos de recuperação ───
   "Entrar": { es: "Entrar" },
+  "Como este agente se comporta, o que ele sabe e quando ele passa a conversa para uma pessoa.": { es: "Cómo se comporta este agente, qué sabe y cuándo pasa la conversación a una persona." },
   "abrir conversa": { es: "abrir conversación" },
   "Concluir seleção": { es: "Terminar selección" },
   "Novos nos últimos 7 dias": { es: "Nuevos en los últimos 7 días" },

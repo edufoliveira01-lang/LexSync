@@ -1,4 +1,7 @@
+import Link from "next/link";
+import { ArrowLeft } from "@/lib/ui/icons";
 import { notFound, redirect } from "next/navigation";
+import { traduzir } from "@/lib/i18n/dicionario";
 
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
@@ -223,6 +226,17 @@ export default async function AgentEditorPage({ params }: { params: Promise<{ id
 
   return (
     <div className="flex h-full flex-col gap-6 p-6">
+      <div className="space-y-3">
+        <Link href="/app/ai/agents" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline">
+          <ArrowLeft size={14} aria-hidden /> {traduzir("Agentes de IA", user.idioma)}
+        </Link>
+        <header>
+          <h1 className="text-2xl font-semibold tracking-tight">{agent.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {traduzir("Como este agente se comporta, o que ele sabe e quando ele passa a conversa para uma pessoa.", user.idioma)}
+          </p>
+        </header>
+      </div>
       <AgentOperation agent={agent} readOnly={readOnly} />
       {(agent.kind ?? "rag_bot") !== "mcp_agent" && !agent.published_version_id && (
         <LegacyRecovery
