@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Robot, Plus, Trash, PencilSimple, FlowArrow } from "@/lib/ui/icons";
+import { MagnifyingGlass, Robot, Plus, Trash, PencilSimple, FlowArrow } from "@/lib/ui/icons";
 import { SeloDeAutoria } from "@/components/operacao/SeloDeAutoria";
 import {
   useAutomationRules,
@@ -48,6 +48,7 @@ export function RulesTab() {
   const [editorOpen, setEditorOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<AutomationRuleRow | null>(null);
   const [deleting, setDeleting] = React.useState<AutomationRuleRow | null>(null);
+  const [busca, setBusca] = React.useState("");
 
   const rules = data?.data ?? [];
 
@@ -83,101 +84,114 @@ export function RulesTab() {
     );
   }
 
-  if (rules.length === 0) {
-    return (
-      <div className="flex justify-center pt-10">
-        <Card className="max-w-md">
-          <CardHeader className="items-center text-center">
-            <Robot className="mb-2 h-10 w-10 text-accent" />
-            <CardTitle>{t("Crie sua primeira automação")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              {t("Ex.: quando entrar um contato novo, enviar uma mensagem de boas-vindas.")}
-            </p>
+  const termo = busca.trim().toLowerCase();
+  const visiveis = termo ? rules.filter((r) => r.name.toLowerCase().includes(termo)) : rules;
+  const ligadas = rules.filter((r) => r.is_active).length;
+
+  return (
+    <div className="space-y-5 pt-4">
+      {rules.length === 0 ? (
+        <section className="rounded-md border border-border bg-surface p-6">
+          <div className="flex items-start gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-accent">
+              <Robot className="h-5 w-5" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold">{t("Crie sua primeira automação")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("Ex.: quando entrar um contato novo, enviar uma mensagem de boas-vindas.")}
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2">
             <Button onClick={openCreate}>
               <Plus /> {t("Nova automação")}
             </Button>
             {/* Fase 1 do designer: a mesma automação, montada no canvas. É link
                 (não botão) para não colidir com quem procura "Nova automação". */}
-            <Button asChild variant="secondary">
+            <Button asChild variant="outline">
               <Link href={DESIGNER_NOVA}>
                 <FlowArrow /> {t("Montar no designer")}
               </Link>
             </Button>
-          </CardContent>
-        </Card>
-        <RuleEditor open={editorOpen} onOpenChange={setEditorOpen} rule={editing} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4 pt-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <Button asChild variant="secondary" className="w-full sm:w-auto">
-          <Link href={DESIGNER_NOVA}>
-            <FlowArrow /> {t("Montar no designer")}
-          </Link>
-        </Button>
-        <Button onClick={openCreate} className="w-full sm:w-auto">
-          <Plus /> {t("Nova automação")}
-        </Button>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {rules.map((r) => (
-          <Card key={r.id}>
-            <CardHeader className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle className="truncate">{r.name}</CardTitle>
-                <Badge variant={r.is_active ? "success" : "neutral"}>
-                  {r.is_active ? t("Ativa") : t("Pausada")}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">{triggerLabel(r.trigger_event, t)}</p>
-              <p className="text-xs text-muted-foreground">
-                {r.actions.length} {r.actions.length === 1 ? t("ação") : t("ações")}
-              </p>
-              {/* Uma regra ligada roda sozinha para sempre: quem a ligou é parte
-                  do estado dela, não um detalhe de auditoria. */}
-              <SeloDeAutoria kind={r.last_change_actor_kind} em={r.last_change_at} />
-            </CardHeader>
-            <CardContent className="flex items-center justify-between gap-2">
-              <Switch
-                checked={r.is_active}
-                disabled={update.isPending}
-                onCheckedChange={(checked) => toggleActive(r, checked)}
-                aria-label={`${r.is_active ? t("Pausar") : t("Ligar")} ${r.name}`}
+          </div>
+        </section>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-0 flex-1 basis-64 sm:max-w-sm">
+              <MagnifyingGlass size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <Input
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder={t("Buscar automação")}
+                aria-label={t("Buscar automação")}
+                className="rounded-full pl-9"
               />
-              <div className="flex items-center gap-1">
-                <Button asChild variant="ghost" size="icon">
-                  <Link href={`/app/webhooks/automacoes/${r.id}`} aria-label={t("Abrir no designer")}>
-                    <FlowArrow />
-                  </Link>
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => openEdit(r)}
-                  aria-label={t("Editar automação")}
-                >
-                  <PencilSimple />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDeleting(r)}
-                  aria-label={t("Excluir automação")}
-                >
-                  <Trash />
-                </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {ligadas} {ligadas === 1 ? t("ligada") : t("ligadas")} · {rules.length} {t("no total")}
+            </p>
+            <div className="ml-auto flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Link href={DESIGNER_NOVA}>
+                  <FlowArrow /> {t("Montar no designer")}
+                </Link>
+              </Button>
+              <Button onClick={openCreate} className="w-full sm:w-auto">
+                <Plus /> {t("Nova automação")}
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {visiveis.map((r) => (
+              <div key={r.id} className="flex flex-col rounded-md border border-border bg-surface shadow-xs transition hover:border-accent-300 hover:shadow-sm">
+                <div className="flex items-start gap-3 p-4">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-accent">
+                    <Robot className="h-[18px] w-[18px]" aria-hidden />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{r.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {t("Quando")}: {triggerLabel(r.trigger_event, t)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {r.actions.length} {r.actions.length === 1 ? t("ação") : t("ações")}
+                    </p>
+                  </div>
+                  <Badge variant={r.is_active ? "success" : "neutral"}>{r.is_active ? t("Ativa") : t("Pausada")}</Badge>
+                </div>
+                {/* Uma regra ligada roda sozinha para sempre: quem a ligou é parte do estado dela, não um detalhe de auditoria. */}
+                <div className="px-4 pb-3">
+                  <SeloDeAutoria kind={r.last_change_actor_kind} em={r.last_change_at} />
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-2.5">
+                  <Switch
+                    checked={r.is_active}
+                    disabled={update.isPending}
+                    onCheckedChange={(checked) => toggleActive(r, checked)}
+                    aria-label={`${r.is_active ? t("Pausar") : t("Ligar")} ${r.name}`}
+                  />
+                  <div className="flex items-center gap-1">
+                    <Button asChild variant="ghost" size="icon">
+                      <Link href={`/app/webhooks/automacoes/${r.id}`} aria-label={t("Abrir no designer")}>
+                        <FlowArrow />
+                      </Link>
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => openEdit(r)} aria-label={t("Editar automação")}>
+                      <PencilSimple />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => setDeleting(r)} aria-label={t("Excluir automação")} className="hover:text-error-fg">
+                      <Trash />
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            ))}
+            {visiveis.length === 0 && <p className="text-sm text-muted-foreground">{t("Nenhuma automação encontrada para essa busca.")}</p>}
+          </div>
+        </>
+      )}
 
       <RuleEditor open={editorOpen} onOpenChange={setEditorOpen} rule={editing} />
 
@@ -192,6 +206,7 @@ export function RulesTab() {
           <AlertDialogFooter>
             <AlertDialogCancel>{t("Cancelar")}</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-error text-white hover:brightness-95"
               onClick={async () => {
                 if (!deleting) return;
                 await del.mutateAsync(deleting.id);
