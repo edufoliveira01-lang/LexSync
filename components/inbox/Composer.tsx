@@ -1117,7 +1117,8 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
             )}
           </div>
         )}
-        <div className="mb-1.5 flex gap-1">
+        <div className="mb-1.5 flex items-center gap-2">
+        <div className="flex gap-1">
           <button
             type="button"
             onClick={() => setMode("reply")}
@@ -1142,6 +1143,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
           >
             {t("Nota interna")}
           </button>
+        </div>
           <div id="slot-acoes-da-conversa" className="ml-auto flex flex-wrap items-center justify-end gap-1" />
         </div>
         {/*
