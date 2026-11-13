@@ -51,6 +51,7 @@ const FRASES: Record<string, string> = {
   "Resumo do negócio": "Resumo do caso",
   "Compra": "Contratação",
   "Meus negócios": "Meus casos",
+  "Empresas e pessoas (venda para empresas)": "Empresas e pessoas (clientes pessoa jurídica)",
 };
 
 /** Palavras, com o artigo/preposição junto quando o gênero muda. A ordem importa: a mais específica primeiro. */
@@ -85,8 +86,12 @@ const PALAVRAS: Array<[RegExp, string | ((m: string, ...g: string[]) => string)]
   // jargão técnico → português do escritório
   [/\btenant\b/gi, "escritório"],
   [/\broles\b/gi, "papéis"],
-  // leads → contatos
+  // leads → contatos; card → cartão; custom fields → campos personalizados
   [/\bleads\b/gi, "contatos"],
+  [/\blead\b/gi, "contato"],
+  [/\bcustom fields\b/gi, "campos personalizados"],
+  [/\bcards\b/gi, "cartões"],
+  [/\bcard\b/gi, "cartão"],
 ];
 
 const memo = new Map<string, string>();

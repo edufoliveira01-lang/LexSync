@@ -18,6 +18,10 @@ describe("vocabulário de escritório de advocacia", () => {
     expect(v("Sem vendedor dono")).toBe("Sem responsável dono");
     expect(v("responder sobre o seu negócio")).toBe("responder sobre o seu escritório");
   });
+  it("lead, card e custom fields", () => {
+    expect(v("cada envio vira um lead aqui dentro")).toBe("cada envio vira um contato aqui dentro");
+    expect(v("leva o card em cada passo, custom fields")).toBe("leva o cartão em cada passo, campos personalizados");
+  });
   it("jargão técnico vira português do escritório", () => {
     expect(v("Gestão de membros, roles e atendimento do tenant.")).toBe("Gestão de membros, papéis e atendimento do escritório.");
   });
