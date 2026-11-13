@@ -45,7 +45,9 @@ export function SettingsNav({
     [grupos, termo],
   );
 
-  const ativo = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const casam = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const maisEspecifico = grupos.flatMap((g) => g.itens.map((i) => i.href)).filter(casam).sort((a, b) => b.length - a.length)[0];
+  const ativo = (href: string) => href === maisEspecifico;
   const emVisaoGeral = pathname === "/app/settings";
   const valorAtual = emVisaoGeral
     ? "/app/settings"

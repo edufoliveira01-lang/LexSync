@@ -106,7 +106,15 @@ export function vocabularioJuridico(texto: string): string {
   let saida = FRASES[texto];
   if (saida === undefined) {
     saida = texto;
-    for (const [re, troca] of PALAVRAS) saida = saida.replace(re, troca as never);
+    for (const [re, troca] of PALAVRAS) {
+      // Troca em texto fixo preserva a maiúscula do começo ("Propostas comerciais" → "Propostas de honorários").
+      saida = saida.replace(
+        re,
+        typeof troca === "string"
+          ? (m: string) => (m[0] !== m[0]!.toLowerCase() ? troca[0]!.toUpperCase() + troca.slice(1) : troca)
+          : (troca as never),
+      );
+    }
   }
   if (memo.size > 20000) memo.clear();
   memo.set(texto, saida);

@@ -85,6 +85,15 @@ export function ApiTokensClient() {
   const [created, setCreated] = useState<CreatedApiToken | null>(null);
 
   const tokens = data?.data ?? [];
+  const [filtro, setFiltro] = useState<"ativos" | "revogados" | "todos">("ativos");
+  const [comAutomaticos, setComAutomaticos] = useState(false);
+  const ehAutomatico = (nome: string) => nome.startsWith("agent-run:");
+  const automaticos = tokens.filter((tk) => ehAutomatico(tk.name)).length;
+  const visiveis = tokens.filter(
+    (tk) =>
+      (comAutomaticos || !ehAutomatico(tk.name)) &&
+      (filtro === "todos" || (filtro === "ativos" ? !tk.revoked_at : Boolean(tk.revoked_at))),
+  );
 
   const onCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,8 +123,31 @@ export function ApiTokensClient() {
 
   return (
     <>
-      <div className="flex sm:justify-end">
-        <Button onClick={() => setCreateOpen(true)} className="w-full sm:w-auto">
+      {/* O que a pessoa criou à mão fica à vista; as chaves que o sistema gera sozinho a cada execução do agente
+          (nome "agent-run:…") ficam atrás de uma chave, porque eram centenas de linhas de ruído. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t("Filtrar por situação")}>
+          {([["ativos", t("Ativos")], ["revogados", t("Revogados")], ["todos", t("Todos")]] as const).map(([v, r]) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={filtro === v}
+              onClick={() => setFiltro(v)}
+              className={
+                filtro === v
+                  ? "rounded-full border border-accent bg-accent-50 px-3 py-1 text-xs font-semibold text-accent-700"
+                  : "rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-accent-300"
+              }
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <input type="checkbox" checked={comAutomaticos} onChange={(e) => setComAutomaticos(e.target.checked)} />
+          {t("Incluir chaves automáticas do agente")} ({automaticos})
+        </label>
+        <Button onClick={() => setCreateOpen(true)} className="ml-auto w-full sm:w-auto">
           {t("Criar token")}
         </Button>
       </div>
@@ -123,41 +155,49 @@ export function ApiTokensClient() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("Carregando…")}</p>
       ) : tokens.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("Nenhum token criado ainda.")}</p>
+        <section className="rounded-md border border-border bg-surface p-8 text-center">
+          <p className="text-sm font-medium">{t("Nenhum token criado ainda.")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("Crie um token para integrar outro sistema ao escritório. Ele é mostrado uma única vez.")}</p>
+        </section>
+      ) : visiveis.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("Nenhum token com esse filtro.")}</p>
       ) : (
-        <div className="rounded-md border">
+        <div className="overflow-x-auto rounded-md border border-border bg-surface">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{t("Nome")}</TableHead>
                 <TableHead>{t("Prefixo")}</TableHead>
-                <TableHead>{t("Escopos")}</TableHead>
+                <TableHead>{t("Permissões")}</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>{t("Expira")}</TableHead>
                 <TableHead className="w-[120px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tokens.map((tok) => (
+              {visiveis.map((tok) => (
                 <TableRow key={tok.id}>
-                  <TableCell className="font-medium">{tok.name}</TableCell>
+                  <TableCell className="max-w-[260px] truncate font-medium" title={tok.name}>{tok.name}</TableCell>
                   <TableCell>
                     <code className="text-xs">{tok.prefix}…</code>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {tok.scopes.map((s) => (
-                        <Badge key={s} variant="secondary" className="text-xs">
-                          {s}
+                    <div className="flex flex-wrap items-center gap-1">
+                      {tok.scopes.slice(0, 3).map((sc) => (
+                        <Badge key={sc} variant="secondary" className="text-xs">
+                          {sc}
                         </Badge>
                       ))}
+                      {tok.scopes.length > 3 ? (
+                        <span className="text-xs text-muted-foreground" title={tok.scopes.slice(3).join(", ")}>+{tok.scopes.length - 3}</span>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell>
                     {tok.revoked_at ? (
                       <Badge variant="destructive">{t("Revogado")}</Badge>
                     ) : (
-                      <Badge variant="default">{t("Ativo")}</Badge>
+                      <Badge variant="success">{t("Ativo")}</Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -166,7 +206,7 @@ export function ApiTokensClient() {
                   <TableCell>
                     {!tok.revoked_at ? (
                       <Button
-                        variant="ghost"
+                        variant="destructive"
                         size="sm"
                         disabled={revoke.isPending}
                         onClick={async () => {

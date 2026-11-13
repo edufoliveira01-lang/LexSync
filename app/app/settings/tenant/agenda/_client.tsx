@@ -744,7 +744,7 @@ export function TiposDeAgendamentoClient({
                 <span className="ml-auto flex flex-wrap gap-1">
                   {(tipo.is_active || !tipo.service_enabled) && <Button variant="outline" size="sm" className="h-auto min-h-11 whitespace-normal text-left" onClick={() => { setServicoId(servicoId === tipo.id ? null : tipo.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("Configurar")} {tipo.name}</Button>}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     data-testid={`editar-${tipo.id}`}
                     onClick={() => setEditandoId(editandoId === tipo.id ? null : tipo.id)}
@@ -753,7 +753,7 @@ export function TiposDeAgendamentoClient({
                   </Button>
                   {tipo.is_active ? (
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       data-testid={`desativar-${tipo.id}`}
                       disabled={salvando}
@@ -770,7 +770,7 @@ export function TiposDeAgendamentoClient({
                     <Button variant="outline" size="sm" className="h-auto min-h-11 whitespace-normal text-left" onClick={() => { setServicoId(tipo.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("Configurar")} {tipo.name}</Button>
                   ) : (
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       data-testid={`reativar-${tipo.id}`}
                       disabled={salvando}
