@@ -1,6 +1,5 @@
 "use client";
 
-import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -28,13 +27,13 @@ import { usePacingKnobs } from "@/hooks/channels/usePacingKnobs";
 import { AntiBanSheet } from "./AntiBanSheet";
 import { GruposSheet } from "./GruposSheet";
 import { PairingOptions } from "./PairingOptions";
-import { ChannelAcervo } from "./ChannelAcervo";
-import { ChannelHistorico } from "./ChannelHistorico";
-import { ChannelAiAccess } from "./ChannelAiAccess";
 import { ParaIntegrar } from "./ParaIntegrar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { NovaConexaoSheet } from "./NovaConexaoSheet";
+import { DetalheDaConexaoSheet } from "./DetalheDaConexaoSheet";
 import {
   Dialog,
   DialogContent,
@@ -44,15 +43,16 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowsClockwise,
+  CaretRight,
   CheckCircle,
   CircleNotch,
+  Info,
+  MagnifyingGlass,
   Pause,
   Phone,
   Play,
   Plus,
-  ShieldCheck,
   Trash,
-  UsersThree,
   Warning,
 } from "@/lib/ui/icons";
 import { canalDesativado } from "@/lib/channels/desativado";
@@ -60,7 +60,6 @@ import { lerEstadoDoCanal } from "@/lib/channels/estado";
 import { fonteDeTemplates } from "@/lib/channels/templates-fonte";
 import { useT } from "@/hooks/i18n/useT";
 import { AgendaDePausa } from "@/components/connections/AgendaDePausa";
-import { RenomearConexao } from "./RenomearConexao";
 
 type Variant = "success" | "warning" | "error" | "neutral";
 
@@ -121,6 +120,21 @@ function ehCanalOficial(c: ChannelSession): boolean {
 }
 
 /** "3 conversas" / "1 conversa" — ou nada, quando não há o que contar. */
+function textoDosResponsaveis(
+  policy: { mode: string } | undefined,
+  t: (texto: string) => string,
+): string {
+  return t(
+    !policy
+      ? "Consulte os responsáveis em Atendimento."
+      : policy.mode === "legacy_unconfigured"
+        ? "Usa todos os atendentes elegíveis da organização."
+        : policy.mode === "restricted_empty"
+          ? "Ninguém configurado — as conversas ficarão na fila."
+          : "Somente as pessoas selecionadas recebem este número.",
+  );
+}
+
 function contar(
   n: number,
   singular: string,
@@ -205,7 +219,6 @@ export function frasesDoLoteDePausa(
 }
 
 export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean }) {
-  const tagDoIdioma = useTagDeIdioma();
   const t = useT();
   const qc = useQueryClient();
   const {
@@ -225,11 +238,25 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
   const [gruposId, setGruposId] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<ChannelSession | null>(null);
   const pacingItems = usePacingKnobs().data?.items ?? [];
+  const [novaAberta, setNovaAberta] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [detalheId, setDetalheId] = useState<string | null>(null);
 
   // A mesma lista que a tela desenha é a que a ação em lote comanda: filtrar
   // social aqui (como a tela já faz) evita um botão que pede ids que ninguém vê.
   const list = (sessions ?? []).filter((session) => session.provider !== CHANNEL_PROVIDER_SOCIAL);
   /** Alvo de cada botão de lote — os dois só existem quando têm o que fazer. */
+  const detalhe = list.find((c) => c.id === detalheId) ?? null;
+  const termo = busca.trim().toLowerCase();
+  const filtrada = termo
+    ? list.filter((c) => `${channelLabel(c, t)} ${c.phone_number ?? ""}`.toLowerCase().includes(termo))
+    : list;
+  const noAr = (c: ChannelSession) => c.status === "WORKING" && !canalDesativado(c.metadata);
+  const grupos = [
+    { chave: "conectadas", titulo: t("Conectadas"), ponto: "bg-success", itens: filtrada.filter(noAr) },
+    { chave: "pausadas", titulo: t("Pausadas"), ponto: "bg-muted-foreground", itens: filtrada.filter((c) => canalDesativado(c.metadata)) },
+    { chave: "fora", titulo: t("Fora do ar"), ponto: "bg-error", itens: filtrada.filter((c) => c.status !== "WORKING" && !canalDesativado(c.metadata)) },
+  ].filter((g) => g.itens.length > 0);
   const paraPausar = list.filter((c) => !canalDesativado(c.metadata));
   const paraRetomar = list.filter((c) => canalDesativado(c.metadata));
 
@@ -269,19 +296,21 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
     void runHealthCheck(sessions);
   }, [sessions, runHealthCheck]);
 
-  const handleConnectNew = useCallback(async () => {
+  const handleConnectNew = useCallback(async (nome?: string) => {
     setCreating(true);
     setConnectionDetail(null);
     try {
       const res = await apiClient.post<{ data: ChannelSession }>(
         "/api/v1/channel-sessions",
-        {},
+        nome ? { display_name: nome } : {},
         { idempotencyKey: createKey.current ??= randomId(), timeoutMs: 120_000 },
       );
       invalidate();
       createKey.current = null;
-      setQr({ sessionId: res.data.id, title: t("Conectar novo WhatsApp") });
+      setNovaAberta(false);
+      setQr({ sessionId: res.data.id, title: nome ? `${t("Conectar")} ${nome}` : t("Conectar novo WhatsApp") });
     } catch (err) {
+      setNovaAberta(false);
       toast.error(errMsg(err, "Não foi possível iniciar a conexão.", t));
       if (err instanceof ApiError) setConnectionDetail(JSON.stringify({ code: err.code, request_id: err.requestId, ...err.details }, null, 2));
       invalidate();
@@ -387,15 +416,19 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">
-          {isError
-            ? t("Não foi possível carregar seus números.")
-            : list.length === 0
-              ? t("Nenhum número conectado ainda.")
-              : `${list.length} ${list.length === 1 ? t("número conectado") : t("números conectados")}.`}
-        </p>
-        <div className="flex flex-wrap gap-2">
+      {/* Barra do topo: busca à esquerda; à direita, atualizar, as ações em lote e o botão principal. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1 basis-64 sm:max-w-sm">
+          <MagnifyingGlass size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder={t("Buscar por nome ou número")}
+            aria-label={t("Buscar por nome ou número")}
+            className="rounded-full pl-9"
+          />
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           {list.length > 0 && (
             <Button
               variant="outline"
@@ -403,71 +436,40 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
               disabled={checking || !wahaConfigured}
               onClick={() => void runHealthCheck(list)}
             >
-              <ArrowsClockwise
-                size={14}
-                className={checking ? "animate-spin" : undefined}
-                aria-hidden
-              />
+              <ArrowsClockwise size={14} className={checking ? "animate-spin" : undefined} aria-hidden />
               {t("Atualizar saúde")}
             </Button>
           )}
-          {/* Ação em lote (#2387): o "todas" que resolve a janela de manutenção
-              do rodízio (#1330) — um número esquecido no meio de N cliques é o
-              defeito que este botão existe para evitar. Cada um só aparece
-              quando TEM alvo: "Retomar todas" com ninguém pausado seria um
-              botão que promete uma conta que não fecha. Sem exigir o serviço do
-              WhatsApp: pausar é gravar `metadata.disabled`, nada de transporte.
-              O total no rótulo é o mesmo que o toast confirma depois — o
-              operador vê a conta antes e depois do clique. */}
           {paraPausar.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={loteOcupado}
-              onClick={() => void handleLote(true)}
-            >
-              {loteOcupado ? (
-                <CircleNotch size={14} className="animate-spin" aria-hidden />
-              ) : (
-                <Pause size={14} aria-hidden />
-              )}
+            <Button variant="outline" size="sm" disabled={loteOcupado} onClick={() => void handleLote(true)}>
+              {loteOcupado ? <CircleNotch size={14} className="animate-spin" aria-hidden /> : <Pause size={14} aria-hidden />}
               {t("Pausar todas")} ({paraPausar.length})
             </Button>
           )}
           {paraRetomar.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={loteOcupado}
-              onClick={() => void handleLote(false)}
-            >
-              {loteOcupado ? (
-                <CircleNotch size={14} className="animate-spin" aria-hidden />
-              ) : (
-                <Play size={14} aria-hidden />
-              )}
+            <Button variant="outline" size="sm" disabled={loteOcupado} onClick={() => void handleLote(false)}>
+              {loteOcupado ? <CircleNotch size={14} className="animate-spin" aria-hidden /> : <Play size={14} aria-hidden />}
               {t("Retomar todas")} ({paraRetomar.length})
             </Button>
           )}
-          {/* A JANELA DE MANUTENÇÃO (#2388): o "todas" com HORÁRIO e RETOMADA
-              automática. Ela fica ao lado dos dois botões de lote de propósito:
-              os três são a mesma escrita (`metadata.disabled`), e a diferença é
-              quando — agora, ou quando o operador escolher. */}
           <AgendaDePausa canais={list} />
-          <Button size="sm" disabled={creating || !wahaConfigured} onClick={handleConnectNew}>
-            {creating ? (
-              <CircleNotch size={14} className="animate-spin" aria-hidden />
-            ) : (
-              <Plus size={14} aria-hidden />
-            )}
-            {t("Conectar novo WhatsApp")}
+          <Button onClick={() => setNovaAberta(true)}>
+            <Plus size={14} aria-hidden />
+            {t("Nova conexão")}
           </Button>
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        {t("Novos canais começam em modo de teste, sem respostas automáticas até você autorizar números ou liberar o público.")}
-      </p>
+      <div className="flex items-start gap-3 rounded-md border border-info-border bg-info-bg p-4 text-sm text-info-fg">
+        <Info size={18} className="mt-0.5 shrink-0" aria-hidden />
+        <div>
+          <p className="font-medium">{t("Uma conexão por número.")}</p>
+          <p>{t("Evite ter mais de uma conexão com o mesmo número: isso pode causar erros no sistema, mesmo que uma delas esteja fora do ar.")}</p>
+          <p className="mt-1 text-xs opacity-80">
+            {t("Novos canais começam em modo de teste, sem respostas automáticas até você autorizar números ou liberar o público.")}
+          </p>
+        </div>
+      </div>
 
       {list.length > 0 ? (
         <ParaIntegrar
@@ -539,6 +541,7 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
         // conectado. Erro tem que aparecer como erro.
         <Card className="flex flex-col items-center gap-3 p-8 text-center">
           <Warning size={28} className="text-error-fg" aria-hidden />
+          <p className="text-sm font-medium">{t("Não foi possível carregar seus números.")}</p>
           <p className="text-sm text-error-fg">
             {t(
               "Não foi possível carregar seus números — esta lista não está mostrando o que existe.",
@@ -558,121 +561,53 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
           </p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {list.map((c) => {
-            const info = statusInfo(c.status, t);
-            const pausado = canalDesativado(c.metadata);
-            const policy = routing.data?.data?.channels?.find((channel) => channel.id === c.id);
-            // Sem o serviço no ar a rota de exclusão falha fechado (503) para
-            // quem depende dele: oferecer o botão seria prometer uma ação que
-            // não acontece. O canal oficial não passa pelo transporte e continua
-            // podendo ser excluído.
-            const vivaNoTransporte = dependeDoTransporte(c);
-            const podeExcluir = wahaConfigured || !vivaNoTransporte;
-            return (
-              <Card key={c.id} className="flex flex-col gap-3 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Phone size={16} className="text-muted-foreground" aria-hidden />
-                      <span className="truncate text-sm font-medium">{channelLabel(c, t)}</span>
-                      {ehCanalOficial(c) && (
-                        <Badge variant="default" className="shrink-0">
-                          {t("API oficial")}
-                        </Badge>
-                      )}
-                    </div>
-                    {c.phone_number && c.display_name && (
-                      <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                        {c.phone_number}
-                      </p>
-                    )}
-                  </div>
-                  <Badge variant={info.variant}>{info.label}</Badge>
-                  {pausado && <Badge variant="neutral">{t("Pausado")}</Badge>}
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {c.last_health_check_at
-                    ? `${t("Verificado")} ${new Date(c.last_health_check_at).toLocaleString(tagDoIdioma)}`
-                    : t("Ainda não verificado")}
-                </p>
-                <ChannelAiAccess channelId={c.id} />
-                {dependeDoTransporte(c) && <ChannelAcervo channelId={c.id} />}
-                {dependeDoTransporte(c) && <ChannelHistorico channelId={c.id} />}
-                <p className="text-xs text-muted-foreground">{t(!policy ? "Consulte os responsáveis em Atendimento." : policy.mode === "legacy_unconfigured" ? "Usa todos os atendentes elegíveis da organização." : policy.mode === "restricted_empty" ? "Ninguém configurado — as conversas ficarão na fila." : "Somente as pessoas selecionadas recebem este número.")}</p>
-                <div className="mt-auto flex flex-wrap gap-2">
-                  <RenomearConexao
-                    channelId={c.id}
-                    currentName={c.display_name}
-                    onSaved={() => qc.invalidateQueries({ queryKey: ["channel-sessions"] })}
-                  />
-                  {/* Some no canal oficial em vez de aparecer desabilitado: não é
-                      indisponibilidade passageira (como o Excluir sem o serviço no
-                      ar), é uma ação que não existe para esse canal — e o clique
-                      ainda abriria o diálogo de QR, que ele nunca vai ter. */}
-                  {vivaNoTransporte && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={busyId === c.id || !wahaConfigured}
-                      onClick={() => handleReconnect(c)}
+        <div className="flex flex-col gap-6">
+          {grupos.map((g) => (
+            <section key={g.chave} aria-label={g.titulo} className="flex flex-col gap-3">
+              <h2 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                <span className={`h-1.5 w-1.5 rounded-full ${g.ponto}`} aria-hidden />
+                {g.titulo} {g.itens.length}
+              </h2>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {g.itens.map((c) => {
+                  const info = statusInfo(c.status, t);
+                  const pausado = canalDesativado(c.metadata);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setDetalheId(c.id)}
+                      aria-label={`${t("Abrir")} ${channelLabel(c, t)}`}
+                      className="group flex flex-col rounded-md border border-border bg-surface text-left shadow-xs transition hover:border-accent-300 hover:shadow-sm"
                     >
-                      {busyId === c.id ? (
-                        <CircleNotch size={14} className="animate-spin" aria-hidden />
-                      ) : (
-                        <ArrowsClockwise size={14} aria-hidden />
-                      )}
-                      {t("Reconectar")}
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" onClick={() => setAntiBanId(c.id)}>
-                    <ShieldCheck size={14} aria-hidden />
-                    {t("Proteção de envio")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={busyId === c.id}
-                    aria-label={
-                      pausado
-                        ? `${t("Retomar")} ${channelLabel(c, t)}`
-                        : `${t("Pausar")} ${channelLabel(c, t)}`
-                    }
-                    onClick={() => void handleToggleDisabled(c)}
-                  >
-                    {busyId === c.id ? (
-                      <CircleNotch size={14} className="animate-spin" aria-hidden />
-                    ) : pausado ? (
-                      <Play size={14} aria-hidden />
-                    ) : (
-                      <Pause size={14} aria-hidden />
-                    )}
-                    {pausado ? t("Retomar") : t("Pausar")}
-                  </Button>
-                  {capabilitiesOf((c.provider ?? DEFAULT_CHANNEL_PROVIDER) as ChannelProvider).groups !==
-                    "none" && (
-                    <Button variant="outline" size="sm" onClick={() => setGruposId(c.id)}>
-                      <UsersThree size={14} aria-hidden />
-                      {t("Grupos")}
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!podeExcluir}
-                    aria-label={
-                      podeExcluir
-                        ? `${t("Excluir")} ${channelLabel(c, t)}`
-                        : `${t("Excluir")} ${channelLabel(c, t)} — ${t("indisponível enquanto o serviço do WhatsApp não estiver ativo")}`
-                    }
-                    onClick={() => setToDelete(c)}
-                  >
-                    <Trash size={14} aria-hidden />
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
+                      <span className="flex items-start gap-3 p-4">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-accent">
+                          <Phone size={18} aria-hidden />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold">{channelLabel(c, t)}</span>
+                          {c.phone_number && c.display_name && (
+                            <span className="mt-0.5 block font-mono text-xs text-muted-foreground">{c.phone_number}</span>
+                          )}
+                        </span>
+                        <span className="flex shrink-0 flex-col items-end gap-1">
+                          <Badge variant={info.variant}>{info.label}</Badge>
+                          {pausado && <Badge variant="neutral">{t("Pausado")}</Badge>}
+                        </span>
+                      </span>
+                      <span className="flex items-center justify-between border-t border-border px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                        {ehCanalOficial(c) ? t("API oficial") : t("QR Code")}
+                        <CaretRight size={14} aria-hidden />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+          {grupos.length === 0 && (
+            <p className="text-sm text-muted-foreground">{t("Nenhuma conexão encontrada para essa busca.")}</p>
+          )}
         </div>
       )}
 
@@ -700,6 +635,35 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
           onDeleted={handleDeleted}
         />
       )}
+
+      <NovaConexaoSheet
+        aberto={novaAberta}
+        onFechar={() => setNovaAberta(false)}
+        criando={creating}
+        servicoAtivo={wahaConfigured}
+        onCriar={(nome) => void handleConnectNew(nome)}
+        onEscolherOficial={() => window.location.assign("/app/connections?aba=oficial")}
+      />
+
+      <DetalheDaConexaoSheet
+        canal={detalhe}
+        tipo={detalhe && ehCanalOficial(detalhe) ? t("API oficial") : t("WhatsApp por QR Code")}
+        estado={detalhe ? statusInfo(detalhe.status, t) : { label: "", variant: "neutral" }}
+        pausado={detalhe ? canalDesativado(detalhe.metadata) : false}
+        responsaveis={textoDosResponsaveis(detalhe ? routing.data?.data?.channels?.find((ch) => ch.id === detalhe.id) : undefined, t)}
+        ocupado={detalhe ? busyId === detalhe.id : false}
+        vivaNoTransporte={detalhe ? dependeDoTransporte(detalhe) : false}
+        servicoAtivo={wahaConfigured}
+        podeExcluir={detalhe ? wahaConfigured || !dependeDoTransporte(detalhe) : false}
+        temGrupos={detalhe ? capabilitiesOf((detalhe.provider ?? DEFAULT_CHANNEL_PROVIDER) as ChannelProvider).groups !== "none" : false}
+        onFechar={() => setDetalheId(null)}
+        onRenomeado={() => qc.invalidateQueries({ queryKey: ["channel-sessions"] })}
+        onReconectar={() => detalhe && void handleReconnect(detalhe)}
+        onProtecao={() => detalhe && setAntiBanId(detalhe.id)}
+        onAlternarPausa={() => detalhe && void handleToggleDisabled(detalhe)}
+        onGrupos={() => detalhe && setGruposId(detalhe.id)}
+        onExcluir={() => detalhe && setToDelete(detalhe)}
+      />
 
       {qr && (
         <QrDialog

@@ -53,6 +53,12 @@ vi.mock("@/hooks/channels/useChannelSessions", async (original) => {
 
 import { ConnectionsClient } from "@/components/connections/ConnectionsClient";
 
+function abrirGerenciar(nome: string) {
+  if (!screen.queryByTestId("detalhe-da-conexao")) fireEvent.click(screen.getByRole("button", { name: `Abrir ${nome}` }));
+  const aba = screen.getByRole("tab", { name: "Gerenciar" });
+  if (aba.getAttribute("data-state") !== "active") fireEvent.mouseDown(aba, { button: 0 });
+}
+
 const A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
 function canal(id: string, over: Partial<ChannelSession> = {}): ChannelSession {
@@ -135,6 +141,7 @@ describe("o pareamento não pergunta o status com a aba oculta (refs #2821)", ()
     await esvaziar();
 
     // Reconectar abre o diálogo de QR, que pergunta o status na hora.
+    abrirGerenciar("Número "+A.slice(0,1).toUpperCase());
     fireEvent.click(screen.getByRole("button", { name: /^Reconectar/ }));
     await esvaziar();
     await esvaziar();

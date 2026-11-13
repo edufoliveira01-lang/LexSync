@@ -64,6 +64,12 @@ vi.mock("@/hooks/channels/useChannelSessions", async (original) => {
 import { ConnectionsClient } from "@/components/connections/ConnectionsClient";
 import { AntiBanSheet } from "@/components/connections/AntiBanSheet";
 
+function abrirGerenciar(nome: string) {
+  if (!screen.queryByTestId("detalhe-da-conexao")) fireEvent.click(screen.getByRole("button", { name: `Abrir ${nome}` }));
+  const aba = screen.getByRole("tab", { name: "Gerenciar" });
+  if (aba.getAttribute("data-state") !== "active") fireEvent.mouseDown(aba, { button: 0 });
+}
+
 function canal(over: Partial<ChannelSession> = {}): ChannelSession {
   return {
     id: "canal-1",
@@ -228,6 +234,7 @@ describe("#669 — painel não morre mudo quando a conexão sumiu da lista", () 
     // Antes de abrir, nada de painel fantasma (o Sheet só monta quando pedido).
     expect(screen.queryByTestId("anti-ban-indisponivel")).toBeNull();
 
+    abrirGerenciar("Vendas");
     fireEvent.click(screen.getByRole("button", { name: /Proteção de envio/ }));
 
     expect(await screen.findByTestId("anti-ban-indisponivel")).toBeInTheDocument();

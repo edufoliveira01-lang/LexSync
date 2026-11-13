@@ -59,6 +59,12 @@ vi.mock("@/hooks/channels/useChannelSessions", async (original) => {
 import { ConnectionsClient, frasesDoImpacto } from "@/components/connections/ConnectionsClient";
 import { ConnectionHealthDot } from "@/components/connections/ConnectionHealthDot";
 
+function abrirGerenciar(nome: string) {
+  if (!screen.queryByTestId("detalhe-da-conexao")) fireEvent.click(screen.getByRole("button", { name: `Abrir ${nome}` }));
+  const aba = screen.getByRole("tab", { name: "Gerenciar" });
+  if (aba.getAttribute("data-state") !== "active") fireEvent.mouseDown(aba, { button: 0 });
+}
+
 function canal(over: Partial<ChannelSession> = {}): ChannelSession {
   return {
     id: "canal-1",
@@ -143,6 +149,7 @@ describe("Excluir sem o serviço de WhatsApp ativo", () => {
   it("fica desabilitado para o número pareado por QR, dizendo por quê", () => {
     render(wrap(<ConnectionsClient wahaConfigured={false} />));
 
+    abrirGerenciar("Vendas");
     const botao = screen.getByRole("button", { name: /^Excluir Vendas — indisponível/ });
     expect(botao).toBeDisabled();
   });
@@ -152,6 +159,7 @@ describe("Excluir sem o serviço de WhatsApp ativo", () => {
 
     render(wrap(<ConnectionsClient wahaConfigured={false} />));
 
+    abrirGerenciar("Oficial");
     expect(screen.getByRole("button", { name: "Excluir Oficial" })).toBeEnabled();
   });
 });
@@ -170,12 +178,14 @@ describe("Reconectar não é oferecido a quem não vive no transporte", () => {
 
     expect(screen.queryByRole("button", { name: /Reconectar/ })).not.toBeInTheDocument();
     // Não-vacuidade: o card É o do canal oficial, e as ações dele continuam lá.
+    abrirGerenciar("Oficial");
     expect(screen.getByRole("button", { name: "Excluir Oficial" })).toBeInTheDocument();
   });
 
   it("número pareado por QR continua recebendo o botão", () => {
     render(wrap(<ConnectionsClient wahaConfigured />));
 
+    abrirGerenciar("Vendas");
     expect(screen.getByRole("button", { name: /Reconectar/ })).toBeEnabled();
   });
 });
@@ -185,6 +195,7 @@ describe("diálogo de exclusão diz a verdade antes do clique", () => {
     getMock.mockResolvedValue({ data: { deletion_impact: IMPACTO_ARQUIVA } });
 
     render(wrap(<ConnectionsClient wahaConfigured />));
+    abrirGerenciar("Vendas");
     fireEvent.click(screen.getByRole("button", { name: "Excluir Vendas" }));
 
     await waitFor(() =>
@@ -204,6 +215,7 @@ describe("diálogo de exclusão diz a verdade antes do clique", () => {
     getMock.mockReturnValue(new Promise(() => {}));
 
     render(wrap(<ConnectionsClient wahaConfigured />));
+    abrirGerenciar("Vendas");
     fireEvent.click(screen.getByRole("button", { name: "Excluir Vendas" }));
 
     const confirmar = await screen.findByRole("button", { name: "Excluir" });
@@ -215,6 +227,7 @@ describe("diálogo de exclusão diz a verdade antes do clique", () => {
     getMock.mockRejectedValue(new Error("500"));
 
     render(wrap(<ConnectionsClient wahaConfigured />));
+    abrirGerenciar("Vendas");
     fireEvent.click(screen.getByRole("button", { name: "Excluir Vendas" }));
 
     expect(await screen.findByText(/Não foi possível verificar o que está ligado/)).toBeInTheDocument();
@@ -228,6 +241,7 @@ describe("diálogo de exclusão diz a verdade antes do clique", () => {
     });
 
     render(wrap(<ConnectionsClient wahaConfigured />));
+    abrirGerenciar("Vendas");
     fireEvent.click(screen.getByRole("button", { name: "Excluir Vendas" }));
     fireEvent.click(await screen.findByRole("button", { name: "Excluir" }));
 
@@ -309,7 +323,10 @@ describe("copiar detalhes de conexão no self-host HTTP", () => {
     vi.stubGlobal("navigator", {});
     document.execCommand = vi.fn().mockReturnValue(copied);
     render(wrap(<ConnectionsClient wahaConfigured />));
-    fireEvent.click(screen.getByRole("button", { name: "Conectar novo WhatsApp" }));
+    fireEvent.click(screen.getByRole("button", { name: "Nova conexão" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    fireEvent.change(screen.getByLabelText("Nome da conexão"), { target: { value: "Atendimento" } });
+    fireEvent.click(screen.getByRole("button", { name: "Gerar QR Code" }));
     const details = await screen.findByText(/request-owned/);
     fireEvent.click(screen.getByText("Detalhes para suporte"));
     fireEvent.click(screen.getByRole("button", { name: "Copiar detalhes" }));
