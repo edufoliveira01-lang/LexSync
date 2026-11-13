@@ -20,7 +20,7 @@ import { useT } from "@/hooks/i18n/useT";
 
 import type { ConfigOf } from "./shared";
 
-type TipoDeFinalizacao = "nada" | "ia" | "skill" | "proximo_fluxo";
+type TipoDeFinalizacao = "nada" | "ia" | "skill" | "proximo_fluxo" | "fechar_conversa";
 
 /**
  * Rótulos LOCAIS de propósito: `ao_finalizar` é união de literais (discriminante
@@ -33,6 +33,7 @@ export const ACOES_AO_FINALIZAR: ReadonlyArray<{ valor: TipoDeFinalizacao; rotul
   { valor: "ia", rotulo: "Devolver à IA" },
   { valor: "skill", rotulo: "Chamar uma skill" },
   { valor: "proximo_fluxo", rotulo: "Iniciar outro fluxo de atendimento" },
+  { valor: "fechar_conversa", rotulo: "Fechar a conversa" },
 ];
 
 export function EndForm({
@@ -84,7 +85,9 @@ export function EndForm({
         ? undefined
         : next.finishTipo === "ia"
           ? { tipo: "ia" as const, ...(next.finishPrompt.trim() ? { prompt: next.finishPrompt } : {}) }
-          : next.finishTipo === "proximo_fluxo"
+          : next.finishTipo === "fechar_conversa"
+            ? { tipo: "fechar_conversa" as const }
+            : next.finishTipo === "proximo_fluxo"
             ? { tipo: "proximo_fluxo" as const, fluxo: next.finishFluxo }
             : { tipo: "skill" as const, skill_name: next.finishSkill };
     const candidate = {

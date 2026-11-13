@@ -113,6 +113,34 @@ export interface TurnoDoRoteiro {
   mensagens: readonly MensagemDoContexto[];
 }
 
+/**
+ * "Ao concluir: fechar a conversa". Fecha DEPOIS de a IA responder (alguns segundos): fechar no meio do turno trocaria a revisão do
+ * atendimento e derrubaria a resposta que ainda vai sair. Melhor esforço — se o processo reiniciar neste intervalo, a conversa
+ * simplesmente continua aberta para a equipe.
+ */
+const ESPERA_ANTES_DE_FECHAR_MS = 25_000;
+function fecharConversaDepoisDaResposta(deps: { pool: { query: (sql: string, p?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }; log: Logger }, organizationId: string, conversationId: string): void {
+  const timer = setTimeout(() => {
+    void (async () => {
+      try {
+        const { rows } = await deps.pool.query(
+          `select status, service_revision from conversations where organization_id = $1 and id = $2`,
+          [organizationId, conversationId],
+        );
+        const c = rows[0] as { status: string; service_revision: number } | undefined;
+        // Só fecha se a IA ainda é quem atende: se a equipe assumiu nesse meio-tempo, a conversa é dela.
+        if (!c || ['closed', 'resolved', 'archived', 'claimed'].includes(c.status)) return;
+        await deps.pool.query(`select fn_service_status($1::uuid, $2::uuid, 'closed', $3::bigint)`, [organizationId, conversationId, c.service_revision]);
+        const { registrarEventoNaConversa } = await import('@/lib/inbox/evento-na-conversa');
+        await registrarEventoNaConversa({ organizationId, conversationId, userId: null, acao: 'fechou', detalhe: 'roteiro concluído' });
+      } catch (err) {
+        deps.log.warn('roteiro: não consegui fechar a conversa ao concluir', { error: erroCurto(err) });
+      }
+    })();
+  }, ESPERA_ANTES_DE_FECHAR_MS);
+  timer.unref?.();
+}
+
 function erroCurto(err: unknown): string {
   return (err instanceof Error ? err.message : String(err)).slice(0, 160);
 }
@@ -329,7 +357,11 @@ export async function prepararRoteiroDoTurno(
     if (seguinte !== null && seguinte.enrollment.id !== r.estado.enrollment.id) {
       return montar(seguinte, true);
     }
-    return montar(r.estado, iniciado, r.finalizacao ?? r.estado.checklist.fim.config.ao_finalizar);
+    const fim = r.finalizacao ?? r.estado.checklist.fim.config.ao_finalizar;
+    if (fim?.tipo === 'fechar_conversa' && t.conversationId !== null) {
+      fecharConversaDepoisDaResposta(deps, t.organizationId, t.conversationId);
+    }
+    return montar(r.estado, iniciado, fim);
   } catch (err) {
     deps.log.warn('roteiro: não consegui processar a mensagem no roteiro — o turno segue', {
       enrollment_id: atual.enrollment.id,

@@ -526,6 +526,8 @@ export const endFinishSchema = z.discriminatedUnion('tipo', [
   z.strictObject({ tipo: z.literal('nada') }),
   z.strictObject({ tipo: z.literal('ia'), prompt: z.string().max(1000).optional() }),
   z.strictObject({ tipo: z.literal('skill'), skill_name: z.string().min(1).max(80) }),
+  /** Terminado o roteiro, o sistema fecha a conversa (depois de a IA responder ao cliente). */
+  z.strictObject({ tipo: z.literal('fechar_conversa') }),
   /**
    * Encadeia a venda: ao concluir, o motor inicia OUTRO fluxo de atendimento
    * (`fluxo` = id do `followup_flow_pointers`). A síntese do fluxo concluído
