@@ -158,14 +158,6 @@ h1, h2, h3 { letter-spacing: -0.015em; }
 /* gaveta do celular: mesmo desenho, sem a coluna fixa */
 .dz-nav ul { list-style: none; margin: 0; padding: 0; }
 
-/* ============================== 5. Barra superior enxuta ============================== */
-header.sticky.z-20.items-center.justify-between {
-  height: 56px;
-  border-bottom: 0;
-  background: transparent;
-  backdrop-filter: blur(10px);
-}
-
 /* ============================== 6. Cartões, campos e botões ============================== */
 [class*="rounded-lg"][class*="border"][class*="bg-card"],
 [class*="rounded-xl"][class*="border"][class*="bg-card"] { box-shadow: var(--shadow-sm); }
@@ -468,7 +460,7 @@ main h1.text-2xl + p.text-sm {
 /* ============================== 9. Barra do topo branca e uma só medida de margem (como o Sales) ============================== */
 :root { --altura-da-barra-do-topo: 56px; }
 @media (min-width: 768px) { :root { --altura-da-barra-do-topo: 64px; } }
-.dz-topbar {
+header.dz-topbar {
   height: var(--altura-da-barra-do-topo);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
