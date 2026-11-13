@@ -8,6 +8,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { formatDistanceToNowStrict } from "date-fns";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -291,7 +292,7 @@ export function SourceDetail({ source, open, onOpenChange }: Props) {
         onOpenChange(aberto);
       }}
     >
-      <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+      <SheetContent className="w-full overflow-y-auto bg-surface sm:max-w-xl">
         <SheetHeader>
           <div className="flex items-center gap-2">
             {editandoNome ? (
@@ -367,385 +368,412 @@ export function SourceDetail({ source, open, onOpenChange }: Props) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
-          <section className="space-y-2">
-            <p className="text-sm font-medium text-text">{t("Endereço da fonte")}</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded-sm border border-border bg-muted px-3 py-2 text-xs">
-                {url}
-              </code>
+        <Tabs defaultValue="conexao" className="mt-6">
+          <TabsList className="h-auto flex-wrap justify-start">
+            <TabsTrigger value="conexao">{t("Conexão")}</TabsTrigger>
+            <TabsTrigger value="formulario">{t("Formulário")}</TabsTrigger>
+            <TabsTrigger value="regras">{t("Regras")}</TabsTrigger>
+            <TabsTrigger value="seguranca">{t("Segurança")}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="conexao" className="mt-5 space-y-6">
+            <section className="space-y-2">
+              <p className="text-sm font-medium text-text">{t("Endereço da fonte")}</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 truncate rounded-md border border-border bg-surface bg-muted px-3 py-2 text-xs">
+                  {url}
+                </code>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => copy(url, t("Endereço copiado."), t)}
+                >
+                  <Copy />
+                </Button>
+              </div>
+            </section>
+
+
+            <section className="space-y-3">
+              <Button type="button" onClick={sendTestLead} disabled={testing || temAssinatura}>
+                {testing ? t("Enviando…") : t("Enviar lead de teste")}
+              </Button>
+              {temAssinatura ? (
+                // O navegador não tem o secret — e não deve ter. Um teste daqui
+                // levaria 401 e leria como "a fonte está quebrada".
+                <p className="text-xs text-muted-foreground">
+                  {t("Com assinatura ativa, teste a partir do sistema que envia os dados.")}
+                </p>
+              ) : null}
+              {testOk ? (
+                <p className="text-sm">
+                  <Link href="/app/kanban" className="text-accent underline underline-offset-4">
+                    {t("Ver no Kanban")}
+                  </Link>
+                </p>
+              ) : null}
+            </section>
+
+
+            <section className="space-y-2">
+              <p className="text-sm font-medium text-text">{t("Últimos recebimentos")}</p>
+              {events.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("Ainda não chegou nada por aqui.")}
+                </p>
+              ) : (
+                <ul className="space-y-1">
+                  {events.map((ev) => (
+                    <li key={ev.id} className="flex items-center gap-2 text-sm">
+                      <span
+                        className={cn(
+                          "h-2 w-2 shrink-0 rounded-full",
+                          ev.valid_signature === false ? "bg-error" : "bg-success",
+                        )}
+                      />
+                      <span className="text-muted-foreground">
+                        {relativeReceivedAt(ev.created_at, localeDaData)}
+                      </span>
+                      {ev.valid_signature === false ? (
+                        <span className="text-xs text-error">{t("assinatura inválida")}</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+
+            <section className="space-y-2 rounded-md border border-border bg-surface">
+              <details className="group p-3">
+                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-text">
+                  {t("Como conectar no seu caso")}
+                  <CaretDown className="transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="mt-3 space-y-4 text-sm text-muted-foreground">
+                  <div>
+                    <p className="font-medium text-text">Elementor Pro</p>
+                    <p>
+                      {t(
+                        'Em "Ações após o envio", adicione "Webhook" e cole o endereço acima em "URL do Webhook".',
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-text">JetFormBuilder</p>
+                    <p>
+                      {t('Adicione a ação "Call Webhook" ao formulário e cole o endereço acima.')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-text">WordPress</p>
+                    <p>
+                      {t(
+                        'Cole o endereço acima no campo "Action" (ou "URL de envio") do seu formulário.',
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-text">Zapier / n8n</p>
+                    <p>{t('Use a ação "Webhooks" → POST, apontando para o endereço acima.')}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-text">{t("Formulário próprio")}</p>
+                    <p>{t("Use o HTML pronto logo acima — já aponta para o endereço certo.")}</p>
+                  </div>
+                </div>
+              </details>
+            </section>
+
+
+            <details className="rounded-md border border-border bg-surface p-3">
+              <summary className="cursor-pointer list-none text-sm font-medium text-text">
+                {t("Para desenvolvedores")}
+              </summary>
+              <pre className="mt-3 overflow-x-auto rounded-sm bg-muted p-3 text-xs">
+                <code>{curlSnippet(url, temAssinatura, t)}</code>
+              </pre>
+            </details>
+
+          </TabsContent>
+          <TabsContent value="formulario" className="mt-5 space-y-6">
+
+            <section className="space-y-2">
+              <p className="text-sm font-medium text-text">{t("Personalizar perguntas do formulário")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("As respostas extras ficam nos campos personalizados do lead e no histórico desta captação. O checkbox envia sim ou não; a lista permite escolher uma opção.")}
+              </p>
+              <WebhookFormFieldsEditor fields={formFields} onChange={setFormFields} />
               <Button
                 type="button"
                 variant="secondary"
-                size="icon"
-                onClick={() => copy(url, t("Endereço copiado."), t)}
+                disabled={!formFieldsDirty || update.isPending}
+                onClick={() => void salvarCamposDoFormulario()}
               >
-                <Copy />
+                {update.isPending ? t("Salvando…") : t("Salvar perguntas")}
               </Button>
-            </div>
-          </section>
+            </section>
 
-          <section className="space-y-2 rounded-sm border border-border p-3">
-            <div className="flex items-center justify-between gap-3">
-              <label htmlFor="authorize-ai-on-capture" className="block text-sm font-medium text-text">
-                {t("Autorizar IA para leads deste formulário")}
-              </label>
-              <Switch id="authorize-ai-on-capture" checked={Boolean(autorizaIA)}
-                disabled={!podeGerirWebhooks || update.isPending || (!temAssinatura && !autorizaIA)}
-                onCheckedChange={(ativa) => update.mutate(
-                  { id: source.id, authorize_ai_on_capture: ativa },
-                  { onSuccess: (res) => setAutorizacaoIA({ id: source.id, ativa: res.data.authorize_ai_on_capture }) },
-                )} />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t("Autoriza somente novos envios completos com consentimento explícito para atendimento automatizado. Não retoma contatos bloqueados ou em atendimento humano. O agente e o canal precisam estar configurados para atender.")}
-            </p>
-            {!temAssinatura && <p className="text-sm text-muted-foreground">
-              {t("Configure a assinatura da fonte antes de autorizar IA. Para remover a assinatura, desligue primeiro a autorização de IA.")}
-            </p>}
-            <p className="text-sm text-muted-foreground">
-              {t("O integrador deve enviar external_id, ai_service_consent: true, submission_status: completed e ai_service_consent_version com a versão do aviso aceito. Aceitar apenas a política de privacidade não autoriza a IA. Sem external_id, o envio não concede nem renova a autorização; reenviar com o mesmo external_id não libera de novo. Uma recusa (false) num envio completo e válido revoga, mesmo sem external_id.")}
-            </p>
-          </section>
+            <section className="space-y-2">
+              <p className="text-sm font-medium text-text">
+                {t("Formulário pronto para colar no seu site")}
+              </p>
+              <Textarea readOnly rows={Math.min(24, 8 + formFields.length * 3)} value={formSnippet(url, formFields, t)} className="font-mono text-xs" />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => copy(formSnippet(url, formFields, t), t("Formulário copiado."), t)}
+              >
+                <Copy /> {t("Copiar formulário")}
+              </Button>
+            </section>
 
-          <section className="space-y-2 rounded-sm border border-border p-3">
-            <div className="flex items-center justify-between gap-3">
-              <label htmlFor="update-existing-lead-on-capture" className="block text-sm font-medium text-text">
-                {t("Atualizar o card quando o envio repete o mesmo cadastro")}
-              </label>
-              <Switch id="update-existing-lead-on-capture" checked={Boolean(atualizaCard)}
-                disabled={!podeGerirWebhooks || update.isPending || (!temAssinatura && !atualizaCard)}
-                onCheckedChange={(ativa) => update.mutate(
-                  { id: source.id, update_existing_lead_on_capture: ativa },
-                  { onSuccess: (res) => setAtualizacaoDeCard({ id: source.id, ativa: res.data.update_existing_lead_on_capture }) },
-                )} />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t("Só para integrações entre sistemas: ligado, um envio com o mesmo external_id que traga dado novo atualiza o card desta fonte — os campos, o título e a etapa pedida em stage, sempre para a frente. Desligado, o padrão, o envio repetido continua sendo reenvio e nada no card muda, nem o que a equipe corrigiu à mão.")}
-            </p>
-            {!temAssinatura && <p className="text-sm text-muted-foreground">
-              {t("Configure a assinatura da fonte antes de deixar a integração atualizar o card. Para remover a assinatura, desligue primeiro a atualização pelo external_id.")}
-            </p>}
-          </section>
+          </TabsContent>
+          <TabsContent value="regras" className="mt-5 space-y-6">
 
-          <section className="space-y-2 rounded-sm border border-border p-3">
-            <div className="flex items-center justify-between gap-3">
-              <label htmlFor="reuse-open-lead-on-capture" className="block text-sm font-medium text-text">
-                {t("Reaproveitar o card aberto do contato")}
-              </label>
-              <Switch id="reuse-open-lead-on-capture" checked={Boolean(reusaCardAberto)}
-                disabled={!podeGerirWebhooks || update.isPending || (!temAssinatura && !reusaCardAberto)}
-                onCheckedChange={(ativa) => update.mutate(
-                  { id: source.id, reuse_open_lead_on_capture: ativa },
-                  { onSuccess: (res) => setReusoDoCardAberto({ id: source.id, ativa: res.data.reuse_open_lead_on_capture }) },
-                )} />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t("Só para fontes com assinatura: ligado, um envio de quem já tem card aberto neste funil atualiza esse card — os campos novos e a etapa da fonte, sempre para a frente — em vez de abrir um segundo card. Desligado, o padrão, cada envio continua virando um card novo.")}
-            </p>
-            {!temAssinatura && <p className="text-sm text-muted-foreground">
-              {t("Configure a assinatura da fonte antes de reaproveitar o card aberto do contato. Para remover a assinatura, desligue primeiro o reaproveitamento do card aberto.")}
-            </p>}
-          </section>
-
-          <section className="space-y-2">
-            <p className="text-sm font-medium text-text">{t("Personalizar perguntas do formulário")}</p>
-            <p className="text-xs text-muted-foreground">
-              {t("As respostas extras ficam nos campos personalizados do lead e no histórico desta captação. O checkbox envia sim ou não; a lista permite escolher uma opção.")}
-            </p>
-            <WebhookFormFieldsEditor fields={formFields} onChange={setFormFields} />
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={!formFieldsDirty || update.isPending}
-              onClick={() => void salvarCamposDoFormulario()}
-            >
-              {update.isPending ? t("Salvando…") : t("Salvar perguntas")}
-            </Button>
-          </section>
-          <section className="space-y-2">
-            <p className="text-sm font-medium text-text">
-              {t("Formulário pronto para colar no seu site")}
-            </p>
-            <Textarea readOnly rows={Math.min(24, 8 + formFields.length * 3)} value={formSnippet(url, formFields, t)} className="font-mono text-xs" />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => copy(formSnippet(url, formFields, t), t("Formulário copiado."), t)}
-            >
-              <Copy /> {t("Copiar formulário")}
-            </Button>
-          </section>
-
-          <section className="space-y-2 rounded-sm border border-border">
-            <details className="group p-3">
-              <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-text">
-                {t("Como conectar no seu caso")}
-                <CaretDown className="transition-transform group-open:rotate-180" />
-              </summary>
-              <div className="mt-3 space-y-4 text-sm text-muted-foreground">
-                <div>
-                  <p className="font-medium text-text">Elementor Pro</p>
-                  <p>
-                    {t(
-                      'Em "Ações após o envio", adicione "Webhook" e cole o endereço acima em "URL do Webhook".',
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-text">JetFormBuilder</p>
-                  <p>
-                    {t('Adicione a ação "Call Webhook" ao formulário e cole o endereço acima.')}
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-text">WordPress</p>
-                  <p>
-                    {t(
-                      'Cole o endereço acima no campo "Action" (ou "URL de envio") do seu formulário.',
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-text">Zapier / n8n</p>
-                  <p>{t('Use a ação "Webhooks" → POST, apontando para o endereço acima.')}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-text">{t("Formulário próprio")}</p>
-                  <p>{t("Use o HTML pronto logo acima — já aponta para o endereço certo.")}</p>
-                </div>
+            <section className="space-y-2 rounded-md border border-border bg-surface p-3">
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="authorize-ai-on-capture" className="block text-sm font-medium text-text">
+                  {t("Autorizar IA para leads deste formulário")}
+                </label>
+                <Switch id="authorize-ai-on-capture" checked={Boolean(autorizaIA)}
+                  disabled={!podeGerirWebhooks || update.isPending || (!temAssinatura && !autorizaIA)}
+                  onCheckedChange={(ativa) => update.mutate(
+                    { id: source.id, authorize_ai_on_capture: ativa },
+                    { onSuccess: (res) => setAutorizacaoIA({ id: source.id, ativa: res.data.authorize_ai_on_capture }) },
+                  )} />
               </div>
-            </details>
-          </section>
+              <p className="text-sm text-muted-foreground">
+                {t("Autoriza somente novos envios completos com consentimento explícito para atendimento automatizado. Não retoma contatos bloqueados ou em atendimento humano. O agente e o canal precisam estar configurados para atender.")}
+              </p>
+              {!temAssinatura && <p className="text-sm text-muted-foreground">
+                {t("Configure a assinatura da fonte antes de autorizar IA. Para remover a assinatura, desligue primeiro a autorização de IA.")}
+              </p>}
+              <p className="text-sm text-muted-foreground">
+                {t("O integrador deve enviar external_id, ai_service_consent: true, submission_status: completed e ai_service_consent_version com a versão do aviso aceito. Aceitar apenas a política de privacidade não autoriza a IA. Sem external_id, o envio não concede nem renova a autorização; reenviar com o mesmo external_id não libera de novo. Uma recusa (false) num envio completo e válido revoga, mesmo sem external_id.")}
+              </p>
+            </section>
 
-          <details className="rounded-sm border border-border p-3">
-            <summary className="cursor-pointer list-none text-sm font-medium text-text">
-              {t("Para desenvolvedores")}
-            </summary>
-            <pre className="mt-3 overflow-x-auto rounded-sm bg-muted p-3 text-xs">
-              <code>{curlSnippet(url, temAssinatura, t)}</code>
-            </pre>
-          </details>
 
-          <section className="space-y-3">
-            <Button type="button" onClick={sendTestLead} disabled={testing || temAssinatura}>
-              {testing ? t("Enviando…") : t("Enviar lead de teste")}
-            </Button>
-            {temAssinatura ? (
-              // O navegador não tem o secret — e não deve ter. Um teste daqui
-              // levaria 401 e leria como "a fonte está quebrada".
+            <section className="space-y-2 rounded-md border border-border bg-surface p-3">
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="update-existing-lead-on-capture" className="block text-sm font-medium text-text">
+                  {t("Atualizar o card quando o envio repete o mesmo cadastro")}
+                </label>
+                <Switch id="update-existing-lead-on-capture" checked={Boolean(atualizaCard)}
+                  disabled={!podeGerirWebhooks || update.isPending || (!temAssinatura && !atualizaCard)}
+                  onCheckedChange={(ativa) => update.mutate(
+                    { id: source.id, update_existing_lead_on_capture: ativa },
+                    { onSuccess: (res) => setAtualizacaoDeCard({ id: source.id, ativa: res.data.update_existing_lead_on_capture }) },
+                  )} />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t("Só para integrações entre sistemas: ligado, um envio com o mesmo external_id que traga dado novo atualiza o card desta fonte — os campos, o título e a etapa pedida em stage, sempre para a frente. Desligado, o padrão, o envio repetido continua sendo reenvio e nada no card muda, nem o que a equipe corrigiu à mão.")}
+              </p>
+              {!temAssinatura && <p className="text-sm text-muted-foreground">
+                {t("Configure a assinatura da fonte antes de deixar a integração atualizar o card. Para remover a assinatura, desligue primeiro a atualização pelo external_id.")}
+              </p>}
+            </section>
+
+
+            <section className="space-y-2 rounded-md border border-border bg-surface p-3">
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="reuse-open-lead-on-capture" className="block text-sm font-medium text-text">
+                  {t("Reaproveitar o card aberto do contato")}
+                </label>
+                <Switch id="reuse-open-lead-on-capture" checked={Boolean(reusaCardAberto)}
+                  disabled={!podeGerirWebhooks || update.isPending || (!temAssinatura && !reusaCardAberto)}
+                  onCheckedChange={(ativa) => update.mutate(
+                    { id: source.id, reuse_open_lead_on_capture: ativa },
+                    { onSuccess: (res) => setReusoDoCardAberto({ id: source.id, ativa: res.data.reuse_open_lead_on_capture }) },
+                  )} />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t("Só para fontes com assinatura: ligado, um envio de quem já tem card aberto neste funil atualiza esse card — os campos novos e a etapa da fonte, sempre para a frente — em vez de abrir um segundo card. Desligado, o padrão, cada envio continua virando um card novo.")}
+              </p>
+              {!temAssinatura && <p className="text-sm text-muted-foreground">
+                {t("Configure a assinatura da fonte antes de reaproveitar o card aberto do contato. Para remover a assinatura, desligue primeiro o reaproveitamento do card aberto.")}
+              </p>}
+            </section>
+
+          </TabsContent>
+          <TabsContent value="seguranca" className="mt-5 space-y-6">
+
+            <section className="space-y-3 rounded-md border border-border bg-surface p-3">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-text">{t("Assinatura (HMAC)")}</p>
+                {/* "Ligada", e não "Ativa": o cabeçalho do painel já tem uma badge
+                    "Ativa/Pausada" para a FONTE, e duas badges com a mesma palavra
+                    no mesmo painel falam de duas coisas diferentes. */}
+                <Badge variant={temAssinatura ? "success" : "neutral"}>
+                  {temAssinatura ? t("Ligada") : t("Desligada")}
+                </Badge>
+              </div>
               <p className="text-xs text-muted-foreground">
-                {t("Com assinatura ativa, teste a partir do sistema que envia os dados.")}
+                {t(
+                  "Sem assinatura, quem descobrir o endereço consegue criar leads. Com ela, quem envia assina o corpo cru da requisição com HMAC-SHA256 e manda o resultado em hexadecimal — hex puro, sem prefixo — neste cabeçalho:",
+                )}{" "}
+                {/* O nome sai da constante, e não de uma string aqui: ele é
+                    contrato de fio (lib/webhooks/assinatura.ts), e a mesma
+                    constante é a que a rota de entrada confere. */}
+                <code className="rounded-sm bg-muted px-1 py-0.5">
+                  {HEADER_ASSINATURA_DE_ENTRADA}
+                </code>
               </p>
-            ) : null}
-            {testOk ? (
-              <p className="text-sm">
-                <Link href="/app/kanban" className="text-accent underline underline-offset-4">
-                  {t("Ver no Kanban")}
-                </Link>
-              </p>
-            ) : null}
-          </section>
 
-          <section className="space-y-3 rounded-sm border border-border p-3">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-text">{t("Assinatura (HMAC)")}</p>
-              {/* "Ligada", e não "Ativa": o cabeçalho do painel já tem uma badge
-                  "Ativa/Pausada" para a FONTE, e duas badges com a mesma palavra
-                  no mesmo painel falam de duas coisas diferentes. */}
-              <Badge variant={temAssinatura ? "success" : "neutral"}>
-                {temAssinatura ? t("Ligada") : t("Desligada")}
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t(
-                "Sem assinatura, quem descobrir o endereço consegue criar leads. Com ela, quem envia assina o corpo cru da requisição com HMAC-SHA256 e manda o resultado em hexadecimal — hex puro, sem prefixo — neste cabeçalho:",
-              )}{" "}
-              {/* O nome sai da constante, e não de uma string aqui: ele é
-                  contrato de fio (lib/webhooks/assinatura.ts), e a mesma
-                  constante é a que a rota de entrada confere. */}
-              <code className="rounded-sm bg-muted px-1 py-0.5">
-                {HEADER_ASSINATURA_DE_ENTRADA}
-              </code>
-            </p>
-
-            {secretRevelado ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  {/* `break-all`, não `truncate`: é a única vez que este valor
-                      aparece, e um "…" no fim esconde metade de um segredo que
-                      não volta. Quem copia à mão precisa vê-lo inteiro. */}
-                  <code className="flex-1 break-all rounded-sm border border-border bg-muted px-3 py-2 text-xs">
-                    {secretRevelado}
-                  </code>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => copy(secretRevelado, t("Segredo copiado."), t)}
-                  >
-                    <Copy />
-                  </Button>
+              {secretRevelado ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    {/* `break-all`, não `truncate`: é a única vez que este valor
+                        aparece, e um "…" no fim esconde metade de um segredo que
+                        não volta. Quem copia à mão precisa vê-lo inteiro. */}
+                    <code className="flex-1 break-all rounded-md border border-border bg-surface bg-muted px-3 py-2 text-xs">
+                      {secretRevelado}
+                    </code>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      onClick={() => copy(secretRevelado, t("Segredo copiado."), t)}
+                    >
+                      <Copy />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-error">
+                    {t("Guarde agora. Ele não será mostrado de novo.")}
+                  </p>
                 </div>
-                <p className="text-xs text-error">
-                  {t("Guarde agora. Ele não será mostrado de novo.")}
+              ) : null}
+
+              {podeGerirWebhooks ? (
+                <div className="flex flex-wrap gap-2">
+                  {temAssinatura ? (
+                    <>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button type="button" variant="secondary" disabled={update.isPending}>
+                            {t("Trocar segredo")}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t("Trocar o segredo desta fonte?")}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t(
+                                "Integrações que usam o segredo atual vão parar de funcionar até serem atualizadas.",
+                              )}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("Cancelar")}</AlertDialogCancel>
+                            <AlertDialogAction
+                              disabled={update.isPending}
+                              onClick={() => aplicarSecret(gerarSecretHex(), t("Segredo trocado."))}
+                            >
+                              {t("Trocar")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button type="button" variant="secondary" disabled={update.isPending}>
+                            {t("Remover segredo")}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {t("Remover a assinatura desta fonte?")}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t(
+                                "O endereço volta a aceitar envios sem assinatura — só o endereço secreto passa a protegê-lo.",
+                              )}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("Cancelar")}</AlertDialogCancel>
+                            <AlertDialogAction
+                              disabled={update.isPending}
+                              onClick={() => aplicarSecret(null, t("Assinatura removida."))}
+                            >
+                              {t("Remover")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      disabled={update.isPending}
+                      onClick={() => aplicarSecret(gerarSecretHex(), t("Assinatura ligada."))}
+                    >
+                      {t("Gerar segredo")}
+                    </Button>
+                  )}
+                </div>
+              ) : null}
+            </section>
+
+
+            <section className="flex items-center justify-between rounded-md border border-border bg-surface p-3">
+              <div>
+                <p className="text-sm font-medium text-text">{t("Fonte ativa")}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("Pausada, ela para de aceitar novos envios.")}
                 </p>
               </div>
-            ) : null}
+              <Switch
+                checked={source.is_active}
+                disabled={update.isPending}
+                onCheckedChange={(checked) =>
+                  update.mutate(
+                    { id: source.id, is_active: checked },
+                    {
+                      onSuccess: () =>
+                        toast.success(checked ? t("Fonte ativada.") : t("Fonte pausada.")),
+                    },
+                  )
+                }
+              />
+            </section>
 
-            {podeGerirWebhooks ? (
-              <div className="flex flex-wrap gap-2">
-                {temAssinatura ? (
-                  <>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button type="button" variant="secondary" disabled={update.isPending}>
-                          {t("Trocar segredo")}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>{t("Trocar o segredo desta fonte?")}</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {t(
-                              "Integrações que usam o segredo atual vão parar de funcionar até serem atualizadas.",
-                            )}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{t("Cancelar")}</AlertDialogCancel>
-                          <AlertDialogAction
-                            disabled={update.isPending}
-                            onClick={() => aplicarSecret(gerarSecretHex(), t("Segredo trocado."))}
-                          >
-                            {t("Trocar")}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
 
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button type="button" variant="secondary" disabled={update.isPending}>
-                          {t("Remover segredo")}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            {t("Remover a assinatura desta fonte?")}
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {t(
-                              "O endereço volta a aceitar envios sem assinatura — só o endereço secreto passa a protegê-lo.",
-                            )}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{t("Cancelar")}</AlertDialogCancel>
-                          <AlertDialogAction
-                            disabled={update.isPending}
-                            onClick={() => aplicarSecret(null, t("Assinatura removida."))}
-                          >
-                            {t("Remover")}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </>
-                ) : (
-                  <Button
-                    type="button"
-                    disabled={update.isPending}
-                    onClick={() => aplicarSecret(gerarSecretHex(), t("Assinatura ligada."))}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive">
+                  <Trash /> {t("Excluir fonte")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("Excluir esta fonte?")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t(
+                      "O endereço para de funcionar imediatamente. Leads já recebidos continuam no seu funil — só a captação futura é interrompida. Essa ação não pode ser desfeita.",
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("Cancelar")}</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      await del.mutateAsync(source.id);
+                      toast.success(t("Fonte excluída."));
+                      onOpenChange(false);
+                    }}
                   >
-                    {t("Gerar segredo")}
-                  </Button>
-                )}
-              </div>
-            ) : null}
-          </section>
+                    {t("Excluir")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-          <section className="space-y-2">
-            <p className="text-sm font-medium text-text">{t("Últimos recebimentos")}</p>
-            {events.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t("Ainda não chegou nada por aqui.")}
-              </p>
-            ) : (
-              <ul className="space-y-1">
-                {events.map((ev) => (
-                  <li key={ev.id} className="flex items-center gap-2 text-sm">
-                    <span
-                      className={cn(
-                        "h-2 w-2 shrink-0 rounded-full",
-                        ev.valid_signature === false ? "bg-error" : "bg-success",
-                      )}
-                    />
-                    <span className="text-muted-foreground">
-                      {relativeReceivedAt(ev.created_at, localeDaData)}
-                    </span>
-                    {ev.valid_signature === false ? (
-                      <span className="text-xs text-error">{t("assinatura inválida")}</span>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="flex items-center justify-between rounded-sm border border-border p-3">
-            <div>
-              <p className="text-sm font-medium text-text">{t("Fonte ativa")}</p>
-              <p className="text-xs text-muted-foreground">
-                {t("Pausada, ela para de aceitar novos envios.")}
-              </p>
-            </div>
-            <Switch
-              checked={source.is_active}
-              disabled={update.isPending}
-              onCheckedChange={(checked) =>
-                update.mutate(
-                  { id: source.id, is_active: checked },
-                  {
-                    onSuccess: () =>
-                      toast.success(checked ? t("Fonte ativada.") : t("Fonte pausada.")),
-                  },
-                )
-              }
-            />
-          </section>
-
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button type="button" variant="destructive">
-                <Trash /> {t("Excluir fonte")}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t("Excluir esta fonte?")}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t(
-                    "O endereço para de funcionar imediatamente. Leads já recebidos continuam no seu funil — só a captação futura é interrompida. Essa ação não pode ser desfeita.",
-                  )}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("Cancelar")}</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={async () => {
-                    await del.mutateAsync(source.id);
-                    toast.success(t("Fonte excluída."));
-                    onOpenChange(false);
-                  }}
-                >
-                  {t("Excluir")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+          </TabsContent>
+        </Tabs>
       </SheetContent>
     </Sheet>
   );

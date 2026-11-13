@@ -559,7 +559,7 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
+      <SheetContent className="w-full overflow-y-auto bg-surface sm:max-w-3xl">
         <SheetHeader>
           <SheetTitle>{isEdit ? t("Editar automação") : t("Nova automação")}</SheetTitle>
           <SheetDescription>
@@ -581,8 +581,11 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
             />
           </div>
 
-          <section className="space-y-2">
-            <h3 className="text-lg font-semibold text-text">{t("QUANDO")}</h3>
+          <section className="space-y-3 rounded-md border border-border bg-surface p-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-50 text-sm font-semibold text-accent-700">1</span>
+              <h3 className="text-base font-semibold text-text">{t("Quando isso acontecer")}</h3>
+            </div>
             <Select
               value={triggerEvent}
               onValueChange={(v) => {
@@ -606,7 +609,7 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
             </Select>
 
             {ehGatilhoDeNovoContato ? (
-              <div className="space-y-1 rounded-sm border border-border p-3">
+              <div className="space-y-1 rounded-md border border-border bg-surface p-4">
                 <Label>{t("Fonte do formulário")}</Label>
                 <Select value={webhookSourceId} onValueChange={setWebhookSourceId}>
                   <SelectTrigger aria-label={t("Fonte do formulário")}>
@@ -646,7 +649,7 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
                 comportamento histórico (no próprio dia, às 9h locais) e é o que
                 toda regra gravada antes desta versão tem no banco. */}
             {ehGatilhoDoAniversario ? (
-              <div className="space-y-2 rounded-sm border border-border p-3">
+              <div className="space-y-2 rounded-md border border-border bg-surface p-4">
                 <div className="w-40 space-y-1">
                   <Label htmlFor="dias-de-antecedencia">{t("Dias de antecedência")}</Label>
                   <Input
@@ -672,7 +675,7 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
                 regra é salva e nunca dispara — por isso o schema da API também
                 a recusa. */}
             {ehGatilhoDeData ? (
-              <div className="space-y-3 rounded-sm border border-border p-3">
+              <div className="space-y-3 rounded-md border border-border bg-surface p-4">
                 <p className="text-sm text-muted-foreground">
                   {t(
                     "O aviso sai no dia em que faltarem N dias para a data, uma vez por negócio. Para avisar DEPOIS da data, use N negativo — -60 confirma a entrega 60 dias após o casamento.",
@@ -753,7 +756,7 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
                 varredura não sabe onde olhar — por isso o schema da API também
                 a recusa. */}
             {ehGatilhoDeTempo ? (
-              <div className="space-y-3 rounded-sm border border-border p-3">
+              <div className="space-y-3 rounded-md border border-border bg-surface p-4">
                 <p className="text-sm text-muted-foreground">
                   {triggerEvent === GATILHO_SILENCIO
                     ? t(
@@ -891,8 +894,11 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
             ) : null}
           </section>
 
-          <section className="space-y-3">
-            <h3 className="text-lg font-semibold text-text">{t("SE (opcional)")}</h3>
+          <section className="space-y-3 rounded-md border border-border bg-surface p-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-50 text-sm font-semibold text-accent-700">2</span>
+              <h3 className="text-base font-semibold text-text">{t("Se (opcional)")}</h3>
+            </div>
             {/* #2727 — o grupo do TOPO: "todas" combina por E (a lista simples,
                 o formato de sempre) e "qualquer uma" grava `{any:[…]}`. */}
             {conditions.length > 0 ? (
@@ -923,7 +929,7 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
                 (cond.field !== "" && !curatedFields.some((f) => f.value === cond.field));
               const curated = curatedFields.find((f) => f.value === cond.field);
               return (
-                <div key={idx} className="space-y-1 rounded-sm border border-border p-3">
+                <div key={idx} className="space-y-1 rounded-md border border-border bg-surface p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     {isAdvanced ? (
                       <Input
@@ -1031,10 +1037,13 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
             </Button>
           </section>
 
-          <section className="space-y-3">
-            <h3 className="text-lg font-semibold text-text">{t("ENTÃO")}</h3>
+          <section className="space-y-3 rounded-md border border-border bg-surface p-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-50 text-sm font-semibold text-accent-700">3</span>
+              <h3 className="text-base font-semibold text-text">{t("Então fazer")}</h3>
+            </div>
             {actions.map((action, idx) => (
-              <div key={idx} className="space-y-3 rounded-sm border border-border p-3">
+              <div key={idx} className="space-y-3 rounded-md border border-border bg-surface p-4">
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-text">{t(ACTION_LABELS[action.type])}</p>
                   <div className="flex items-center gap-1">
@@ -1100,13 +1109,13 @@ export function RuleEditor({ open, onOpenChange, rule }: Props) {
           </section>
 
           {!isEdit ? (
-            <p className="rounded-sm border border-border bg-muted p-3 text-sm text-muted-foreground">
+            <p className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
               {t("A automação nasce pausada. Revise e ligue quando estiver pronta.")}
             </p>
           ) : null}
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+          <div className="sticky bottom-0 -mx-6 flex justify-end gap-2 border-t border-border bg-surface px-6 py-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("Cancelar")}
             </Button>
             <Button type="button" onClick={onSubmit} disabled={saving}>

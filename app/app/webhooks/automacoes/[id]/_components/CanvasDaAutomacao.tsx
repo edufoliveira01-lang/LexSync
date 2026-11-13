@@ -436,7 +436,7 @@ export function CanvasDaAutomacao({ regra }: Props) {
             placeholder={t("Boas-vindas a contato novo")}
             maxLength={120}
             aria-label={t("Nome da automação")}
-            className="h-8 w-64 max-w-full"
+            className="h-10 w-72 max-w-full"
           />
           <Badge variant={regra && ativo ? "success" : "neutral"}>
             {!regra ? t("Ainda não criada") : ativo ? t("Ativa") : t("Pausada")}
@@ -465,7 +465,7 @@ export function CanvasDaAutomacao({ regra }: Props) {
               {selecionado ? t("Excluir caixa") : t("Excluir ligação")}
             </Button>
           ) : null}
-          <Button type="button" size="sm" onClick={() => void salvar()} disabled={salvando} data-testid="designer-salvar">
+          <Button type="button" onClick={() => void salvar()} disabled={salvando} data-testid="designer-salvar">
             {salvando ? t("Salvando…") : regra ? t("Salvar alterações") : t("Criar automação")}
           </Button>
           {regra ? (
