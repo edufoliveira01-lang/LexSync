@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useAttendantMetrics, type AttendantMetric } from "@/hooks/metrics/useAttendantMetrics";
 import { EmptyState } from "@/components/empty/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PainelDeNumeros } from "@/components/ui/painel-de-numeros";
 import { formatarDuracao } from "@/lib/metrics/canais";
 import { WarningOctagon } from "@/lib/ui/icons";
 import { AtritoPanel } from "./AtritoPanel";
@@ -130,8 +131,20 @@ export function MetricsClient({ canCompare, currentUserId }: Props) {
   const funnelTotal = metrics.funnel.reduce((acc, s) => acc + s.count, 0);
   const maxCount = Math.max(1, ...metrics.funnel.map((s) => s.count));
 
+  const somar = (campo: "won" | "lost" | "conversations_handled") =>
+    metrics.attendants.reduce((acc, a) => acc + (a[campo] ?? 0), 0);
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Os cartões de número do alto, como nas listas do Sales: o retrato do período antes dos painéis. */}
+      <PainelDeNumeros
+        itens={[
+          { chave: "abertos", rotulo: t("Atendimentos abertos"), valor: funnelTotal, testId: "numero-abertos" },
+          { chave: "ganhos", rotulo: t("Ganhos"), valor: somar("won"), testId: "numero-ganhos" },
+          { chave: "perdidos", rotulo: t("Perdidos"), valor: somar("lost"), testId: "numero-perdidos" },
+          { chave: "conversas", rotulo: t("Conversas atendidas"), valor: somar("conversations_handled"), testId: "numero-conversas" },
+        ]}
+      />
       {canCompare ? (
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-muted-foreground">{t("Atendente")}</span>
