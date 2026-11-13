@@ -531,3 +531,9 @@ select:not([multiple]):not([size]) {
   background-position: right 12px center;
   background-size: 16px;
 }
+
+/* Todo bloco com borda e cantos arredondados, mas sem fundo próprio, ganha o fundo branco dos cartões do Sales (listas, tabelas e faixas
+   que ficavam com a cor da página). Botões, abas e campos têm o seu fundo e ficam de fora. */
+:where(main) [class*="border-border"][class*="rounded"]:not([class*="bg-"]):not(button):not(input):not(select):not(textarea):not([role="tab"]):not([role="menuitem"]):not(a):not(svg):not(img):not(span):not([data-state]) {
+  background-color: var(--color-surface);
+}
