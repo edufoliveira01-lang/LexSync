@@ -56,6 +56,7 @@ import {
 } from "./no-show-recuperacao-esgotada";
 import { interpolarDestino, persistirRespostaFollowupSupabase } from "./persistir-resposta";
 import { funilUnicoDasEtapas, idsDeEtapaCitados } from "./etapas-citadas";
+import { fecharConversaAoFimDoFluxo } from "./fechar-conversa-ao-fim";
 import { desvioAntesDoEnvio } from "./condicao-antes-do-envio";
 import { criarTarefaInterna as criarTarefaNoCrm } from "@/lib/tarefas/criar-tarefa";
 import { moveLeadHandler } from "@/app/api/v1/leads/_handler";
@@ -867,6 +868,10 @@ async function applyResult(
   }
 
   await db.updateEnrollment(enrollment.id, enrollment.organization_id, patch);
+
+  if (result.kind === "complete" && !isReplay && node.type === "end" && node.config.ao_finalizar?.tipo === "fechar_conversa") {
+    await fecharConversaAoFimDoFluxo({ organizationId: enrollment.organization_id, contactId: enrollment.contact_id, conversationId: enrollment.conversation_id });
+  }
 
   if (
     result.kind === "advance" &&

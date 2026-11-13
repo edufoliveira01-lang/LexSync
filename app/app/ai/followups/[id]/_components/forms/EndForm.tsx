@@ -146,6 +146,27 @@ export function EndForm({
         />
       </div>
 
+      {!deRoteiro && (
+        <label className="flex cursor-pointer items-start gap-2 border-t border-border pt-3 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4 accent-[var(--color-accent)]"
+            checked={finishTipo === "fechar_conversa"}
+            onChange={(e) => {
+              const next: TipoDeFinalizacao = e.target.checked ? "fechar_conversa" : "nada";
+              setFinishTipo(next);
+              commit({ ...state, finishTipo: next });
+            }}
+          />
+          <span>
+            <span className="font-medium">{t("Fechar a conversa ao terminar o fluxo")}</span>
+            <span className="mt-0.5 block text-xs text-text-muted">
+              {t("Quando o fluxo chega aqui, a conversa do cliente é fechada. Não fecha se a equipe assumiu o atendimento.")}
+            </span>
+          </span>
+        </label>
+      )}
+
       {deRoteiro && (
         <div className="space-y-2 border-t border-border pt-3">
           <Label htmlFor="end-finish">{t("Ao concluir, o que fazer")}</Label>
