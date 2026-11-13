@@ -379,7 +379,7 @@ button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px r
 .cabecalho-conversa > .acoes-da-conversa { flex: none; margin-left: auto; cursor: default; }
 /* painel do contato: recolhido = some por completo (abre pelo clique no cabeçalho) */
 @media (min-width: 1280px) {
-  [data-realtime-status][data-painel-recolhido].grid:not([data-sem-conversa]) { grid-template-columns: 344px minmax(0, 1fr); }
+  [data-realtime-status][data-painel-recolhido].grid:not([data-sem-conversa]) { grid-template-columns: 250px minmax(0, 1fr); }
   [data-realtime-status][data-painel-recolhido] .painel-do-contato { display: none; }
 }
 /* busca no topo do menu lateral */
@@ -662,7 +662,7 @@ div.relative.flex.w-full.items-start.border-b:nth-child(6n) .h-11.w-11 > span { 
 div.relative.flex.w-full.items-start.border-b > button[data-testid^="exemplo-ia-"] { margin-top: 10px; margin-right: 8px; opacity: .55; }
 div.relative.flex.w-full.items-start.border-b:hover > button[data-testid^="exemplo-ia-"], div.relative.flex.w-full.items-start.border-b > button[aria-pressed="true"] { opacity: 1; }
 
-/* Abas da lista: as cinco cabem na coluna de 344px sem esconder a primeira */
+/* Abas da lista: as cinco cabem na coluna sem esconder a primeira */
 [data-realtime-status] [role="tablist"] { padding: 2px 12px 10px !important; gap: 4px !important; }
 [data-realtime-status] [role="tablist"] [role="tab"] { padding: 0 9px !important; font-size: 12px; }
 
