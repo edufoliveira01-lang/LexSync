@@ -351,7 +351,7 @@ export function MessageBubble({
         // fez a spec achar que havia mensagem onde não havia (issue #1318).
         data-testid="message-bubble"
         className={cn(
-          "relative max-w-[75%] min-w-0 text-sm",
+          "relative max-w-[min(34rem,78%)] min-w-0 text-sm",
           isBareSticker
             ? "px-0 py-0"
             : cn(

@@ -14,11 +14,9 @@ export function EventoDaConversa({ note }: { note: Note }) {
       data-testid="evento-da-conversa"
       className="my-2 flex items-center justify-center gap-2 px-4 text-[12px] text-text-muted"
     >
-      <span className="h-px flex-1 bg-border" aria-hidden />
       <span className="max-w-[80%] truncate rounded-full bg-muted px-3 py-1 text-center">
         {textoDoEvento(note.body)} · {format(new Date(note.created_at), "dd/MM HH:mm")}
       </span>
-      <span className="h-px flex-1 bg-border" aria-hidden />
     </div>
   );
 }
