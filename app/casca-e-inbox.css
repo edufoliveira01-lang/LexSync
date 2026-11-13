@@ -477,3 +477,39 @@ header.dz-topbar {
 /* Abas no desenho do Sales (fora do Inbox): barra branca com cantos de 12px; a ativa com a tinta suave do azul. */
 [role="tablist"][data-orientation] [role="tab"][data-state="active"] { background: var(--color-accent-50); color: var(--color-accent-700); box-shadow: none; }
 [data-theme="dark"] [role="tablist"][data-orientation] [role="tab"][data-state="active"] { background: var(--color-accent-soft); color: var(--color-accent-300); }
+
+/* O rótulo da área acima do título (como o "CLIENTES" do Sales): vem da rota, pela variável --area que a casca põe no <main>. */
+main[style*="--area"] h1.text-2xl::before {
+  content: var(--area);
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-accent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+/* Alternadores de visão (Lista | Calendário, Quadro | Lista…) no desenho do Sales: barra branca de 12px, ativo na tinta suave do azul. */
+[class*="bg-muted"][class*="rounded-md"][class*="border"][class*="p-0.5"] {
+  gap: 4px;
+  padding: 6px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+[class*="bg-muted"][class*="rounded-md"][class*="border"][class*="p-0.5"] > button {
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+[class*="bg-muted"][class*="rounded-md"][class*="border"][class*="p-0.5"] > button[aria-pressed="true"],
+[class*="bg-muted"][class*="rounded-md"][class*="border"][class*="p-0.5"] > button[aria-selected="true"] {
+  background: var(--color-accent-50);
+  color: var(--color-accent-700);
+  box-shadow: none;
+}
+[data-theme="dark"] [class*="bg-muted"][class*="rounded-md"][class*="border"][class*="p-0.5"] > button[aria-pressed="true"] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-300);
+}

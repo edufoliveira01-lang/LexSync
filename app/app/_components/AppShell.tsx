@@ -10,6 +10,9 @@ import { useInboundCallAlerts } from "@/hooks/calls/useInboundCallAlerts";
 import { useCrmAlerts } from "@/hooks/notifications/useCrmAlerts";
 import { useNotifyOpenFromServiceWorker } from "@/lib/notifications/notify_open";
 import { ensureNotifyServiceWorker } from "@/lib/notifications/service_worker";
+import { usePathname } from "next/navigation";
+import { areaDaRota } from "@/lib/navigation/area-da-rota";
+import { useT } from "@/hooks/i18n/useT";
 import { estiloDaReserva, useOcupacaoDoRodape } from "@/lib/ui/rodape-ocupado";
 
 interface AppShellProps {
@@ -43,6 +46,9 @@ export function AppShell({ sidebarCollapsed, podeAtender, children }: AppShellPr
   // no Inbox e na Agenda; um emissor amarrado à tela de gestão diria que só o
   // gerente está presente.
   useSinalDePresenca(podeAtender);
+  // O rótulo da área acima do título de cada tela (CSS `main h1.text-2xl::before`), traduzido.
+  const t = useT();
+  const area = areaDaRota(usePathname() ?? "");
   // O que as peças fixas do rodapé declararam ocupar agora (issue #1305). Sem
   // chamada nenhuma é ZERO, e aí o `<main>` fica exatamente como sempre foi —
   // o `p-6` inteiro é rodapé. Com o painel de chamada na tela, é ele que
@@ -111,7 +117,7 @@ export function AppShell({ sidebarCollapsed, podeAtender, children }: AppShellPr
         */}
         <main
           className="flex-1 overflow-auto px-4 py-4 pb-area-segura sm:px-7 sm:py-8 xl:px-10"
-          style={estiloDaReserva(ocupacaoDoRodape)}
+          style={{ ...estiloDaReserva(ocupacaoDoRodape), ...(area ? ({ "--area": JSON.stringify(t(area)) } as React.CSSProperties) : {}) }}
           data-rodape-ocupado={ocupacaoDoRodape}
         >
           {children}

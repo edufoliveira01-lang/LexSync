@@ -6,6 +6,7 @@ import { ContactDetailClient } from "@/app/app/contacts/[id]/_client";
 import { AgendaClient } from "@/app/app/agenda/_client";
 import { PipelinePageClient } from "@/app/app/pipelines/[id]/_client";
 import { RespostasRapidasTela } from "@/app/app/templates/_components/RespostasRapidasTela";
+import { TarefasClient } from "@/app/app/tasks/_components/TarefasClient";
 import { RadarTela } from "@/app/app/radar/_components/RadarTela";
 
 /** Telas disponíveis no preview. Cada uma é o componente REAL da tela; os dados vêm do mock de rede. */
@@ -31,6 +32,7 @@ const AGENDAMENTOS = [
 const TELAS: Record<string, () => React.ReactNode> = {
   contacts: () => <ContactsListClient />,
   radar: () => <RadarTela />,
+  tasks: () => <TarefasClient podeEditar minhasDeInicio={false} funis={[{ id: "f1", name: "Captação" }]} />,
   templates: () => <RespostasRapidasTela canShare currentUserId="00000000-0000-4000-8000-000000000001" />,
   quadro: () => (
     <PipelinePageClient
