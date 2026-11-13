@@ -294,7 +294,7 @@ export function PainelDeTags({ tags, idioma, paginado = false }: { tags: LinhaDe
               <tr>
                 <th className="p-3 font-medium">{t("Etiqueta")}</th>
                 <th className="p-3 font-medium">{t("Contatos")}</th>
-                <th className="p-3 font-medium max-md:hidden">{t("Casos")}</th>
+                <th className="p-3 font-medium max-md:hidden">{t("No funil")}</th>
                 <th className="p-3 font-medium max-md:hidden">{t("Conversas")}</th>
                 <th className="p-3 font-medium max-md:hidden">{t("Regras de agente")}</th>
                 <th className="p-3 text-right font-medium">{t("Ações")}</th>
