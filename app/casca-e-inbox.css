@@ -181,10 +181,10 @@ main:has([data-realtime-status]:not([data-quadro])) { padding: 0; overflow: hidd
 @media (min-width: 1280px) {
   /* Colunas fixas do Sales (344 lista | conversa | 320 ficha). As divisórias arrastáveis ficam ocultas:
      elas calculam a posição pelos tamanhos padrão do original e apareciam no meio da lista. */
-  [data-realtime-status].grid { grid-template-columns: 344px minmax(0, 1fr) 320px; }
-  [data-realtime-status][data-sem-conversa].grid { grid-template-columns: 344px minmax(0, 1fr); }
+  [data-realtime-status].grid { grid-template-columns: 300px minmax(0, 1fr) 320px; }
+  [data-realtime-status][data-sem-conversa].grid { grid-template-columns: 300px minmax(0, 1fr); }
   /* painel do contato recolhido: só o trilho com o botão de expandir */
-  [data-realtime-status][data-painel-recolhido].grid:not([data-sem-conversa]) { grid-template-columns: 344px minmax(0, 1fr) 44px; }
+  [data-realtime-status][data-painel-recolhido].grid:not([data-sem-conversa]) { grid-template-columns: 300px minmax(0, 1fr) 44px; }
   [data-realtime-status] [data-divisoria] { display: none; }
 }
 
@@ -688,3 +688,27 @@ button[data-conversation-id] .text-sm { font-size: 13.5px; }
 button[data-conversation-id] p.text-\[13px\] { font-size: 12.5px; }
 button[data-conversation-id] span[role="img"] { height: 18px; font-size: 10.5px; padding-inline: 7px; }
 [data-realtime-status] .space-y-2 input { min-height: 34px !important; height: 34px !important; padding-top: 0; padding-bottom: 0; }
+
+/* ===== Inbox: cabeçalho alinhado, seleção que substitui o avatar, selo do canal maior ===== */
+.titulo-da-lista { padding: 12px 14px 6px !important; min-height: 0 !important; gap: 8px; }
+.titulo-da-lista h2 { display: flex; align-items: center; height: 28px; font-size: 16px; line-height: 28px; }
+[data-realtime-status] .space-y-2 { padding: 4px 14px 4px; }
+
+/* A caixa de seleção cobre o avatar INTEIRO (em vez de um círculo pela metade por cima da foto) */
+.caixa-de-selecao {
+  left: 14px !important; top: 10px !important;
+  width: 40px !important; height: 40px !important;
+  border-radius: 999px !important;
+  border-width: 2px !important;
+  border-color: var(--color-accent) !important;
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent) !important;
+  color: var(--color-accent);
+}
+.caixa-de-selecao[aria-checked="true"] { background: var(--color-accent) !important; color: #fff; }
+.caixa-de-selecao svg { width: 18px; height: 18px; }
+button[data-conversation-id] .relative.shrink-0 { margin-left: 0; }
+
+/* Barra de ações em lote: faixa compacta e discreta */
+.barra-de-lote { background: var(--color-accent-50) !important; border-color: var(--color-accent-200) !important; }
+.barra-de-lote span { color: var(--color-accent-700); }
+[data-theme="dark"] .barra-de-lote { background: var(--color-accent-soft) !important; }

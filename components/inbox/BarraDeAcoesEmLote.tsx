@@ -30,7 +30,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAssignableMembers } from "@/hooks/inbox/useAssignableMembers";
 import { useT } from "@/hooks/i18n/useT";
-import { ArrowRight, Archive, Check, Pause, Robot, X } from "@/lib/ui/icons";
+import { ArrowRight, Archive, Check, CheckCircle, Checks, DotsThree, Pause, Robot, X } from "@/lib/ui/icons";
 import { rotuloDoMembro } from "@/lib/users/rotulo-do-atendente";
 
 interface Props {
@@ -96,46 +96,61 @@ export function BarraDeAcoesEmLote({
 
   return (
     <div
-      className="barra-de-lote flex flex-wrap items-center gap-1.5 border-b border-border bg-surface-elevated px-3 py-2"
+      className="barra-de-lote flex items-center gap-1 border-b border-border bg-surface-elevated px-2 py-1.5"
       role="toolbar"
       aria-label={t("Ações em lote")}
       data-testid="barra-de-acoes-em-lote"
     >
-      <span className="mr-1 text-xs font-medium text-foreground">
+      {/* Uma linha só: sair da seleção à esquerda, a contagem, e à direita três ações de ícone (com dica ao passar o mouse). */}
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={onLimpar}
+        className="h-8 w-8 shrink-0"
+        aria-label={t("Limpar seleção")}
+        title={t("Limpar seleção")}
+        data-testid="lote-limpar"
+      >
+        <X size={15} aria-hidden />
+      </Button>
+      <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
         {quantidade === 1
           ? t("1 conversa selecionada")
           : `${quantidade} ${t("conversas selecionadas")}`}
       </span>
       <Button
-        size="sm"
-        variant="outline"
-        disabled={pendente}
-        onClick={onFechar}
-        data-testid="lote-fechar"
-      >
-        {t("Fechar")}
-      </Button>
-      <Button
-        size="sm"
+        size="icon"
         variant="outline"
         disabled={pendente}
         onClick={onMarcarComoLida}
+        className="h-8 w-8 shrink-0"
+        aria-label={t("Marcar como lida")}
+        title={t("Marcar como lida")}
         data-testid="lote-marcar-como-lida"
       >
-        {t("Marcar como lida")}
+        <Checks size={15} aria-hidden />
+      </Button>
+      <Button
+        size="icon"
+        variant="outline"
+        disabled={pendente}
+        onClick={onFechar}
+        className="h-8 w-8 shrink-0"
+        aria-label={t("Encerrar conversas")}
+        title={t("Encerrar conversas")}
+        data-testid="lote-fechar"
+      >
+        <CheckCircle size={15} aria-hidden />
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" variant="outline" disabled={pendente}>
-            {t("Mais ações")}
+          <Button size="icon" variant="outline" disabled={pendente} className="h-8 w-8 shrink-0" aria-label={t("Mais ações")} title={t("Mais ações")}>
+            <DotsThree size={16} weight="bold" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
+        <DropdownMenuContent align="end">
           <DropdownMenuLabel>{t("Ações em lote")}</DropdownMenuLabel>
-          <DropdownMenuItem
-            onSelect={onArquivar}
-            data-testid="lote-arquivar"
-          >
+          <DropdownMenuItem onSelect={onArquivar} data-testid="lote-arquivar">
             <Archive size={14} className="mr-2" aria-hidden />
             {t("Arquivar")}
           </DropdownMenuItem>
@@ -143,33 +158,17 @@ export function BarraDeAcoesEmLote({
             <Pause size={14} className="mr-2" aria-hidden />
             {t("Pausar IA")}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={onDevolverAoAutomatico}
-            data-testid="lote-devolver-ao-automatico"
-          >
+          <DropdownMenuItem onSelect={onDevolverAoAutomatico} data-testid="lote-devolver-ao-automatico">
             <Robot size={14} className="mr-2" aria-hidden />
             {t("Devolver ao automático")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onSelect={() => setTransferirAberto(true)}
-            data-testid="lote-transferir"
-          >
+          <DropdownMenuItem onSelect={() => setTransferirAberto(true)} data-testid="lote-transferir">
             <ArrowRight size={14} className="mr-2" aria-hidden />
             {t("Transferir para…")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={onLimpar}
-        className="ml-auto"
-        aria-label={t("Limpar seleção")}
-        data-testid="lote-limpar"
-      >
-        <X size={14} aria-hidden />
-      </Button>
 
       <Dialog
         open={transferirAberto}
