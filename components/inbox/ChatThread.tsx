@@ -12,7 +12,7 @@ import { MessageBubble } from "./MessageBubble";
 import { separarReacoes } from "@/lib/inbox/reacoes-no-fio";
 import { NoteCard } from "./NoteCard";
 import { EventoDaConversa } from "./EventoDaConversa";
-import { ehEventoDaConversa } from "@/lib/inbox/evento-na-conversa-marca";
+import { ehEventoDaConversa, textoDoEvento } from "@/lib/inbox/evento-na-conversa-marca";
 import { PassagemCard } from "./PassagemCard";
 import { useThreadAutoScroll } from "@/hooks/inbox/useThreadAutoScroll";
 import { useMessagesRealtime } from "@/hooks/inbox/useMessagesRealtime";
@@ -270,8 +270,16 @@ export function ChatThread({
   }
 
   // Group by day for separators (usa o timestamp do item — sent_at pra mensagem, created_at pra nota).
+  // Dois acontecimentos iguais em sequência (mesmo texto, mesma pessoa) contam uma história só: fica o mais recente.
+  const textoDeEvento = (it: ThreadItem | undefined): string | null =>
+    it && it.kind === "note" && ehEventoDaConversa(it.data.body) ? textoDoEvento(it.data.body) : null;
+  const semRepetidos = items.filter((item, i) => {
+    const atual = textoDeEvento(item);
+    return atual === null || textoDeEvento(items[i + 1]) !== atual;
+  });
+
   const groups: { key: string; date: Date; items: ThreadItem[] }[] = [];
-  for (const item of items) {
+  for (const item of semRepetidos) {
     const d = new Date(item.ts);
     const key = format(d, "yyyy-MM-dd");
     const last = groups[groups.length - 1];
