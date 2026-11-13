@@ -570,3 +570,24 @@ button[class*="text-error"]:not([class*="hover:text-error"]):not([class*="w-7"])
 button[class*="text-destructive"]:not([class*="w-7"]):not([class*="w-8"]):not([class*="w-9"]):not([class*="size-"]):not(:disabled):hover {
   filter: brightness(0.95);
 }
+
+/* Campo de arquivo no padrão do Sales: o botão "Escolher arquivo" vira um botão de borda com fundo branco. */
+input[type="file"] { font-size: 13px; color: var(--color-muted-foreground, #64748b); }
+input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-foreground, #0f172a);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+input[type="file"]::file-selector-button:hover { border-color: var(--color-accent-400); }
+
+/* Configurações: os cartões e formulários de cada subpágina usam toda a largura do conteúdo (antes cada página tinha uma largura máxima diferente). */
+.dz-pagina [class*="max-w-"][class*="border"]:not([role="dialog"]):not([class*="max-w-xs"]):not([class*="max-w-sm"]),
+.dz-pagina form[class*="max-w-"]:not([class*="max-w-xs"]):not([class*="max-w-sm"]) { max-width: none; }

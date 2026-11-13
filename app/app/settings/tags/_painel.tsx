@@ -294,10 +294,10 @@ export function PainelDeTags({ tags, idioma, paginado = false }: { tags: LinhaDe
               <tr>
                 <th className="p-3 font-medium">{t("Etiqueta")}</th>
                 <th className="p-3 font-medium">{t("Contatos")}</th>
-                <th className="p-3 font-medium max-md:hidden">{t("Leads")}</th>
+                <th className="p-3 font-medium max-md:hidden">{t("Casos")}</th>
                 <th className="p-3 font-medium max-md:hidden">{t("Conversas")}</th>
                 <th className="p-3 font-medium max-md:hidden">{t("Regras de agente")}</th>
-                <th className="p-3 font-medium">{t("Ações")}</th>
+                <th className="p-3 text-right font-medium">{t("Ações")}</th>
               </tr>
             </thead>
             <tbody>
@@ -329,19 +329,21 @@ export function PainelDeTags({ tags, idioma, paginado = false }: { tags: LinhaDe
                       <span className="text-muted-foreground">0</span>
                     )}
                   </td>
-                  <td className="flex flex-wrap gap-2 p-3">
-                    <Button size="sm" variant="outline" onClick={() => abrir(linha, "definir_cor")}>
-                      {t("Cor")}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => abrir(linha, "renomear")}>
-                      {t("Renomear")}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => abrir(linha, "juntar")}>
-                      {t("Juntar")}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => abrir(linha, "excluir")}>
-                      {t("Excluir")}
-                    </Button>
+                  <td className="p-3">
+                    <div className="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap">
+                      <Button size="sm" variant="outline" onClick={() => abrir(linha, "definir_cor")}>
+                        {t("Cor")}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => abrir(linha, "renomear")}>
+                        {t("Renomear")}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => abrir(linha, "juntar")}>
+                        {t("Juntar")}
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => abrir(linha, "excluir")}>
+                        {t("Excluir")}
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
