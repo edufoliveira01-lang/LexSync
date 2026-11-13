@@ -346,7 +346,7 @@ export function ConversationListItem({
             {initials(displayName, phoneFallback)}
           </AvatarFallback>
         </Avatar>
-        <ChannelLogo channel={canal} size={20} className="absolute -bottom-1 -right-1.5 h-[22px] w-[22px] rounded-full bg-background ring-2 ring-background" />
+        <ChannelLogo channel={canal} size={24} className="absolute -bottom-1.5 -right-2 h-6 w-6 rounded-full bg-white ring-2 ring-white" />
       </div>
 
       <div className="min-w-0 flex-1">

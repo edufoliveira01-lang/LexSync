@@ -181,10 +181,10 @@ main:has([data-realtime-status]:not([data-quadro])) { padding: 0; overflow: hidd
 @media (min-width: 1280px) {
   /* Colunas fixas do Sales (344 lista | conversa | 320 ficha). As divisórias arrastáveis ficam ocultas:
      elas calculam a posição pelos tamanhos padrão do original e apareciam no meio da lista. */
-  [data-realtime-status].grid { grid-template-columns: 300px minmax(0, 1fr) 320px; }
-  [data-realtime-status][data-sem-conversa].grid { grid-template-columns: 300px minmax(0, 1fr); }
+  [data-realtime-status].grid { grid-template-columns: 250px minmax(0, 1fr) 320px; }
+  [data-realtime-status][data-sem-conversa].grid { grid-template-columns: 250px minmax(0, 1fr); }
   /* painel do contato recolhido: só o trilho com o botão de expandir */
-  [data-realtime-status][data-painel-recolhido].grid:not([data-sem-conversa]) { grid-template-columns: 300px minmax(0, 1fr) 44px; }
+  [data-realtime-status][data-painel-recolhido].grid:not([data-sem-conversa]) { grid-template-columns: 250px minmax(0, 1fr) 44px; }
   [data-realtime-status] [data-divisoria] { display: none; }
 }
 
@@ -712,3 +712,23 @@ button[data-conversation-id] .relative.shrink-0 { margin-left: 0; }
 .barra-de-lote { background: var(--color-accent-50) !important; border-color: var(--color-accent-200) !important; }
 .barra-de-lote span { color: var(--color-accent-700); }
 [data-theme="dark"] .barra-de-lote { background: var(--color-accent-soft) !important; }
+
+/* ===== Inbox v3: coluna de 250px, espaçamentos 12/12, seleção abaixo do ícone de exemplo ===== */
+.titulo-da-lista { padding: 12px 12px 12px !important; }
+[data-realtime-status] .space-y-2 { padding: 0 12px 12px !important; }
+[data-realtime-status] [role="tablist"] { padding: 0 12px 10px !important; }
+.selecionar-todas { padding: 5px 12px !important; }
+button[data-conversation-id] { padding: 10px 4px 10px 12px; gap: 9px; }
+
+/* a seleção volta a ser um círculo pequeno, na coluna da direita, logo abaixo do ícone de "exemplo para a IA" */
+.caixa-de-selecao {
+  left: auto !important; right: 12px !important; top: 40px !important;
+  width: 16px !important; height: 16px !important;
+  border: 1.5px solid var(--color-muted-foreground, #94a3b8) !important;
+  background: var(--color-surface) !important;
+  color: #fff;
+  opacity: .55 !important;
+}
+.caixa-de-selecao:hover, div.relative.flex.w-full.items-start.border-b:hover .caixa-de-selecao { opacity: 1 !important; border-color: var(--color-accent) !important; }
+.caixa-de-selecao[aria-checked="true"] { opacity: 1 !important; background: var(--color-accent) !important; border-color: var(--color-accent) !important; }
+.caixa-de-selecao svg { width: 11px; height: 11px; }
