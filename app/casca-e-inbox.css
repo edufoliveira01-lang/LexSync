@@ -386,10 +386,7 @@ button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px r
 .busca-do-menu { height: 36px; border-radius: 12px; background: var(--color-surface); }
 .dz-topbar .busca-do-menu { height: 40px; background: var(--color-surface-elevated); font-size: 14px; }
 
-/* sem barra de cima no computador: a Inbox usa a altura toda */
-@media (min-width: 768px) {
-  [data-realtime-status]:not([data-quadro]) { height: calc(100dvh - var(--faixas-de-cima, 0px)); border-top: 0; }
-}
+/* A Inbox ocupa a altura que sobra DEPOIS da barra do topo (antes esta regra ignorava a barra e a caixa de resposta ficava 64px abaixo da tela). */
 
 /* ============================== 14. Painel do contato (detalhes) — cartões ============================== */
 .painel-do-contato > aside {
