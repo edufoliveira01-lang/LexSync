@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ContactsListClient } from "@/app/app/contacts/_client";
 import { FunisTela } from "@/app/app/kanban/_components/FunisTela";
 import { ContactDetailClient } from "@/app/app/contacts/[id]/_client";
+import { AgendaClient } from "@/app/app/agenda/_client";
 import { RadarTela } from "@/app/app/radar/_components/RadarTela";
 
 /** Telas disponíveis no preview. Cada uma é o componente REAL da tela; os dados vêm do mock de rede. */
@@ -17,9 +18,30 @@ const ETAPAS = {
   f3: [{ id: "e8", name: "Ativo", is_won: false, is_lost: false }],
 };
 
+const AGORA = new Date();
+const dia = (d: number, h: number, m = 0) => { const x = new Date(AGORA); x.setDate(x.getDate() + d); x.setHours(h, m, 0, 0); return x.toISOString(); };
+const AGENDAMENTOS = [
+  { id: "a1", titulo: "Consulta — Maria da Silva", quemSeraAtendido: "Maria da Silva", responsavelId: "u1", comeca: dia(0, 9), termina: dia(0, 10), tipo: "Consulta inicial", origem: "mcp", situacao: "confirmed" },
+  { id: "a2", titulo: "Retorno — João Pereira", quemSeraAtendido: "João Pereira", responsavelId: "u1", comeca: dia(0, 14), termina: dia(0, 15), tipo: "Retorno", origem: "ui", situacao: "pending" },
+  { id: "a3", titulo: "Perícia — Ana Costa", quemSeraAtendido: "Ana Costa", responsavelId: "u1", comeca: dia(1, 10, 30), termina: dia(1, 11, 30), tipo: "Perícia", origem: "google_sync", situacao: "confirmed" },
+] as never[];
+
 const TELAS: Record<string, () => React.ReactNode> = {
   contacts: () => <ContactsListClient />,
   radar: () => <RadarTela />,
+  agenda: () => (
+    <AgendaClient
+      fusoDaAgenda="America/Sao_Paulo"
+      fusoDeApresentacao={null}
+      hojeNaOrganizacao={AGORA.toISOString().slice(0, 10)}
+      usuarioId="u1"
+      googleConfigurado={false}
+      faltaNoGoogle={[]}
+      tiposIniciais={[{ id: "t1", nome: "Consulta inicial", duracaoMin: 60, donoId: "u1", localKind: "online", localDetalhes: null }]}
+      agendamentosIniciais={AGENDAMENTOS}
+      podeMarcar
+    />
+  ),
   contato: () => <ContactDetailClient contactId="c0000000-0000-4000-8000-000000000001" />,
   kanban: () => <FunisTela funis={FUNIS} arquivados={[]} podeGerenciar podeImportar etapas={ETAPAS} />,
 };

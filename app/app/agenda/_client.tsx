@@ -31,6 +31,7 @@ import { recorteDaGrade as recorteDaGradeDe } from "@/lib/agenda/recorte-da-grad
 import { resolverResponsavelDoPainel } from "@/lib/agenda/responsavel-do-painel";
 import { useVinculoDaMarcacao } from "@/lib/agenda/vinculo-da-marcacao";
 import { Button } from "@/components/ui/button";
+import { CabecalhoDaPagina } from "@/components/ui/cabecalho-da-pagina";
 import { PainelDeMarcacao } from "@/components/agenda/PainelDeMarcacao";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAgendamentos } from "@/hooks/agenda/useAgendamentos";
@@ -570,14 +571,12 @@ export function AgendaClient({
         enderecoDeRetorno={enderecoDeRetorno}
       />
 
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">{tituloDaAgenda ?? t("Agendamentos")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("O que está marcado, com quem, e quem atende — seu e da equipe.")}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+      <CabecalhoDaPagina
+        area={t("Atendimento")}
+        titulo={tituloDaAgenda ?? t("Agendamentos")}
+        descricao={t("O que está marcado, com quem, e quem atende — seu e da equipe.")}
+        acoes={
+          <>
           {/* "Hoje" é o hoje DA ORGANIZAÇÃO. Com `new Date()` o botão desfazia a
               âncora do servidor e devolvia a semana do navegador — o defeito que
               a tela acabou de fechar, a um clique de distância. */}
@@ -638,8 +637,9 @@ export function AgendaClient({
               <span>{t("Novo agendamento")}</span>
             </Button>
           )}
-        </div>
-      </header>
+                  </>
+        }
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
@@ -704,7 +704,7 @@ export function AgendaClient({
           <FiltroDePessoas pessoas={pessoas} isolada={isolada} onIsolar={setIsolada} />
           <div
             data-testid="alternador-de-visao"
-            className="flex items-center gap-0.5 rounded-md border border-border bg-surface p-0.5"
+            className="flex items-center gap-1 rounded-md border border-border bg-surface p-1 shadow-xs"
           >
             {VISOES.map((v) => (
               <button
@@ -722,10 +722,10 @@ export function AgendaClient({
                   //
                   // `lg:` devolve o compacto onde quem aciona é cursor, no mesmo
                   // corte que `components/ui/button.tsx` já usa.
-                  "min-h-11 rounded-sm px-3 py-1 text-xs transition-colors duration-fast ease-out lg:min-h-0 lg:px-2.5",
+                  "min-h-11 rounded-md px-3 py-1 text-sm font-medium transition-colors duration-fast ease-out lg:min-h-0 lg:px-4 lg:py-1.5",
                   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500",
                   visao === v.id
-                    ? "bg-accent font-semibold text-accent-foreground"
+                    ? "bg-accent-50 text-accent-700"
                     : "text-text-muted hover:bg-surface-elevated hover:text-text",
                 )}
               >

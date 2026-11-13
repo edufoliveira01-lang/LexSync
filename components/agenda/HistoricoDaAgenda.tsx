@@ -153,7 +153,7 @@ export function HistoricoDaAgenda({
       <div
         role="tablist"
         aria-label={t("Filtrar o histórico")}
-        className="flex flex-wrap items-center gap-0.5 rounded-md border border-border bg-surface p-0.5"
+        className="flex flex-wrap items-center gap-1 rounded-md border border-border bg-surface p-1.5 shadow-xs"
       >
         {ABAS.map((a) => {
           const n = grupos[a.id].length;
@@ -166,10 +166,10 @@ export function HistoricoDaAgenda({
               aria-selected={aba === a.id}
               onClick={() => setAba(a.id)}
               className={cn(
-                "flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-xs transition-colors duration-fast ease-out",
+                "flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors duration-fast ease-out",
                 "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500",
                 aba === a.id
-                  ? "bg-accent font-semibold text-accent-foreground"
+                  ? "bg-accent-50 text-accent-700"
                   : "text-text-muted hover:bg-surface-elevated hover:text-text",
               )}
             >
@@ -181,7 +181,7 @@ export function HistoricoDaAgenda({
                 data-testid={`contador-${a.id}`}
                 className={cn(
                   "rounded-full px-1.5 text-[10px] tabular-nums",
-                  aba === a.id ? "bg-accent-foreground/20" : "bg-surface-elevated text-text-subtle",
+                  aba === a.id ? "bg-accent-100 text-accent-700" : "bg-surface-elevated text-text-subtle",
                 )}
               >
                 {n}
