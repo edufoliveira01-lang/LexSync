@@ -10,12 +10,13 @@ import type { Note } from "@/lib/types/messaging";
 /**
  * Cada TIPO de acontecimento tem a sua cor, para o olho separar a história da conversa sem ler:
  *   azul = assumiu · roxo = transferiu · âmbar = liberou/devolveu à fila · cinza = fechou/arquivou · verde = reabriu/contrato assinado
- *   índigo = contrato enviado · rosa = automático · verde-água = a IA mexeu no funil (classificou / moveu o negócio).
+ *   índigo = contrato enviado · rosa = automático · verde-água = a IA mexeu no funil (classificou / moveu o negócio) · azul-céu = follow-up (entrou, enviou, respondeu, concluiu).
  */
-export type TipoDeEvento = "crm" | "assumiu" | "transferiu" | "liberou" | "encerrou" | "reabriu" | "contrato_enviado" | "contrato_assinado" | "automatico" | "outro";
+export type TipoDeEvento = "followup" | "crm" | "assumiu" | "transferiu" | "liberou" | "encerrou" | "reabriu" | "contrato_enviado" | "contrato_assinado" | "automatico" | "outro";
 
 export function tipoDoEvento(texto: string): TipoDeEvento {
   const t = texto.toLowerCase();
+  if (/^follow-up/.test(t)) return "followup";
   if (/moveu o neg[óo]cio|marcou o atendimento|atualizou o estado do atendimento/.test(t)) return "crm";
   if (/contrato.*assinad|assinou/.test(t)) return "contrato_assinado";
   if (/contrato/.test(t)) return "contrato_enviado";
@@ -29,6 +30,7 @@ export function tipoDoEvento(texto: string): TipoDeEvento {
 }
 
 const COR: Record<TipoDeEvento, string> = {
+  followup: "border-sky-300 bg-sky-50 text-sky-700",
   crm: "border-teal-300 bg-teal-50 text-teal-700",
   assumiu: "border-accent-300 bg-accent-50 text-accent-700",
   transferiu: "border-purple-300 bg-purple-50 text-purple-700",
@@ -42,6 +44,7 @@ const COR: Record<TipoDeEvento, string> = {
 };
 
 const PONTO: Record<TipoDeEvento, string> = {
+  followup: "bg-sky-500",
   crm: "bg-teal-500",
   assumiu: "bg-accent",
   transferiu: "bg-purple-500",

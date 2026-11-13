@@ -17,6 +17,7 @@ import { PassagemCard } from "./PassagemCard";
 import { useThreadAutoScroll } from "@/hooks/inbox/useThreadAutoScroll";
 import { useMessagesRealtime } from "@/hooks/inbox/useMessagesRealtime";
 import { useConversationNotes } from "@/hooks/inbox/useConversationNotes";
+import { useFollowupDaConversa } from "@/hooks/inbox/useFollowupDaConversa";
 import { usePassagensDaConversa } from "@/hooks/inbox/usePassagensDaConversa";
 import { useAcompanharContratos } from "@/hooks/inbox/useAcompanharContratos";
 import { useClaimConversation } from "@/hooks/inbox/useClaimConversation";
@@ -103,7 +104,9 @@ export function ChatThread({
   const localeDaData = useLocaleDeData();
   const t = useT();
   const q = useMessagesRealtime(conversationId);
-  const notes = useConversationNotes(conversationId);
+  const notasDaConversa = useConversationNotes(conversationId);
+  const eventosDeFollowup = useFollowupDaConversa(conversationId);
+  const notes = useMemo(() => [...notasDaConversa, ...eventosDeFollowup], [notasDaConversa, eventosDeFollowup]);
   const passagens = usePassagensDaConversa(conversationId);
   useAcompanharContratos(conversationId, notes);
   const claim = useClaimConversation();
