@@ -46,7 +46,6 @@ import { showApiError } from "@/components/feedback/ApiErrorToast";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/hooks/i18n/useT";
 import { apiClient } from "@/lib/api/client";
-import { CampoDeData } from "@/components/ui/campo-de-data";
 
 /**
  * Os três gestos da tela. Os dois FECHAR mandam `is_unavailable: true`; o que
@@ -227,7 +226,7 @@ export function DiasBloqueados({ podeEditar }: { podeEditar: boolean }) {
           </label>
           <label className="block">
             <span className="block text-sm">{t("Dia")}</span>
-            <CampoDeData
+            <input
               aria-label={t("Dia")}
               className="mt-1 rounded-md border p-2"
               type="date"
@@ -275,7 +274,7 @@ export function DiasBloqueados({ podeEditar }: { podeEditar: boolean }) {
           </label>
           <label className="block">
             <span className="block text-sm">{t("Repetir toda semana até (opcional)")}</span>
-            <CampoDeData
+            <input
               aria-label={t("Repetir toda semana até (opcional)")}
               className="mt-1 rounded-md border p-2"
               type="date"

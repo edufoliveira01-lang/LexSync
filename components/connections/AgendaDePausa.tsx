@@ -54,7 +54,6 @@ import { instanteDe } from "@/lib/agenda/fuso";
 import { nomeDoCanal } from "@/lib/channels/estado";
 import { useT } from "@/hooks/i18n/useT";
 import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
-import { CampoDeData } from "@/components/ui/campo-de-data";
 
 /** O operador escolhe pelo NOME da conexão — o id é só o valor que desce à API. */
 type CanalDaLista = { id: string; display_name?: string | null; phone_number?: string | null };
@@ -188,7 +187,7 @@ export function AgendaDePausa({ canais }: { canais: CanalDaLista[] }) {
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label htmlFor="agenda-inicio">{t("A pausa começa (hora local)")}</Label>
-            <CampoDeData
+            <Input
               id="agenda-inicio"
               type="datetime-local"
               value={inicio}
@@ -198,7 +197,7 @@ export function AgendaDePausa({ canais }: { canais: CanalDaLista[] }) {
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="agenda-fim">{t("A pausa termina (hora local)")}</Label>
-            <CampoDeData
+            <Input
               id="agenda-fim"
               type="datetime-local"
               value={fim}
