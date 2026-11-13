@@ -188,14 +188,13 @@ export const NAV_CATALOG = [
     sidebar: true,
   },
   {
-    // O controle do botão "Programar" do Inbox. Fora do menu lateral (o grupo Atendimento já tem as quatro telas do dia a dia):
-    // abre pelo link no painel Programar, pelo ⌘K e pelo hub.
+    // O controle do botão "Programar" do Inbox: aparece no menu lateral, dentro de Atendimento.
     href: "/app/mensagens-programadas",
     label: "Mensagens programadas",
     description: "O que a equipe programou para os clientes: quando sai, se foi enviada, se o cliente respondeu e o que foi cancelado.",
     icon: "ClockCountdown",
     group: "atendimento",
-    sidebar: false,
+    sidebar: true,
   },
   {
     // Entra em "atendimento", e não em "organizacao", porque a Agenda é onde o
