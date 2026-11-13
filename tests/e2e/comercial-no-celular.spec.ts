@@ -221,7 +221,7 @@ test.describe("vendas e dinheiro no celular", () => {
     await semRolagemNoMain(page, "Conexões");
     await dentroDaTela(conectar, "Conectar novo WhatsApp");
     await dentroDaTela(page.getByRole("button", { name: "Agendar pausa" }), "Agendar pausa");
-    const responsaveis = page.getByRole("link", { name: "Configurar responsáveis por número" });
+    const responsaveis = page.getByRole("link", { name: "Quem atende cada número" });
     expect((await medir(responsaveis)).height, "link de responsáveis").toBeGreaterThanOrEqual(PISO_DE_TOQUE);
     await foto("01-conexoes");
 
