@@ -11,6 +11,21 @@
  */
 
 const FRASES: Record<string, string> = {
+  // Admin da Plataforma: menu e títulos em português do escritório
+  "Dashboard": "Painel",
+  "Role": "Papel",
+  "Slug": "Identificador",
+  "Tenants": "Escritórios",
+  "Users": "Usuários",
+  "Audit": "Auditoria",
+  "Audit Log": "Registro de auditoria",
+  "Incidents": "Ocorrências",
+  "Incidentes": "Ocorrências",
+  "Platform Admins": "Administradores da plataforma",
+  "Usage": "Consumo",
+  "Uso & Custo": "Uso e custo",
+  "LGPD — Cross-tenant": "LGPD — todos os escritórios",
+  "MODO PLATAFORMA": "Modo plataforma",
   // menu e hubs
   "Prospecção": "Captação ativa",
   "Busque empresas e conduza abordagens graduais com IA.": "Busque pessoas e empresas e conduza abordagens graduais com IA.",
@@ -84,6 +99,7 @@ const PALAVRAS: Array<[RegExp, string | ((m: string, ...g: string[]) => string)]
   [/\bcomandas\b/gi, "lançamentos"],
   [/\bcomanda\b/gi, "lançamento"],
   // jargão técnico → português do escritório
+  [/\btenants\b/gi, "escritórios"],
   [/\btenant\b/gi, "escritório"],
   [/\broles\b/gi, "papéis"],
   // leads → contatos; card → cartão; custom fields → campos personalizados
