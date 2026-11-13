@@ -560,14 +560,14 @@ select:not([multiple]):not([size]) {
 }
 
 /* Botão de excluir/remover: vermelho cheio com texto branco (como o destrutivo do Sales). */
-button[class*="text-destructive"]:not([class*="w-7"]):not([class*="w-8"]):not([class*="w-9"]):not([class*="size-"]):not(:disabled),
-button[class*="text-error"]:not([class*="hover:text-error"]):not([class*="w-7"]):not([class*="w-8"]):not([class*="w-9"]):not([class*="size-"]):not(:disabled) {
+button[class*="text-destructive"]:not([class*="w-7"]):not([class*="w-8"]):not([class*="w-9"]):not(:disabled),
+button[class*="text-error"]:not([class*="hover:text-error"]):not([class*="w-7"]):not([class*="w-8"]):not([class*="w-9"]):not(:disabled) {
   background-color: var(--color-error);
   border-color: var(--color-error);
   color: #fff;
   font-weight: 600;
 }
-button[class*="text-destructive"]:not([class*="w-7"]):not([class*="w-8"]):not([class*="w-9"]):not([class*="size-"]):not(:disabled):hover {
+button[class*="text-destructive"]:not([class*="w-7"]):not([class*="w-8"]):not([class*="w-9"]):not(:disabled):hover {
   filter: brightness(0.95);
 }
 
