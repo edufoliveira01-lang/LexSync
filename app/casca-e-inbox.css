@@ -687,3 +687,4 @@ button[data-conversation-id] .h-11.w-11 { width: 40px; height: 40px; }
 button[data-conversation-id] .text-sm { font-size: 13.5px; }
 button[data-conversation-id] p.text-\[13px\] { font-size: 12.5px; }
 button[data-conversation-id] span[role="img"] { height: 18px; font-size: 10.5px; padding-inline: 7px; }
+[data-realtime-status] .space-y-2 input { min-height: 34px !important; height: 34px !important; padding-top: 0; padding-bottom: 0; }
