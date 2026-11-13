@@ -21,7 +21,7 @@ export function PainelDeNumeros({ itens, className }: { itens: NumeroDoPainel[];
             <span className="mt-1.5 block text-xs text-muted-foreground">{i.rotulo}</span>
           </>
         );
-        const base = "rounded-xl border p-4 text-left transition";
+        const base = "rounded-md border p-4 text-left transition";
         return i.aoClicar ? (
           <button
             key={i.chave}

@@ -10,8 +10,11 @@ const CORES = [
 ];
 
 function iniciais(nome: string): string {
-  const p = nome.trim().split(/\s+/).filter(Boolean);
-  return ((p[0]?.[0] ?? "?") + (p.length > 1 ? (p[p.length - 1]?.[0] ?? "") : "")).toUpperCase();
+  // Só palavras que começam por letra (emoji e símbolos ficam de fora), e por ponto de código, não por unidade UTF-16.
+  const palavras = nome.trim().split(/\s+/).filter((w) => /^\p{L}/u.test(w));
+  const primeira = [...(palavras[0] ?? "?")][0] ?? "?";
+  const ultima = palavras.length > 1 ? ([...(palavras[palavras.length - 1] ?? "")][0] ?? "") : "";
+  return (primeira + ultima).toUpperCase();
 }
 
 function indiceDe(id: string): number {

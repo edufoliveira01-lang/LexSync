@@ -32,32 +32,11 @@ import { SyncPhoneContactsDialog } from "@/components/contacts/SyncPhoneContacts
 import { TAG_DE_CLIENTE } from "@/lib/contacts/cliente";
 import { queryDaExportacao, type FormatoDeExport } from "@/lib/contacts/exportar";
 import { roleAtLeast } from "@/lib/auth/types";
-import { ORIGEM_AGENDA_DO_CELULAR } from "@/lib/leads/origem-do-contato";
 import { type ModoDeEtiqueta } from "@/lib/inbox/marcador-da-conversa";
 import { useActiveOrg, usePermission } from "@/hooks/auth/AuthProvider";
 import { MergeDialog } from "@/components/contacts/MergeDialog";
 import { EmptyContacts } from "@/components/empty";
 import type { ContactOrderBy } from "@/lib/schemas/contacts";
-
-const SOURCE_OPTIONS = [
-  { value: undefined, label: "Todas as origens" },
-  { value: "manual", label: "Manual" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "site", label: "Site (landing page)" },
-  { value: "nuvemshop", label: "Nuvemshop" },
-  { value: "import_csv", label: "Importado (CSV)" },
-  { value: ORIGEM_AGENDA_DO_CELULAR, label: "Agenda do celular" },
-  // Os dois valores que a atribuição de anúncio grava em `contacts.source`
-  // (`PlataformaDeAnuncio` em lib/leads/atribuicao-de-anuncio.ts). Sem eles, o
-  // contato que veio de um clique em anúncio existe no banco e não é
-  // alcançável por nenhum filtro desta tela. O handler aceita qualquer valor
-  // (`_handler.ts:167` faz `eq("source", q.source)`), então a lista é a única
-  // porta — e ela estava incompleta desde que a atribuição passou a existir.
-  { value: "meta_ads", label: "Anúncio da Meta" },
-  { value: "google_ads", label: "Anúncio do Google" },
-];
-
-const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 export function ContactsListClient() {
   const t = useT();
@@ -76,7 +55,7 @@ export function ContactsListClient() {
   const [soPessoais, setSoPessoais] = useState(false);
   const [orderBy, setOrderBy] = useState<ContactOrderBy>("last_activity_at");
   const [orderDir, setOrderDir] = useState<"asc" | "desc">("desc");
-  const [limit, setLimit] = useState<number>(25);
+  const limit = 25;
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
@@ -211,7 +190,7 @@ export function ContactsListClient() {
                   <DotsThree size={20} weight="bold" aria-hidden />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[220px] rounded-xl p-1.5">
+              <DropdownMenuContent align="end" className="min-w-[220px] rounded-md p-1.5">
                 <DropdownMenuItem onClick={() => setDuplicadosOpen(true)} className="gap-3 rounded-lg px-3 py-2 text-[13px]">
                   <UsersThree size={16} aria-hidden /> {t("Duplicados")}
                 </DropdownMenuItem>
@@ -358,38 +337,6 @@ export function ContactsListClient() {
                 <PontoDaEtiqueta tag={tagOption} className="mr-2" />
                 {tagOption}
               </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[10rem] justify-between">
-              {t(SOURCE_OPTIONS.find((s) => s.value === source)?.label ?? "Origem")}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {SOURCE_OPTIONS.map((s) => (
-              <DropdownMenuItem key={s.label} onClick={() => setSource(s.value)}>
-                {t(s.label)}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[9rem] justify-between">
-              {limit} {t("por página")}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuLabel>{t("Itens por página")}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {PAGE_SIZE_OPTIONS.map((n) => (
-              <DropdownMenuItem key={n} onClick={() => setLimit(n)}>
-                {n}
-              </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>

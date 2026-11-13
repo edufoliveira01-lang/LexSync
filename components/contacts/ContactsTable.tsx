@@ -54,9 +54,9 @@ interface Props {
 
 /** Colunas do cartão de contato (a partir de `md`); a primeira só existe quando há seleção em lote. */
 const GRADE_SEM_SELECAO =
-  "md:grid md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_7rem_6rem_88px] md:items-center md:gap-4";
+  "md:grid md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_8.5rem_5.5rem_88px] md:items-center md:gap-4";
 const GRADE_COM_SELECAO =
-  "md:grid md:grid-cols-[1.25rem_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_7rem_6rem_88px] md:items-center md:gap-4";
+  "md:grid md:grid-cols-[1.25rem_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_8.5rem_5.5rem_88px] md:items-center md:gap-4";
 
 function displayName(c: Contact, t: (texto: string) => string = (texto) => texto): string {
   return rotuloParaAEquipe(c, t);
@@ -98,7 +98,7 @@ function SortableHead({
       <button
         type="button"
         onClick={() => onSort(column)}
-        className="inline-flex items-center gap-1 font-semibold uppercase tracking-wider hover:text-foreground"
+        className="inline-flex items-center gap-1 whitespace-nowrap font-semibold uppercase tracking-wider hover:text-foreground"
       >
         {label}
         <span className="inline-flex flex-col -space-y-1" aria-hidden>
@@ -218,7 +218,7 @@ export function ContactsTable({
     <>
     <div role="table" aria-label={t("Contatos")} className="space-y-2.5">
       <div role="rowgroup" className="max-md:hidden">
-        <div role="row" className={`${GRADE} px-4 text-[11px] text-text-subtle`}>
+        <div role="row" className={`${GRADE} px-4 pb-1 text-[11px] text-text-subtle`}>
           {/*
             Cabeça da seleção em lote (#2484, F3): marca de uma vez tudo o que
             está na tela. Só existe quando a tabela recebe as props de seleção
@@ -236,7 +236,7 @@ export function ContactsTable({
                 title={t("Selecionar todas")}
                 data-testid="selecionar-todos-contatos"
                 onClick={onSelecionarTodosVisiveis}
-                className="flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-muted-foreground bg-background transition-colors hover:bg-surface-elevated focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
+                className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border border-muted-foreground bg-background transition-colors hover:bg-surface-elevated focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
               >
                 {selecionados && contacts.every((c) => selecionados.has(c.id)) && (
                   <Check size={12} weight="bold" aria-hidden />
@@ -284,7 +284,7 @@ export function ContactsTable({
           <div
             role="row"
             key={c.id}
-            className={`${GRADE} rounded-xl border border-border bg-surface px-4 py-3 shadow-xs transition hover:border-accent-300 hover:shadow-sm max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-3.5 max-md:py-2`}
+            className={`${GRADE} rounded-md border border-border bg-surface px-4 py-3 shadow-xs transition hover:border-accent-300 hover:shadow-sm max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-3.5 max-md:py-2`}
           >
             {onAlternarSelecao && (
               <div role="cell" className="max-md:p-0">
@@ -295,7 +295,7 @@ export function ContactsTable({
                   aria-label={`${t("Selecionar contato")} ${displayName(c, t)}`}
                   data-testid={`selecionar-contato-${c.id}`}
                   onClick={() => onAlternarSelecao(c.id)}
-                  className="relative flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-muted-foreground bg-background transition-colors hover:bg-surface-elevated focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent pointer-coarse:before:absolute pointer-coarse:before:-inset-3.5"
+                  className="relative flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border border-muted-foreground bg-background transition-colors hover:bg-surface-elevated focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent pointer-coarse:before:absolute pointer-coarse:before:-inset-3.5"
                 >
                   {selecionados?.has(c.id) && <Check size={12} weight="bold" aria-hidden />}
                 </button>

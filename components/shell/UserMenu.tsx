@@ -70,7 +70,7 @@ export function UserMenu(_props: { noMenuLateral?: boolean } = {}) {
           {initials(user.full_name, user.email)}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[220px] rounded-xl p-1.5">
+      <DropdownMenuContent align="end" className="min-w-[220px] rounded-md p-1.5">
         <div className="px-3 pb-2 pt-1.5">
           <p className="truncate text-sm font-semibold text-foreground">{nome}</p>
           <p className="truncate text-xs text-muted-foreground">{papel ? t(papel) : user.email}</p>

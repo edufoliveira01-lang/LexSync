@@ -50,7 +50,7 @@ export function AlternadorDeSistema({ recolhido }: { recolhido?: boolean }) {
     "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
   return (
     <div className="dz-copy px-3 pb-2 pt-1" role="group" aria-label={t("Ambiente")}>
-      <div className="flex rounded-xl bg-surface-elevated p-1">
+      <div className="flex rounded-md bg-surface-elevated p-1">
         <button type="button" onClick={irParaOSistema} className={cn(base, "text-muted-foreground hover:text-foreground")}>
           <SquaresFour size={14} aria-hidden /> {t("Sistema")}
         </button>
