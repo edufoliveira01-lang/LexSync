@@ -537,3 +537,36 @@ select:not([multiple]):not([size]) {
 :where(main) [class*="border-border"][class*="rounded"]:not([class*="bg-"]):not(button):not(input):not(select):not(textarea):not([role="tab"]):not([role="menuitem"]):not(a):not(svg):not(img):not(span):not([data-state]) {
   background-color: var(--color-surface);
 }
+
+/* ---- Ajustes finos (Sales): fundo branco nos campos e blocos de borda simples, hover só com borda suave, excluir em vermelho ---- */
+
+/* Campos soltos (borda simples, sem fundo próprio) e faixas/cartões de borda simples ganham o fundo branco. */
+:where(main) input[class~="border"]:not([class*="bg-"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+:where(main) select[class~="border"]:not([class*="bg-"]):not(.dz-select),
+:where(main) textarea[class~="border"]:not([class*="bg-"]),
+:where(main) select[class*="bg-background"],
+:where(main) input[class*="bg-background"]:not([type="checkbox"]):not([type="radio"]),
+:where(main) textarea[class*="bg-background"] {
+  background-color: var(--color-surface);
+}
+:where(main) [class~="border"][class*="rounded"]:not([class*="bg-"]):not(button):not(input):not(select):not(textarea):not([role="tab"]):not([role="menuitem"]):not(a):not(svg):not(img):not(span):not([data-state]) {
+  background-color: var(--color-surface);
+}
+
+/* Passar o mouse numa linha/cartão: só a borda suave, igual à tabela de Contatos (nunca o fundo azul). */
+:where(main) [class*="hover:bg-accent"]:not(button):not([role="menuitem"]):not([role="tab"]):not([role="option"]):hover {
+  background-color: inherit;
+  box-shadow: inset 0 0 0 1px var(--color-accent-300);
+}
+
+/* Botão de excluir/remover: vermelho cheio com texto branco (como o destrutivo do Sales). */
+button[class*="text-destructive"]:not([class*="w-7"]):not([class*="w-8"]):not([class*="w-9"]):not([class*="size-"]):not(:disabled),
+button[class*="text-error"]:not([class*="hover:text-error"]):not([class*="w-7"]):not([class*="w-8"]):not([class*="w-9"]):not([class*="size-"]):not(:disabled) {
+  background-color: var(--color-error);
+  border-color: var(--color-error);
+  color: #fff;
+  font-weight: 600;
+}
+button[class*="text-destructive"]:not([class*="w-7"]):not([class*="w-8"]):not([class*="w-9"]):not([class*="size-"]):not(:disabled):hover {
+  filter: brightness(0.95);
+}
