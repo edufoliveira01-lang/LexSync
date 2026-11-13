@@ -59,6 +59,7 @@ import {
 } from "@/lib/notifications/mentions";
 import { cn } from "@/lib/utils";
 import { ProgramarMensagem } from "./ProgramarMensagem";
+import { AtivarFollowup } from "./AtivarFollowup";
 import { resolveSharedContact } from "@/lib/messaging/contact-card";
 import { BarraDeRecursos } from "@/components/inbox/composer/BarraDeRecursos";
 import { type Recurso } from "@/lib/inbox/recursos";
@@ -94,6 +95,10 @@ function avisoDeRascunhoIndisponivel(motivo: MotivoDeRecusa, t: (texto: string) 
 
 interface Props {
   conversationId: string;
+  /** O contato da conversa: habilita o botão "Follow-up" ao lado de Programar. */
+  contactId?: string | null;
+  followupSomenteLeitura?: boolean;
+  podePararFollowup?: boolean;
   initialDraft?: string;
   initialMode?: "reply" | "note";
   onDraftChange?: (text: string, mode: "reply" | "note") => void;
@@ -174,6 +179,9 @@ interface Props {
 export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
   {
     conversationId,
+    contactId = null,
+    followupSomenteLeitura = false,
+    podePararFollowup = false,
     initialDraft = "",
     initialMode = "reply",
     active = true,
@@ -1147,6 +1155,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
         </div>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
             <div id="slot-acoes-da-conversa" className="flex flex-wrap items-center justify-end gap-1" />
+            {mode === "reply" ? <AtivarFollowup conversationId={conversationId} contactId={contactId} somenteLeitura={followupSomenteLeitura} podeParar={podePararFollowup} /> : null}
             {mode === "reply" ? <ProgramarMensagem conversationId={conversationId} /> : null}
           </div>
         </div>

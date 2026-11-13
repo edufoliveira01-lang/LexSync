@@ -1169,6 +1169,9 @@ export function InboxLayout({
               key={rascunhoVivo ? `rascunho:${rascunhoVivo.conversationId}` : "composer"}
               ref={composerRef}
               conversationId={selectedConversation.id}
+              contactId={selectedConversation.contact_id ?? null}
+              followupSomenteLeitura={Boolean(user.support)}
+              podePararFollowup={(user.is_platform_admin && !user.support) || roleAtLeast(activeOrg?.role, "manager")}
               blockedReason={supportReadonly ? "Acompanhamento somente leitura" : blockedReason}
               janelaFechada={motivoDaJanela}
               disabled={selectedConversation.status === "closed"}
