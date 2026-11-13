@@ -71,9 +71,13 @@ export function TenantForm({ initial, onSave, onSaved }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl">
+    <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
       <Card className="space-y-4 p-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div>
+          <h2 className="text-base font-semibold">{t("Identificação do escritório")}</h2>
+          <p className="text-sm text-muted-foreground">{t("Como o escritório se apresenta e quem responde pelos dados pessoais.")}</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="display_name">{t("Nome de exibição")}</Label>
             <Input
@@ -101,7 +105,7 @@ export function TenantForm({ initial, onSave, onSaved }: Props) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="dpo_email">{t("DPO email")}</Label>
+            <Label htmlFor="dpo_email">{t("E-mail do encarregado de dados (DPO)")}</Label>
             <Input
               id="dpo_email"
               type="email"
@@ -109,6 +113,15 @@ export function TenantForm({ initial, onSave, onSaved }: Props) {
               onChange={(e) => set("dpo_email", e.target.value || null)}
             />
           </div>
+        </div>
+      </Card>
+
+      <Card className="space-y-4 p-6">
+        <div>
+          <h2 className="text-base font-semibold">{t("Região e idioma")}</h2>
+          <p className="text-sm text-muted-foreground">{t("Fuso horário, idioma, moeda e o país que define a regra do documento do contato.")}</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="timezone">{t("Fuso horário")}</Label>
             <Select value={form.timezone} onValueChange={(v) => set("timezone", v)}>
@@ -208,6 +221,15 @@ export function TenantForm({ initial, onSave, onSaved }: Props) {
               </p>
             )}
           </div>
+        </div>
+      </Card>
+
+      <Card className="space-y-4 p-6">
+        <div>
+          <h2 className="text-base font-semibold">{t("Privacidade e retenção")}</h2>
+          <p className="text-sm text-muted-foreground">{t("Por quanto tempo guardar mídias e onde o titular lê a política de privacidade.")}</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="media_retention_days">{t("Retenção de mídia (dias)")}</Label>
             <Input
@@ -258,12 +280,13 @@ export function TenantForm({ initial, onSave, onSaved }: Props) {
           </div>
         </div>
 
-        <div className="flex sm:justify-end">
-          <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
-            {isPending ? t("Salvando…") : t("Salvar")}
-          </Button>
-        </div>
       </Card>
+
+      <div className="flex sm:justify-end">
+        <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+          {isPending ? t("Salvando…") : t("Salvar")}
+        </Button>
+      </div>
     </form>
   );
 }

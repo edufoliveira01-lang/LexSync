@@ -68,13 +68,28 @@ export function ProfileForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl">
-      <Card className="space-y-4 p-6">
+    <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
+      <Card className="flex items-center gap-4 p-6">
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt="" className="h-16 w-16 shrink-0 rounded-full border border-border object-cover" />
+        ) : (
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-accent-50 text-xl font-semibold text-accent-700">
+            {(fullName || email || "?").slice(0, 1).toUpperCase()}
+          </span>
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-lg font-semibold">{fullName || t("Seu nome")}</p>
+          <p className="truncate text-sm text-muted-foreground">{email}</p>
+        </div>
+      </Card>
+      <Card className="space-y-5 p-6">
+        <h2 className="text-base font-semibold">{t("Seus dados")}</h2>
         <div className="space-y-2">
-          <Label htmlFor="email">{t("Email")}</Label>
+          <Label htmlFor="email">{t("E-mail de acesso")}</Label>
           <Input id="email" value={email} disabled />
           <p className="text-xs text-muted-foreground">
-            {t("Trocar email — em breve.")}
+            {t("Para trocar o e-mail de acesso, peça a quem administra o escritório.")}
           </p>
         </div>
         <div className="space-y-2">
@@ -126,7 +141,7 @@ export function ProfileForm({
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="avatar_url">{t("Avatar URL")}</Label>
+          <Label htmlFor="avatar_url">{t("Foto (endereço da imagem)")}</Label>
           <Input
             id="avatar_url"
             type="url"
@@ -135,7 +150,7 @@ export function ProfileForm({
             onChange={(e) => setAvatarUrl(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            {t("Upload de arquivo — em breve. Cole uma URL pública.")}
+            {t("Cole o endereço público de uma imagem. O envio de arquivo ainda não está disponível.")}
           </p>
         </div>
         <div className="flex sm:justify-end">

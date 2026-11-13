@@ -29,6 +29,7 @@ import {
 import { ROTULO_DO_PAPEL } from "@/lib/auth/types";
 import type { PapelMinimoDeMfa } from "@/lib/auth/politica-mfa";
 import { PainelDeChamadaDeVoz } from "@/components/voice/PainelDeChamadaDeVoz";
+import { DeviceMobile, Key, Phone, ShieldCheck, UsersThree } from "@/lib/ui/icons";
 import { useT } from "@/hooks/i18n/useT";
 
 export function SecurityClient({
@@ -122,10 +123,15 @@ export function SecurityClient({
           Ele recarrega a página ao terminar, e o servidor reavalia o estado. */}
       {ativando ? <MfaEnrollModal motivo="escolha" /> : null}
 
-      <Card className="space-y-3 p-6">
+      <Card className="space-y-4 p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-sm font-semibold">{t("Verificação em duas etapas")}</h2>
+            <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-accent">
+            <ShieldCheck size={18} aria-hidden />
+          </span>
+          <h2 className="text-base font-semibold">{t("Verificação em duas etapas")}</h2>
+        </div>
             <p className="mt-1 text-xs text-muted-foreground">
               {t(
                 "Além da senha, o sistema pede um código de 6 dígitos que só existe no seu celular. É a proteção que segura uma senha vazada.",
@@ -164,15 +170,20 @@ export function SecurityClient({
             )}
           </div>
         ) : (
-          <Button size="sm" onClick={() => setAtivando(true)}>
+          <Button onClick={() => setAtivando(true)}>
             {t("Ativar")}
           </Button>
         )}
       </Card>
 
       {podeExigirDaEquipe ? (
-        <Card className="space-y-3 p-6">
-          <h2 className="text-sm font-semibold">{t("Exigir da equipe")}</h2>
+        <Card className="space-y-4 p-6">
+          <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-accent">
+            <UsersThree size={18} aria-hidden />
+          </span>
+          <h2 className="text-base font-semibold">{t("Exigir da equipe")}</h2>
+        </div>
           <p className="text-xs text-muted-foreground">
             {t(
               "Escolha quem precisa configurar a verificação em duas etapas. Ligue se a sua equipe mexe com dados de clientes — é a diferença entre uma senha vazada virar um susto ou virar um vazamento.",
@@ -232,8 +243,13 @@ export function SecurityClient({
         </Card>
       ) : null}
 
-      <Card className="space-y-3 p-6">
-        <h2 className="text-sm font-semibold">{t("Códigos de recuperação")}</h2>
+      <Card className="space-y-4 p-6">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-accent">
+            <Key size={18} aria-hidden />
+          </span>
+          <h2 className="text-base font-semibold">{t("Códigos de recuperação")}</h2>
+        </div>
         <p className="text-xs text-muted-foreground">
           {t("Use se perder acesso ao autenticador. Cada código é de uso único.")}
         </p>
@@ -272,8 +288,13 @@ export function SecurityClient({
       <PainelDeChamadaDeVoz />
 
       {mfaEnrolled ? (
-        <Card className="space-y-3 p-6">
-          <h2 className="text-sm font-semibold">{t("Dispositivos confiáveis")}</h2>
+        <Card className="space-y-4 p-6">
+          <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-accent">
+            <DeviceMobile size={18} aria-hidden />
+          </span>
+          <h2 className="text-base font-semibold">{t("Dispositivos confiáveis")}</h2>
+        </div>
           <p className="text-xs text-muted-foreground">
             {t("Navegadores onde você marcou “Confiar neste dispositivo”. Neles o login não pede o código por 30 dias.")}
           </p>
@@ -309,8 +330,13 @@ export function SecurityClient({
         </Card>
       ) : null}
 
-      <Card className="space-y-3 p-6">
-        <h2 className="text-sm font-semibold">{t("Sessões ativas")}</h2>
+      <Card className="space-y-4 p-6">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-accent">
+            <Phone size={18} aria-hidden />
+          </span>
+          <h2 className="text-base font-semibold">{t("Sessões ativas")}</h2>
+        </div>
         <p className="text-xs text-muted-foreground">
           {t("Listagem de sessões — em breve. Por enquanto, deslogue todos os dispositivos:")}
         </p>
