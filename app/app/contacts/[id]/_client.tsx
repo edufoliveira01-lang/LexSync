@@ -5,9 +5,11 @@ import { useLocaleDeData } from "@/hooks/i18n/useLocaleDeData";
 import { useT } from "@/hooks/i18n/useT";
 import { useState } from "react";
 import { format } from "date-fns";
-import { ShieldCheck, PencilSimple, LockOpen } from "@/lib/ui/icons";
+import { ArrowLeft, ChatCircle, ShieldCheck, PencilSimple, LockOpen } from "@/lib/ui/icons";
+import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { AvatarDoContato } from "@/components/ui/avatar-do-contato";
 import { FichasDoModulo } from "@/components/modulos/FichasDoModulo";
 import { ChipDeEtiqueta } from "@/components/tags/ChipDeEtiqueta";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +51,7 @@ import { AnonymizeDialog } from "@/components/contacts/AnonymizeDialog";
 import { PropostasDeDado } from "@/components/contacts/PropostasDeDado";
 import { RoteirosDoContato } from "@/components/contacts/RoteirosDoContato";
 import { UltimasComprasDoContato } from "@/components/contacts/UltimasCompras";
-import { ConversaNoDossie } from "@/components/kanban/ConversaNoDossie";
+import { ExcluirContatoDialog } from "@/components/contacts/ExcluirContatoDialog";
 import { rotuloParaAEquipe } from "@/lib/contacts/rotulo-do-contato";
 import { ORIGEM_AGENDA_DO_CELULAR, origemDoContato } from "@/lib/leads/origem-do-contato";
 import { phoneForDisplay } from "@/lib/channels/phone-variants";
@@ -79,7 +81,7 @@ function NivelDaOrigem({ rotulo, valor }: { rotulo: string; valor: string | null
   if (!valor) return null;
   return (
     <div>
-      <dt className="text-xs uppercase text-muted-foreground">{rotulo}</dt>
+      <dt className="text-xs font-medium text-muted-foreground">{rotulo}</dt>
       <dd className="mt-1 break-words">{valor}</dd>
     </div>
   );
@@ -117,7 +119,7 @@ function BlocoDeTelefones({ contato, t }: { contato: Contact; t: (texto: string)
   const extras = contato.additional_phones ?? [];
   return (
     <div className="md:col-span-2">
-      <dt className="text-xs uppercase text-muted-foreground">{t("Telefones")}</dt>
+      <dt className="text-xs font-medium text-muted-foreground">{t("Telefones")}</dt>
       <dd className="mt-1">
         <ul className="flex flex-col gap-2">
           {contato.phone_number && (
@@ -175,6 +177,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
   // chamá-los depois mudaria a ordem dos hooks entre renderizações.
   const vocabularioDeEtiquetas = useContactTagVocabulary(activeOrg?.orgId ?? null);
   const canonicalTags = canonicalTagsDoFunil(pipelineQuery.data?.pipeline.settings ?? null);
+  const [excluirOpen, setExcluirOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [anonOpen, setAnonOpen] = useState(false);
   // Juntar com outra ficha (spec 31, PR A): gestor, mesmo gate da fusão. Fica
@@ -261,7 +264,11 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
   );
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-5">
+      <Link href="/app/contacts" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline">
+        <ArrowLeft size={14} aria-hidden /> {t("Contatos")}
+      </Link>
+
       {contact.is_anonymized && (
         <div
           role="alert"
@@ -277,16 +284,26 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
         </div>
       )}
 
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0">
+      <header className="flex flex-col gap-4 rounded-md border border-border bg-surface p-5 shadow-xs sm:flex-row sm:items-start sm:gap-5">
+        <AvatarDoContato id={contact.id} nome={displayName} tamanho={64} />
+        <div className="min-w-0 flex-1">
           {/* Sem truncar: nome é dado que a tela existe pra mostrar, e cortar
               com reticências sem um jeito de ver o resto violaria o princípio
               de nunca esconder informação crítica. Deixa quebrar linha. */}
-          <h1 className="break-words text-2xl font-semibold tracking-tight">{displayName}</h1>
+          <h1 className="break-words text-[22px] font-semibold leading-tight tracking-tight text-foreground">{displayName}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {contact.email && <span>{contact.email}</span>}
             {contact.email && contact.phone_number && <span>•</span>}
             {contact.phone_number && <span>{phoneForDisplay(contact.phone_number)}</span>}
+            {contact.conversa && (
+              <Link
+                href={`/app/inbox?id=${contact.conversa.id}`}
+                className="inline-flex items-center gap-1 font-medium text-emerald-600 hover:underline"
+              >
+                <ChatCircle size={14} aria-hidden /> {t("abrir conversa")}
+                {contact.conversa.unread > 0 && ` (${contact.conversa.unread} ${t("sem ler")})`}
+              </Link>
+            )}
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
             {contact.tags.map((t) => (
@@ -311,7 +328,18 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
           </div>
         </div>
         {!contact.is_anonymized && user.support?.access_mode !== "support_readonly" && (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+            <DialButton contactId={contactId} hasPhone={!!contact.phone_number} />
+            <Button onClick={() => setEditOpen(true)} className="shrink-0">
+              <PencilSimple size={16} weight="bold" aria-hidden />
+              <span>{t("Editar")}</span>
+            </Button>
+          </div>
+        )}
+      </header>
+
+      {!contact.is_anonymized && user.support?.access_mode !== "support_readonly" && (
+          <div className="flex flex-wrap items-center gap-2 [&_button]:h-9 [&_button]:text-xs">
             {/* O CAMINHO DE VOLTA do descadastro. Sem ele, o contato que pediu
                 para sair — ou que caiu num falso positivo — ficava preso para
                 sempre: `before-send` recusa todo envio, o funil não cria lead,
@@ -445,7 +473,6 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
                 </span>
               </Button>
             )}
-            <DialButton contactId={contactId} hasPhone={!!contact.phone_number} />
             {podeJuntar && (
               <Button
                 variant="outline"
@@ -456,15 +483,22 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
                 <span>{t("Juntar com outra ficha")}</span>
               </Button>
             )}
-            <Button variant="outline" onClick={() => setEditOpen(true)} className="shrink-0">
-              <PencilSimple size={16} weight="bold" aria-hidden />
-              <span>{t("Editar")}</span>
+            <Button
+              variant="ghost"
+              className="ml-auto shrink-0 text-error-fg hover:text-error-fg"
+              data-testid="excluir-contato"
+              onClick={() => setExcluirOpen(true)}
+            >
+              <span>{t("Excluir contato")}</span>
             </Button>
           </div>
-        )}
-      </header>
+      )}
+      <ExcluirContatoDialog
+        contato={excluirOpen ? contact : null}
+        onClose={() => setExcluirOpen(false)}
+        aoExcluir={() => window.location.assign("/app/contacts")}
+      />
 
-      <ConversaNoDossie conversa={contact.conversa} />
 
       {/* ANTES das abas, e não dentro de uma delas: é o único conteúdo desta
           tela que PEDE uma ação. Enterrado numa aba, viraria pendência que só
@@ -489,17 +523,17 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
           <Card className="p-4">
             <dl className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">{t("Nome")}</dt>
+                <dt className="text-xs font-medium text-muted-foreground">{t("Nome")}</dt>
                 <dd className="mt-1">{contact.name ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">{t("Nome")} · WhatsApp</dt>
+                <dt className="text-xs font-medium text-muted-foreground">{t("Nome")} · WhatsApp</dt>
                 <dd className="mt-1">{contact.display_name ?? "—"}</dd>
               </div>
               {contact.address_book_name && (
                 <div>
                   {/* Só a equipe vê: nenhuma mensagem usa este nome (PR #2439). */}
-                  <dt className="text-xs uppercase text-muted-foreground">{t("Nome na agenda do celular")}</dt>
+                  <dt className="text-xs font-medium text-muted-foreground">{t("Nome na agenda do celular")}</dt>
                   <dd className="mt-1">{contact.address_book_name}</dd>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {t("Só a equipe vê. Para usar em mensagens, copie para o nome.")}
@@ -507,7 +541,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
                 </div>
               )}
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">Email</dt>
+                <dt className="text-xs font-medium text-muted-foreground">Email</dt>
                 <dd className="mt-1">{contact.email ?? "—"}</dd>
               </div>
               {/*
@@ -518,7 +552,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
                 <BlocoDeTelefones contato={contact} t={t} />
               ) : (
                 <div>
-                  <dt className="text-xs uppercase text-muted-foreground">{t("Telefone")}</dt>
+                  <dt className="text-xs font-medium text-muted-foreground">{t("Telefone")}</dt>
                   <dd className="mt-1">
                     {contact.phone_number ? phoneForDisplay(contact.phone_number) : "—"}
                     {contact.phone_number && textoDoTipoDoTelefone(contact.phone_type, t) && (
@@ -531,7 +565,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
               )}
               {linksDoContato.length > 0 && (
                 <div>
-                  <dt className="text-xs uppercase text-muted-foreground">{t("Links")}</dt>
+                  <dt className="text-xs font-medium text-muted-foreground">{t("Links")}</dt>
                   <dd className="mt-1">
                     <ListaDeLinks links={linksDoContato} />
                   </dd>
@@ -546,7 +580,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
                 aniversário de ontem para quem olha.
               */}
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">
+                <dt className="text-xs font-medium text-muted-foreground">
                   {t("Data de nascimento")}
                 </dt>
                 <dd className="mt-1">
@@ -555,7 +589,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
               </div>
               {(contact.zip_code || contact.street || contact.city || contact.state) && (
                 <div className="sm:col-span-2">
-                  <dt className="text-xs uppercase text-muted-foreground">{t("Endereço")}</dt>
+                  <dt className="text-xs font-medium text-muted-foreground">{t("Endereço")}</dt>
                   <dd className="mt-1">
                     {[contact.street, contact.number, contact.complement, contact.district, contact.city, contact.state, contact.zip_code]
                       .filter(Boolean)
@@ -571,7 +605,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
                 anúncio — mesmo com o `utm_source` da campanha gravado ao lado.
               */}
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">{t("Origem")}</dt>
+                <dt className="text-xs font-medium text-muted-foreground">{t("Origem")}</dt>
                 <dd className="mt-1">
                   {origem.origem === ORIGEM_AGENDA_DO_CELULAR ? t("Agenda do celular") : origem.origem}
                 </dd>
@@ -589,7 +623,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
               <NivelDaOrigem rotulo={t("Posicionamento")} valor={origem.posicionamento} />
               {origem.semPosicionamentoDeAnuncio && (
                 <div>
-                  <dt className="text-xs uppercase text-muted-foreground">
+                  <dt className="text-xs font-medium text-muted-foreground">
                     {t("Posicionamento")}
                   </dt>
                   <dd className="mt-1 text-sm text-muted-foreground">
@@ -598,7 +632,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
                 </div>
               )}
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">{t("Última atividade")}</dt>
+                <dt className="text-xs font-medium text-muted-foreground">{t("Última atividade")}</dt>
                 <dd className="mt-1">
                   {contact.last_activity_at
                     ? format(new Date(contact.last_activity_at), "dd/MM/yyyy HH:mm", {
@@ -608,7 +642,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
                 </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">{t("Criado em")}</dt>
+                <dt className="text-xs font-medium text-muted-foreground">{t("Criado em")}</dt>
                 <dd className="mt-1">
                   {format(new Date(contact.created_at), "dd/MM/yyyy", { locale: localeDaData })}
                 </dd>
@@ -621,7 +655,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
               */}
               {clientesLigado && contact.first_service_at && (
                 <div>
-                  <dt className="text-xs uppercase text-muted-foreground">
+                  <dt className="text-xs font-medium text-muted-foreground">
                     {t("Cliente desde")}
                   </dt>
                   <dd className="mt-1">
@@ -632,7 +666,7 @@ export function ContactDetailClient({ contactId, paineisDeModulo = [], acessosMc
                 </div>
               )}
               <div>
-                <dt className="text-xs uppercase text-muted-foreground">Tags</dt>
+                <dt className="text-xs font-medium text-muted-foreground">Tags</dt>
                 <dd className="mt-1 flex flex-wrap gap-1">
                   {contact.tags.length === 0
                     ? "—"

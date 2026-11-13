@@ -199,21 +199,21 @@ main:has([data-realtime-status]) { padding: 0; overflow: hidden; }
 [data-testid="filtros-avancados"] button { height: 28px; padding-inline: 12px; }
 [data-testid="filtros-avancados"] > div.flex { gap: 6px; }
 /* abas: uma linha só, rolagem sem barra; sublinhado azul na ativa */
-[role="tablist"] ~ span.w-4, span.w-4.shrink-0[aria-hidden] { display: none; }
-[role="tablist"] {
+[data-realtime-status] [role="tablist"] ~ span.w-4, [data-realtime-status] span.w-4.shrink-0[aria-hidden] { display: none; }
+[data-realtime-status] [role="tablist"] {
   flex-wrap: nowrap !important;
   justify-content: flex-start !important;
   gap: 22px !important;
   overflow: visible;
 }
-[role="tablist"] [role="tab"] { font-weight: 600; font-size: 12px; letter-spacing: 0; }
-[role="tablist"] [role="tab"][data-state="active"] {
+[data-realtime-status] [role="tablist"] [role="tab"] { font-weight: 600; font-size: 12px; letter-spacing: 0; }
+[data-realtime-status] [role="tablist"] [role="tab"][data-state="active"] {
   color: var(--color-accent);
   border-bottom-color: var(--color-accent);
   box-shadow: none;
   outline: none;
 }
-[data-theme="dark"] [role="tablist"] [role="tab"][data-state="active"] { color: var(--color-accent-300); border-bottom-color: var(--color-accent-400); }
+[data-theme="dark"] [data-realtime-status] [role="tablist"] [role="tab"][data-state="active"] { color: var(--color-accent-300); border-bottom-color: var(--color-accent-400); }
 
 /* ---- linhas de conversa ---- */
 div.relative.flex.w-full.items-start.border-b { border-color: var(--color-border); }
@@ -354,7 +354,7 @@ button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px r
 .menu-de-filtros [data-testid="filtros-avancados"] > div.flex { gap: 6px; }
 .menu-de-filtros button[aria-pressed] { height: 30px; padding-inline: 12px; font-size: 12.5px; }
 .titulo-da-lista button { box-shadow: none; }
-[role="tablist"] [role="tab"] { padding-bottom: 8px; }
+[data-realtime-status] [role="tablist"] [role="tab"] { padding-bottom: 8px; }
 
 /* ============================== 12. Caixa travada até assumir ============================== */
 .aviso-assumir { background: color-mix(in srgb, var(--color-accent) 7%, white); }
@@ -473,3 +473,7 @@ header.dz-topbar {
 @media (min-width: 768px) {
   main > .md\:p-6 { padding: 0; }
 }
+
+/* Abas no desenho do Sales (fora do Inbox): barra branca com cantos de 12px; a ativa com a tinta suave do azul. */
+[role="tablist"][data-orientation] [role="tab"][data-state="active"] { background: var(--color-accent-50); color: var(--color-accent-700); box-shadow: none; }
+[data-theme="dark"] [role="tablist"][data-orientation] [role="tab"][data-state="active"] { background: var(--color-accent-soft); color: var(--color-accent-300); }

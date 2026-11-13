@@ -82,8 +82,12 @@ beforeEach(() => {
 });
 
 describe("caixas de seleção da lista de contatos", () => {
-  it("quem pode editar vê uma caixa por linha mais o 'selecionar todas'", () => {
+  it("quem pode editar vê uma caixa por linha mais o 'selecionar todas' — depois de entrar no modo Selecionar", async () => {
+    const user = userEvent.setup();
     renderLista();
+    // A lista fica limpa (como no Sales): sem caixas até a pessoa escolher "Selecionar".
+    expect(caixas()).toHaveLength(0);
+    await user.click(screen.getByTestId("modo-selecao"));
     // Controle positivo: a consulta acha as caixas quando elas existem, então
     // o zero do caso de baixo é ausência, e não sonda cega.
     expect(caixas()).toHaveLength(3);
@@ -102,8 +106,12 @@ describe("caixas de seleção da lista de contatos", () => {
   it("o botão 'Selecionar todos' do celular marca todas as linhas", async () => {
     const user = userEvent.setup();
     renderLista();
+    await user.click(screen.getByTestId("modo-selecao"));
     await user.click(screen.getByRole("button", { name: "Selecionar todos os contatos visíveis" }));
     expect(caixas()).toHaveLength(3);
     for (const caixa of caixas()) expect(caixa).toHaveAttribute("aria-checked", "true");
+    // Marcar de novo desmarca tudo (antes o "todas" só sabia marcar).
+    await user.click(screen.getByRole("button", { name: "Selecionar todos os contatos visíveis" }));
+    for (const caixa of caixas()) expect(caixa).toHaveAttribute("aria-checked", "false");
   });
 });

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { ContactsListClient } from "@/app/app/contacts/_client";
 import { FunisTela } from "@/app/app/kanban/_components/FunisTela";
+import { ContactDetailClient } from "@/app/app/contacts/[id]/_client";
 import { RadarTela } from "@/app/app/radar/_components/RadarTela";
 
 /** Telas disponíveis no preview. Cada uma é o componente REAL da tela; os dados vêm do mock de rede. */
@@ -19,6 +20,7 @@ const ETAPAS = {
 const TELAS: Record<string, () => React.ReactNode> = {
   contacts: () => <ContactsListClient />,
   radar: () => <RadarTela />,
+  contato: () => <ContactDetailClient contactId="c0000000-0000-4000-8000-000000000001" />,
   kanban: () => <FunisTela funis={FUNIS} arquivados={[]} podeGerenciar podeImportar etapas={ETAPAS} />,
 };
 

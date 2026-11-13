@@ -11082,6 +11082,8 @@ export const DICIONARIO: Traducoes = {
 
   // ─── Auth: login, cadastro, recuperação de senha, MFA, códigos de recuperação ───
   "Entrar": { es: "Entrar" },
+  "abrir conversa": { es: "abrir conversación" },
+  "Concluir seleção": { es: "Terminar selección" },
   "Novos nos últimos 7 dias": { es: "Nuevos en los últimos 7 días" },
   "A lista única de pessoas que falaram com o escritório: telefone, etiquetas, conversas e histórico. Os atendimentos e avisos usam estes cadastros.": { es: "La lista única de personas que hablaron con la oficina: teléfono, etiquetas, conversaciones e historial. Las atenciones y avisos usan estos registros." },
   "Minha conta": { es: "Mi cuenta" },

@@ -96,6 +96,8 @@ export function ContactsListClient() {
   const podeAgirEmLote = usePermission("contact.update");
   const podeMudarResponsavel = usePermission("contact.carteira");
   const selecao = useSelecaoEmLote();
+  // As caixas de seleção só aparecem no modo "Selecionar" (como no Sales a lista fica limpa); sair do modo limpa a seleção.
+  const [modoSelecao, setModoSelecao] = useState(false);
   const lote = useBulkContacts();
 
   const rodarLote = useCallback(
@@ -133,6 +135,12 @@ export function ContactsListClient() {
     if (clientesLigado) set.add(TAG_DE_CLIENTE);
     return Array.from(set).sort();
   }, [allContacts, clientesLigado]);
+
+  // "Todos" marca o que está na tela e, estando tudo marcado, desmarca (antes só sabia marcar).
+  const alternarTodos = useCallback(() => {
+    if (allContacts.length > 0 && allContacts.every((c) => selecao.selecionados.has(c.id))) selecao.limpar();
+    else selecao.selecionarTodos(allContacts.map((c) => c.id));
+  }, [allContacts, selecao]);
 
   const handleSort = useCallback(
     (column: ContactOrderBy) => {
@@ -221,24 +229,40 @@ export function ContactsListClient() {
         }
       />
 
-      <div role="tablist" aria-label={t("Contatos")} className="inline-flex rounded-xl bg-surface-elevated p-1 text-sm font-semibold">
-        {[
-          { chave: "ativos", rotulo: t("Contatos"), ativo: !soPessoais },
-          { chave: "pessoais", rotulo: t("Pessoais"), ativo: soPessoais },
-        ].map((aba) => (
-          <button
-            key={aba.chave}
-            type="button"
-            role="tab"
-            aria-selected={aba.ativo}
-            data-testid={aba.chave === "pessoais" ? "filtro-pessoais" : undefined}
-            aria-pressed={aba.chave === "pessoais" ? aba.ativo : undefined}
-            onClick={() => setSoPessoais(aba.chave === "pessoais")}
-            className={`rounded-lg px-5 py-2.5 transition-colors ${aba.ativo ? "bg-surface text-accent shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div role="tablist" aria-label={t("Contatos")} className="inline-flex rounded-xl bg-surface-elevated p-1 text-sm font-semibold">
+          {[
+            { chave: "ativos", rotulo: t("Contatos"), ativo: !soPessoais },
+            { chave: "pessoais", rotulo: t("Pessoais"), ativo: soPessoais },
+          ].map((aba) => (
+            <button
+              key={aba.chave}
+              type="button"
+              role="tab"
+              aria-selected={aba.ativo}
+              data-testid={aba.chave === "pessoais" ? "filtro-pessoais" : undefined}
+              aria-pressed={aba.chave === "pessoais" ? aba.ativo : undefined}
+              onClick={() => setSoPessoais(aba.chave === "pessoais")}
+              className={`rounded-lg px-5 py-2.5 transition-colors ${aba.ativo ? "bg-surface text-accent shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {aba.rotulo}
+            </button>
+          ))}
+        </div>
+        {podeAgirEmLote && (
+          <Button
+            variant={modoSelecao ? "default" : "outline"}
+            size="sm"
+            aria-pressed={modoSelecao}
+            data-testid="modo-selecao"
+            onClick={() => {
+              if (modoSelecao) selecao.limpar();
+              setModoSelecao(!modoSelecao);
+            }}
           >
-            {aba.rotulo}
-          </button>
-        ))}
+            {modoSelecao ? t("Concluir seleção") : t("Selecionar")}
+          </Button>
+        )}
       </div>
 
       <PainelDeNumeros
@@ -446,7 +470,7 @@ export function ContactsListClient() {
               size="sm"
               variant="outline"
               className="md:hidden"
-              onClick={() => selecao.selecionarTodos(allContacts.map((c) => c.id))}
+              onClick={alternarTodos}
             >
               {t("Selecionar todos os contatos visíveis")}
             </Button>
@@ -463,9 +487,11 @@ export function ContactsListClient() {
               onAlternarSelecao={podeAgirEmLote ? selecao.alternar : undefined}
               onSelecionarTodosVisiveis={
                 podeAgirEmLote
-                  ? () => selecao.selecionarTodos(allContacts.map((c) => c.id))
+                  ? alternarTodos
                   : undefined
               }
+              modoSelecao={modoSelecao}
+              acoesNaLinha={false}
             />
           <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
             <p className="text-sm text-muted-foreground">

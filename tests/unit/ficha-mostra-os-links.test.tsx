@@ -109,7 +109,8 @@ describe("a ficha do contato mostra os links", () => {
     abrirFicha({ cor_favorita: "azul" });
 
     expect(linhaDeLinks()).toBeNull();
-    expect(screen.queryAllByRole("link")).toHaveLength(0);
+    // O único link da ficha sem links gravados é o "← Contatos" de volta à lista.
+    expect(screen.queryAllByRole("link").filter((a) => a.getAttribute("href") !== "/app/contacts")).toHaveLength(0);
   });
 
   it("⭐ javascript: gravado no banco não vira link, e a linha some junto", () => {
