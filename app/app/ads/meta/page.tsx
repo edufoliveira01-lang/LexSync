@@ -58,7 +58,7 @@ export default async function MetaAdsPage() {
     */
     <div
       data-superficie="clara"
-      className="-m-4 flex min-h-[calc(100%+2rem)] flex-col gap-6 bg-bg p-4 text-text sm:-m-6 sm:min-h-[calc(100%+3rem)] sm:p-6"
+      className="flex flex-col gap-6 text-text"
     >
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">{t("Meta Ads")}</h1>

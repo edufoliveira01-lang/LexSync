@@ -87,11 +87,14 @@ const PALAVRAS: Array<[RegExp, string | ((m: string, ...g: string[]) => string)]
   [/\btenant\b/gi, "escritório"],
   [/\broles\b/gi, "papéis"],
   // leads → contatos; card → cartão; custom fields → campos personalizados
-  [/\bleads\b/gi, "contatos"],
-  [/\blead\b/gi, "contato"],
+  [/\bleads\b/gi, (m) => (m[0] === "L" ? "Contatos" : "contatos")],
+  [/\blead\b/gi, (m) => (m[0] === "L" ? "Contato" : "contato")],
   [/\bcustom fields\b/gi, "campos personalizados"],
-  [/\bcards\b/gi, "cartões"],
-  [/\bcard\b/gi, "cartão"],
+  [/\bcards\b/gi, (m) => (m[0] === "C" ? "Cartões" : "cartões")],
+  [/\bcard\b/gi, (m) => (m[0] === "C" ? "Cartão" : "cartão")],
+  // landing page → página do escritório
+  [/\blanding pages\b/gi, (m) => (m[0] === "L" ? "Páginas do escritório" : "páginas do escritório")],
+  [/\blanding page\b/gi, (m) => (m[0] === "L" ? "Página do escritório" : "página do escritório")],
 ];
 
 const memo = new Map<string, string>();

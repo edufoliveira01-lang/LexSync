@@ -77,7 +77,7 @@ export function AgentCard({ agent, canWrite }: Props) {
         <div className="flex shrink-0 items-center gap-1">
           {agent.is_default && (
             <Badge variant="secondary" className="text-xs">
-              {t("default")}
+              {t("Padrão")}
             </Badge>
           )}
           <AgentStatusBadge status={status} />
@@ -90,11 +90,11 @@ export function AgentCard({ agent, canWrite }: Props) {
       <dl className="grid grid-cols-2 gap-2 pt-1 text-xs">
         <div>
           <dt className="text-muted-foreground">{t("Tipo")}</dt>
-          <dd className="font-mono">{agent.kind ?? "rag_bot"}</dd>
+          <dd>{t(agent.kind === "mcp_agent" ? "Atendente de IA" : "Assistente com base de conhecimento")}</dd>
         </div>
         <div>
           <dt className="text-muted-foreground">{t("Prioridade")}</dt>
-          <dd className="font-mono">{agent.priority ?? "—"}</dd>
+          <dd className="tabular-nums">{agent.priority ?? "—"}</dd>
         </div>
       </dl>
       <div className="mt-auto pt-2">

@@ -153,7 +153,7 @@ export function PlanosDeTarefa() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-6">
+    <div className="space-y-4">
       <div>
         <Link
           href="/app/tasks"

@@ -15,7 +15,11 @@ export function areaDaRota(caminho: string): string | null {
     }
   }
   if (pathname === "/app/settings" || pathname.startsWith("/app/settings/")) return "Configurações";
-  if (!melhor) return null;
+  if (!melhor) {
+    // A tela-hub de um grupo (ex.: /app/analise) também leva o rótulo da área.
+    const hub = NAV_GROUPS.find((g) => g.hub && (pathname === g.hub.href || pathname.startsWith(g.hub.href + "/")));
+    return hub && hub.id !== "organizacao" ? hub.label : null;
+  }
   if (melhor.group === "organizacao") return "Configurações";
   return NAV_GROUPS.find((g) => g.id === melhor!.group)?.label ?? null;
 }
