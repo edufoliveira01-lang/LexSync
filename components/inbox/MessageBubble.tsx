@@ -130,6 +130,8 @@ export function MessageBubble({
   podeReenviarDeOutros = false,
 }: Props) {
   const [editando, setEditando] = useState(false);
+  const textoCitado = (message.metadata as Record<string, unknown> | null | undefined)?.reply_to_body;
+  const citacaoSoTexto = typeof textoCitado === "string" && textoCitado.trim() ? textoCitado.trim() : null;
   const [texto, setTexto] = useState(message.body ?? "");
   const [apagando, setApagando] = useState(false);
   const [ocultando, setOcultando] = useState(false);
@@ -449,6 +451,21 @@ export function MessageBubble({
           Mostra de quem era e um trecho. `line-clamp-2` porque serve para
           reconhecer, não para reler: a original está logo acima no histórico.
         */}
+        {/* O cliente respondeu a uma mensagem (citou no WhatsApp), mas a original não veio nesta página da conversa ou não foi
+            encontrada: o texto citado que o WhatsApp mandou junto (`reply_to_body`) aparece mesmo assim — ou, sem texto, o aviso de que
+            é uma resposta. Antes, sem a original carregada, a citação sumia e a resposta parecia sem contexto. */}
+        {!citada && (citacaoSoTexto !== null || message.reply_to_message_id) && (
+          <div
+            data-testid="citacao-sem-original"
+            className={cn(
+              "mb-1 rounded-md border-l-2 px-2 py-1 text-xs",
+              isOutbound ? "border-primary-foreground/50 bg-primary-foreground/10" : "border-primary bg-background/60",
+            )}
+          >
+            <div className="font-medium opacity-80">{t("Em resposta a")}</div>
+            <div className="line-clamp-2 wrap-anywhere opacity-70">{citacaoSoTexto ?? t("uma mensagem anterior")}</div>
+          </div>
+        )}
         {citada && (
           <div
             className={cn(

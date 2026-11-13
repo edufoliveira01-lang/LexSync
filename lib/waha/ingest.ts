@@ -1054,13 +1054,32 @@ function contextoDoBaileys(p: WahaPayload): Record<string, unknown> | null {
 function citacaoDoPayload(p: WahaPayload): { id: string; texto: string | null } | null {
   const direto = objetoSimples(p.replyTo);
   const contexto = contextoDoBaileys(p);
-  const id = textoNaoVazio(direto?.id) ?? textoNaoVazio(contexto?.stanzaId);
+  // Outros motores do WAHA guardam a citação em outro lugar: o WEBJS em `_data.quotedStanzaID` + `_data.quotedMsg`, e o GOWS em
+  // `_data.Message.<tipo>.contextInfo` (com `StanzaID` maiúsculo). Sem ler esses, a resposta do cliente a uma mensagem chegava solta.
+  const dados = objetoSimples(p._data);
+  const quotedMsg = objetoSimples(dados?.quotedMsg);
+  const contextoGows = (() => {
+    const m = objetoSimples(dados?.Message);
+    if (!m) return null;
+    for (const valor of Object.values(m)) {
+      const ctx = objetoSimples(objetoSimples(valor)?.contextInfo);
+      if (ctx) return ctx;
+    }
+    return null;
+  })();
+  const id =
+    textoNaoVazio(direto?.id) ??
+    textoNaoVazio(contexto?.stanzaId) ??
+    textoNaoVazio(dados?.quotedStanzaID) ??
+    textoNaoVazio(contextoGows?.stanzaID) ??
+    textoNaoVazio(contextoGows?.StanzaID);
   if (!id) return null;
-  const citada = objetoSimples(contexto?.quotedMessage);
+  const citada = objetoSimples(contexto?.quotedMessage) ?? objetoSimples(contextoGows?.quotedMessage ?? contextoGows?.QuotedMessage);
   const texto =
     textoNaoVazio(direto?.body) ??
     textoNaoVazio(citada?.conversation) ??
     textoNaoVazio(objetoSimples(citada?.extendedTextMessage)?.text) ??
+    textoNaoVazio(quotedMsg?.body) ??
     null;
   return { id, texto };
 }
