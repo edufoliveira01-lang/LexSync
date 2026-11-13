@@ -48,7 +48,11 @@ export async function enviarMensagensProgramadasVencidas(requestId: string): Pro
     .lte("send_at", agora)
     .order("send_at", { ascending: true })
     .limit(LOTE);
-  if (error) throw new Error(error.message);
+  // Sem a tabela (o SQL é aplicado à mão nesta instalação) não há o que enviar: rodada vazia, sem erro a cada minuto.
+  if (error) {
+    if (error.code === "42P01" || /does not exist|schema cache/i.test(error.message)) return { examinadas: 0, enviadas: 0, canceladas: 0, falhas: 0 };
+    throw new Error(error.message);
+  }
 
   let enviadas = 0;
   let canceladas = 0;

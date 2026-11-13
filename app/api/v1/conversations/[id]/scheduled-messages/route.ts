@@ -50,7 +50,7 @@ export async function GET(_req: NextRequest, { params }: RouteParams): Promise<R
     .in("status", ["pending", "sending", "failed"])
     .order("send_at", { ascending: true })
     .limit(50);
-  if (error) return fail("internal_error", t("Não foi possível listar as mensagens programadas."), 500, { requestId });
+  if (error) return ok([], { requestId }); // sem a tabela (SQL ainda não aplicado) a lista é vazia e a conversa segue normal
   return ok(data ?? [], { requestId });
 }
 
@@ -107,7 +107,14 @@ export async function POST(req: NextRequest, { params }: RouteParams): Promise<R
     })
     .select(COLUNAS)
     .single();
-  if (error || !data) return fail("internal_error", t("Não foi possível programar a mensagem."), 500, { requestId });
+  if (error || !data) {
+    // Nesta instalação o SQL é aplicado à mão (docs/sales/SQL-mensagens-programadas.sql): dizer ISSO, em vez de um erro genérico.
+    const semTabela = error?.code === "42P01" || /scheduled_messages/.test(error?.message ?? "") && /does not exist|schema cache/i.test(error?.message ?? "");
+    if (semTabela) {
+      return fail("service_unavailable", t("A tabela das mensagens programadas ainda não existe no banco. Aplique o SQL de mensagens programadas no Supabase."), 503, { requestId });
+    }
+    return fail("internal_error", t("Não foi possível programar a mensagem."), 500, { requestId });
+  }
 
   const quando = new Date(sendAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   void registrarEventoNaConversa({
