@@ -273,9 +273,26 @@ export function ChatThread({
   // Dois acontecimentos iguais em sequência (mesmo texto, mesma pessoa) contam uma história só: fica o mais recente.
   const textoDeEvento = (it: ThreadItem | undefined): string | null =>
     it && it.kind === "note" && ehEventoDaConversa(it.data.body) ? textoDoEvento(it.data.body) : null;
+  // "marcou o atendimento como «triagem»" e "moveu o negócio para «Triagem»" são a mesma história (classificar É mover o funil): quando o
+  // card andou para a mesma etapa, no mesmo minuto ou quase, fica só o "moveu".
+  const semAcento = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const etapaDe = (texto: string | null, verbo: RegExp): string | null => {
+    const m = texto ? verbo.exec(texto) : null;
+    return m?.[1] ? semAcento(m[1]) : null;
+  };
+  const JANELA_MS = 3 * 60 * 1000;
+  const movimentos = items
+    .map((it) => ({ etapa: etapaDe(textoDeEvento(it), /moveu o neg[óo]cio para [«"]([^»"]+)[»"]/i), ts: new Date(it.ts).getTime() }))
+    .filter((m): m is { etapa: string; ts: number } => m.etapa !== null);
   const semRepetidos = items.filter((item, i) => {
     const atual = textoDeEvento(item);
-    return atual === null || textoDeEvento(items[i + 1]) !== atual;
+    if (atual !== null && textoDeEvento(items[i + 1]) === atual) return false;
+    const classificou = etapaDe(atual, /marcou o atendimento como [«"]([^»"]+)[»"]/i);
+    if (classificou) {
+      const ts = new Date(item.ts).getTime();
+      if (movimentos.some((m) => m.etapa === classificou && Math.abs(m.ts - ts) <= JANELA_MS)) return false;
+    }
+    return true;
   });
 
   const groups: { key: string; date: Date; items: ThreadItem[] }[] = [];
