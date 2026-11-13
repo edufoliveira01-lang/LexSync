@@ -451,7 +451,6 @@ export function ContactsListClient() {
               {t("Selecionar todos os contatos visíveis")}
             </Button>
           )}
-          <Card className="overflow-hidden">
             <ContactsTable
               contacts={allContacts}
               orderBy={orderBy}
@@ -468,7 +467,6 @@ export function ContactsListClient() {
                   : undefined
               }
             />
-          </Card>
           <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
             <p className="text-sm text-muted-foreground">
               {allContacts.length} {allContacts.length === 1 ? t("contato") : t("contatos")}
