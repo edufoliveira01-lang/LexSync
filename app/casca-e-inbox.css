@@ -661,3 +661,7 @@ div.relative.flex.w-full.items-start.border-b:nth-child(6n) .h-11.w-11 > span { 
 /* o ícone de "exemplo para a IA" vira um toque discreto, alinhado ao nome */
 div.relative.flex.w-full.items-start.border-b > button[data-testid^="exemplo-ia-"] { margin-top: 10px; margin-right: 8px; opacity: .55; }
 div.relative.flex.w-full.items-start.border-b:hover > button[data-testid^="exemplo-ia-"], div.relative.flex.w-full.items-start.border-b > button[aria-pressed="true"] { opacity: 1; }
+
+/* Abas da lista: as cinco cabem na coluna de 344px sem esconder a primeira */
+[data-realtime-status] [role="tablist"] { padding: 2px 12px 10px !important; gap: 4px !important; }
+[data-realtime-status] [role="tablist"] [role="tab"] { padding: 0 9px !important; font-size: 12px; }
