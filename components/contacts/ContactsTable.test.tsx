@@ -92,7 +92,7 @@ function renderTabela(
 
 function linhaDoContato() {
   const nome = screen.getByText("Web Speed");
-  return nome.closest("tr") as HTMLElement;
+  return nome.closest('[role="row"]') as HTMLElement;
 }
 
 describe("ContactsTable — atalho de edição na linha (issue #2715)", () => {
@@ -142,7 +142,7 @@ describe("ContactsTable — atalho de edição na linha (issue #2715)", () => {
       anonymized_at: "2026-10-02T12:00:00.000Z",
     };
     renderTabela([contato, anonimizado]);
-    const linhaAnon = screen.getByText("Cliente Anonimizado #7").closest("tr") as HTMLElement;
+    const linhaAnon = screen.getByText("Cliente Anonimizado #7").closest('[role="row"]') as HTMLElement;
     expect(within(linhaAnon).queryByRole("button", { name: /Editar contato/ })).toBeNull();
     expect(
       within(linhaDoContato()).getByRole("button", { name: "Editar contato Web Speed" }),

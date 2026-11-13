@@ -13,14 +13,7 @@ import { format, formatRelative, isToday, isYesterday } from "date-fns";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api/client";
 import { CaretDown, CaretUp, ChatCircle, Check, PencilSimple, Trash } from "@/lib/ui/icons";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { AvatarDoContato } from "@/components/ui/avatar-do-contato";
 import { ChipDeEtiqueta } from "@/components/tags/ChipDeEtiqueta";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +52,12 @@ interface Props {
   onSelecionarTodosVisiveis?: () => void;
 }
 
+/** Colunas do cartão de contato (a partir de `md`); a primeira só existe quando há seleção em lote. */
+const GRADE_SEM_SELECAO =
+  "md:grid md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_7rem_6rem_88px] md:items-center md:gap-4";
+const GRADE_COM_SELECAO =
+  "md:grid md:grid-cols-[1.25rem_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_7rem_6rem_88px] md:items-center md:gap-4";
+
 function displayName(c: Contact, t: (texto: string) => string = (texto) => texto): string {
   return rotuloParaAEquipe(c, t);
 }
@@ -95,12 +94,11 @@ function SortableHead({
   const emphasis = "text-foreground";
 
   return (
-    <TableHead className={className}>
+    <div role="columnheader" aria-sort={active ? (orderDir === "asc" ? "ascending" : "descending") : "none"} className={className}>
       <button
         type="button"
         onClick={() => onSort(column)}
-        className="inline-flex items-center gap-1 font-medium hover:text-foreground"
-        aria-sort={active ? (orderDir === "asc" ? "ascending" : "descending") : "none"}
+        className="inline-flex items-center gap-1 font-semibold uppercase tracking-wider hover:text-foreground"
       >
         {label}
         <span className="inline-flex flex-col -space-y-1" aria-hidden>
@@ -116,7 +114,7 @@ function SortableHead({
           />
         </span>
       </button>
-    </TableHead>
+    </div>
   );
 }
 
@@ -131,6 +129,7 @@ export function ContactsTable({
 }: Props) {
   const localeDaData = useLocaleDeData();
   const t = useT();
+  const GRADE = onAlternarSelecao ? GRADE_COM_SELECAO : GRADE_SEM_SELECAO;
   const orgAtiva = useActiveOrg();
   const clientesLigado = orgAtiva?.cliente_pela_agenda === true;
   // O autocompletar de etiquetas do diálogo de edição (issue #2732): o mesmo
@@ -217,16 +216,16 @@ export function ContactsTable({
 
   return (
     <>
-    <Table className="max-md:block">
-      <TableHeader className="max-md:hidden">
-        <TableRow>
+    <div role="table" aria-label={t("Contatos")} className="space-y-2.5">
+      <div role="rowgroup" className="max-md:hidden">
+        <div role="row" className={`${GRADE} px-4 text-[11px] text-text-subtle`}>
           {/*
             Cabeça da seleção em lote (#2484, F3): marca de uma vez tudo o que
             está na tela. Só existe quando a tabela recebe as props de seleção
             — quem não liga o lote continua com a tabela de sempre.
           */}
           {onAlternarSelecao && (
-            <TableHead className="w-[40px]">
+            <div role="columnheader" className="w-5">
               <button
                 type="button"
                 role="checkbox"
@@ -243,7 +242,7 @@ export function ContactsTable({
                   <Check size={12} weight="bold" aria-hidden />
                 )}
               </button>
-            </TableHead>
+            </div>
           )}
           <SortableHead
             label={t("Nome")}
@@ -266,7 +265,7 @@ export function ContactsTable({
             orderDir={orderDir}
             onSort={onSort}
           />
-          <TableHead>{t("Tags")}</TableHead>
+          <div role="columnheader" className="font-semibold uppercase tracking-wider">{t("Tags")}</div>
           <SortableHead
             label={t("Última atividade")}
             column="last_activity_at"
@@ -274,20 +273,21 @@ export function ContactsTable({
             orderDir={orderDir}
             onSort={onSort}
           />
-          <TableHead>{t("Status")}</TableHead>
-          <TableHead className="w-[88px]">
+          <div role="columnheader" className="font-semibold uppercase tracking-wider">{t("Status")}</div>
+          <div role="columnheader" className="w-[88px]">
             <span className="sr-only">{t("Ações")}</span>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody className="max-md:block">
+          </div>
+        </div>
+      </div>
+      <div role="rowgroup" className="space-y-2.5 max-md:block">
         {contacts.map((c) => (
-          <TableRow
+          <div
+            role="row"
             key={c.id}
-            className="cursor-pointer max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-3.5 max-md:px-4 max-md:py-2"
+            className={`${GRADE} rounded-xl border border-border bg-surface px-4 py-3 shadow-xs transition hover:border-accent-300 hover:shadow-sm max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-3.5 max-md:py-2`}
           >
             {onAlternarSelecao && (
-              <TableCell className="max-md:p-0">
+              <div role="cell" className="max-md:p-0">
                 <button
                   type="button"
                   role="checkbox"
@@ -299,25 +299,27 @@ export function ContactsTable({
                 >
                   {selecionados?.has(c.id) && <Check size={12} weight="bold" aria-hidden />}
                 </button>
-              </TableCell>
+              </div>
             )}
-            <TableCell className="font-medium max-md:min-w-0 max-md:flex-1 max-md:p-0 max-md:wrap-anywhere">
+            <div role="cell" className="flex min-w-0 items-center gap-3 font-medium max-md:flex-1 max-md:wrap-anywhere">
+              <AvatarDoContato id={c.id} nome={displayName(c)} />
               <Link
                 href={`/app/contacts/${c.id}`}
-                className="hover:underline max-md:flex max-md:min-h-11 max-md:items-center"
+                className="min-w-0 truncate text-sm font-semibold text-foreground hover:text-accent max-md:flex max-md:min-h-11 max-md:items-center"
               >
                 {displayName(c)}
               </Link>
-            </TableCell>
-            <TableCell className="text-muted-foreground max-md:hidden">
+            </div>
+            <div role="cell" className="min-w-0 truncate text-sm text-muted-foreground max-md:hidden">
               {c.email ?? "—"}
-            </TableCell>
-            <TableCell
-              className={`text-muted-foreground max-md:basis-full max-md:py-0 max-md:pr-0 max-md:text-xs ${recuoSobONome}`}
+            </div>
+            <div
+              role="cell"
+              className={`text-sm text-muted-foreground max-md:order-last max-md:basis-full max-md:py-0 max-md:text-xs ${recuoSobONome}`}
             >
               {c.phone_number ? phoneForDisplay(c.phone_number) : "—"}
-            </TableCell>
-            <TableCell className="max-md:hidden">
+            </div>
+            <div role="cell" className="max-md:hidden">
               <div className="flex flex-wrap gap-1">
                 {c.tags.length === 0
                   ? <span className="text-muted-foreground text-xs">—</span>
@@ -325,15 +327,16 @@ export function ContactsTable({
                       <ChipDeEtiqueta key={tag} tag={tag} />
                     ))}
               </div>
-            </TableCell>
-            <TableCell
-              className={`text-muted-foreground text-sm max-md:py-0 max-md:pr-0 max-md:text-xs ${recuoSobONome}`}
+            </div>
+            <div
+              role="cell"
+              className={`text-sm text-muted-foreground max-md:py-0 max-md:text-xs ${recuoSobONome}`}
             >
               {c.last_activity_at
                 ? formatUltimaAtividade(c.last_activity_at, localeDaData)
                 : "—"}
-            </TableCell>
-            <TableCell className="max-md:min-w-0 max-md:flex-1 max-md:p-0">
+            </div>
+            <div role="cell" className="max-md:min-w-0 max-md:flex-1">
               <div className="flex flex-wrap gap-1">
                 {c.is_anonymized && <Badge variant="destructive">{t("Anonimizado")}</Badge>}
                 {c.is_blocked && <Badge variant="warning">{t("Bloqueado")}</Badge>}
@@ -358,8 +361,8 @@ export function ContactsTable({
                   <Badge variant="success">{t("Ativo")}</Badge>
                 )}
               </div>
-            </TableCell>
-            <TableCell className="max-md:p-0">
+            </div>
+            <div role="cell" className="max-md:p-0">
               <div className="flex items-center justify-end gap-0.5">
                 {c.conversa ? (
                   <Button variant="ghost" size="icon" className="md:h-8 md:w-8" asChild>
@@ -412,11 +415,11 @@ export function ContactsTable({
                   <Trash size={16} weight="regular" aria-hidden />
                 </Button>
               </div>
-            </TableCell>
-          </TableRow>
+            </div>
+          </div>
         ))}
-      </TableBody>
-    </Table>
+      </div>
+    </div>
 
     <AlertDialog open={alvo !== null} onOpenChange={(open) => { if (!open) setAlvo(null); }}>
       <AlertDialogContent>
