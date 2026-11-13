@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useT } from "@/hooks/i18n/useT";
+import { DeviceMobile } from "@/lib/ui/icons";
 import { ensureNotifyServiceWorker } from "@/lib/notifications/service_worker";
 import { estadoDoApp, type AmbienteDoAparelho } from "@/lib/pwa/estado-da-instalacao";
 import { pedirInstalacao, usePedidoDeInstalacao } from "@/lib/pwa/pedido-de-instalacao";
@@ -37,8 +38,11 @@ async function lerAparelho(): Promise<Aparelho> {
 
 function Caixa({ estado, children }: { estado: string; children: ReactNode }) {
   return (
-    <Card data-testid={`app-${estado}`} className="flex flex-col gap-3 p-4 text-sm">
-      {children}
+    <Card data-testid={`app-${estado}`} className="flex flex-row items-start gap-4 p-6 text-sm">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-accent">
+        <DeviceMobile size={20} aria-hidden />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-3">{children}</div>
     </Card>
   );
 }
