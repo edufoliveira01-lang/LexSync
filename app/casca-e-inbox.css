@@ -265,7 +265,9 @@ button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10p
   background: var(--color-surface);
   box-shadow: var(--shadow-md);
 }
-[data-testid="composer"] > [class~="mb-1.5"][class~="flex"] {
+[data-testid="composer"] > [class~="mb-1.5"][class~="flex"] { display: flex; width: 100%; gap: 8px; }
+/* A pílula cinza é só do par Responder / Nota interna; as ações rápidas ficam do lado de fora, soltas */
+[data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > div:first-child {
   display: inline-flex;
   width: fit-content;
   gap: 2px;
@@ -273,13 +275,13 @@ button[data-conversation-id] span.bg-accent.rounded-full { box-shadow: 0 4px 10p
   border-radius: 16px;
   background: var(--color-surface-elevated);
 }
-[data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > button { border-radius: 12px; padding: 6px 14px; font-weight: 600; }
-[data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > button.bg-accent {
+[data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > div:first-child > button { border-radius: 12px; padding: 6px 14px; font-weight: 600; }
+[data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > div:first-child > button.bg-accent {
   background: var(--color-surface);
   color: var(--color-accent-700);
   box-shadow: var(--shadow-sm);
 }
-[data-theme="dark"] [data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > button.bg-accent { color: var(--color-accent-300); }
+[data-theme="dark"] [data-testid="composer"] > [class~="mb-1.5"][class~="flex"] > div:first-child > button.bg-accent { color: var(--color-accent-300); }
 [data-testid="composer"] textarea { border: 0; background: transparent; box-shadow: none; outline: none; padding-inline: 4px; }
 [data-testid="composer"] textarea:focus { box-shadow: none; outline: none; }
 button[aria-label="Enviar"] { border-radius: 14px; box-shadow: 0 8px 18px -8px rgba(22, 120, 220, 0.75); }
