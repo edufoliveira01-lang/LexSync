@@ -33,6 +33,7 @@ import {
   Plus,
   Trash,
 } from "@/lib/ui/icons";
+import { CabecalhoDaPagina } from "@/components/ui/cabecalho-da-pagina";
 import { useArquivarFunil, useCriarFunil, useEditarFunil } from "@/hooks/pipelines/usePipelines";
 
 /** Uma etapa na faixa do cartão do funil (só leitura). */
@@ -491,7 +492,12 @@ export function FunisClient({
 
   if (funis.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+      <div className="flex flex-1 flex-col gap-5">
+        <CabecalhoDaPagina
+          area={t("CRM")}
+          titulo={t("Funis")}
+          descricao={t("Os caminhos que cada contato percorre, da primeira conversa até virar cliente. Escolha um funil para ver o quadro de negócios.")}
+        />
         {formularioDeCriacao}
         {novo === null && (
           // ⚠️ O BOTÃO CRIA AQUI MESMO. O texto anterior mandava "Ir para
@@ -521,15 +527,20 @@ export function FunisClient({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {(podeGerenciar || podeImportar) && (
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          {/* A porta da importação fica AQUI, e não numa tela própria: é desta
+    <div className="flex flex-col gap-5">
+      <CabecalhoDaPagina
+        area={t("CRM")}
+        titulo={t("Funis")}
+        descricao={t("Os caminhos que cada contato percorre, da primeira conversa até virar cliente. Escolha um funil para ver o quadro de negócios.")}
+        acoes={
+          podeGerenciar || podeImportar ? (
+            <>
+              {/* A porta da importação fica AQUI, e não numa tela própria: é desta
               lista que se escolhe o funil, e a planilha precisa de um destino.
               Uma rota nova exigiria um item de menu para uma coisa que se faz
               uma vez por mês — ruído permanente para um gesto ocasional. */}
-          {podeImportar ? <ImportarLeads funis={funis} /> : null}
-          {podeGerenciar && novo === null ? (
+              {podeImportar ? <ImportarLeads funis={funis} /> : null}
+              {podeGerenciar && novo === null ? (
             <Button
               variant="outline"
               onClick={() => criarFunilDeAdvocacia()}
@@ -541,13 +552,15 @@ export function FunisClient({
               <Plus size={16} className="mr-2" aria-hidden /> {t("Funil para advocacia")}
             </Button>
           ) : null}
-          {podeGerenciar && novo === null ? (
+              {podeGerenciar && novo === null ? (
             <Button onClick={() => setNovo("")} disabled={ocupado} data-testid="novo-funil" className="w-full sm:w-auto">
               <Plus size={16} className="mr-2" aria-hidden /> {t("Novo funil")}
             </Button>
           ) : null}
-        </div>
-      )}
+            </>
+          ) : undefined
+        }
+      />
 
       {formularioDeCriacao}
 

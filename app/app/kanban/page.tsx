@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { Kanban } from "@/lib/ui/icons";
 import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
-import { traduzir } from "@/lib/i18n/dicionario";
-import { FunisClient, type EtapaDaFaixa, type FunilDaLista } from "./_client";
+import { FunisTela } from "./_components/FunisTela";
+import type { EtapaDaFaixa, FunilDaLista } from "./_client";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Funis" };
@@ -72,30 +71,14 @@ export default async function KanbanPickerPage() {
   // Importar planilha é ESCRITA DE OPERAÇÃO, não configuração: quem atende
   // sobe a lista que recebeu. Espelha o `requireRole("agent")` da rota.
   const podeImportar = ROLE_RANK[activeOrg.role] >= ROLE_RANK.agent;
-  const idioma = user.idioma;
-  const t = (texto: string) => traduzir(texto, idioma);
 
   return (
-    <div className="flex h-full flex-col gap-4 p-6">
-      <header className="flex items-center gap-3">
-        <Kanban size={28} className="text-muted-foreground" weight="duotone" />
-        {/* Era "Pipelines" — nome de quem construiu o sistema, não de quem
-            vende. O comentário anterior aqui listava o preço de trocá-lo
-            (`rbac-roles.spec.ts` e `invite-lifecycle.spec.ts`) e dizia que
-            uniformizar era decisão do dono do produto. Ela foi tomada, e o preço
-            era maior do que o comentário contava: são QUATRO assertions em TRÊS
-            specs, e `pipelines-gestao.spec.ts` — a spec da própria feature que
-            gerou o comentário — é uma delas. Todas atualizadas junto. */}
-        <h1 className="text-2xl font-semibold tracking-tight">{t("Funis")}</h1>
-      </header>
-
-      <FunisClient
-        funis={funis}
-        arquivados={arquivados}
-        podeGerenciar={podeGerenciar}
-        podeImportar={podeImportar}
-        etapas={etapas}
-      />
-    </div>
+    <FunisTela
+      funis={funis}
+      arquivados={arquivados}
+      podeGerenciar={podeGerenciar}
+      podeImportar={podeImportar}
+      etapas={etapas}
+    />
   );
 }

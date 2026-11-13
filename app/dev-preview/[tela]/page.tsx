@@ -1,10 +1,25 @@
 import { notFound } from "next/navigation";
 
 import { ContactsListClient } from "@/app/app/contacts/_client";
+import { FunisTela } from "@/app/app/kanban/_components/FunisTela";
+import { RadarTela } from "@/app/app/radar/_components/RadarTela";
 
 /** Telas disponíveis no preview. Cada uma é o componente REAL da tela; os dados vêm do mock de rede. */
+const FUNIS = [
+  { id: "f1", name: "Captação", slug: "captacao", description: "Quem chegou agora e ainda não foi atendido.", position: 0, is_default: true, is_client_pipeline: false },
+  { id: "f2", name: "Previdenciário", slug: "previdenciario", description: "Benefícios por incapacidade, BPC e aposentadorias.", position: 1, is_default: false, is_client_pipeline: false },
+  { id: "f3", name: "Clientes", slug: "clientes", description: "Quem já assinou contrato.", position: 2, is_default: false, is_client_pipeline: true },
+] as never[];
+const ETAPAS = {
+  f1: [{ id: "e1", name: "Novo", is_won: false, is_lost: false }, { id: "e2", name: "Qualificado", is_won: false, is_lost: false }, { id: "e3", name: "Contrato enviado", is_won: false, is_lost: false }, { id: "e4", name: "Assinado", is_won: true, is_lost: false }],
+  f2: [{ id: "e5", name: "Triagem", is_won: false, is_lost: false }, { id: "e6", name: "Documentos", is_won: false, is_lost: false }, { id: "e7", name: "Ganho", is_won: true, is_lost: false }],
+  f3: [{ id: "e8", name: "Ativo", is_won: false, is_lost: false }],
+};
+
 const TELAS: Record<string, () => React.ReactNode> = {
   contacts: () => <ContactsListClient />,
+  radar: () => <RadarTela />,
+  kanban: () => <FunisTela funis={FUNIS} arquivados={[]} podeGerenciar podeImportar etapas={ETAPAS} />,
 };
 
 export default async function DevPreviewPage({ params }: { params: Promise<{ tela: string }> }) {
