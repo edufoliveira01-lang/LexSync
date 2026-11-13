@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api/client";
+import { CabecalhoDeCanal } from "./CabecalhoDeCanal";
 import { Phone, Plus } from "@/lib/ui/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -101,23 +102,25 @@ export function TelefoniaClient() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-muted-foreground">
-          {t(
-            "Números que recebem ligações. Cada número aponta pra um agente de voz e um modo de atendimento.",
-          )}
-        </p>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus size={16} className="mr-1" />
-          {t("Novo número")}
-        </Button>
-      </div>
+      <CabecalhoDeCanal
+        icone={<Phone size={20} aria-hidden />}
+        titulo={t("Telefone")}
+        descricao={t("Números que recebem ligações. Cada número aponta pra um agente de voz e um modo de atendimento.")}
+        acoes={
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus size={16} className="mr-1" />
+            {t("Novo número")}
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("Carregando…")}</p>
       ) : (numbers ?? []).length === 0 ? (
-        <Card className="p-6 text-center text-sm text-muted-foreground">
-          {t("Nenhum número cadastrado ainda.")}
+        <Card className="flex flex-col items-center gap-2 p-8 text-center">
+          <Phone size={24} className="text-accent" aria-hidden />
+          <p className="text-sm font-medium">{t("Nenhum número cadastrado ainda.")}</p>
+          <p className="text-sm text-muted-foreground">{t("Cadastre o número que recebe ligações do escritório e escolha quem atende.")}</p>
         </Card>
       ) : (
         <div className="flex flex-col gap-3">

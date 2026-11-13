@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { CabecalhoDeCanal } from "./CabecalhoDeCanal";
+import { ShieldCheck } from "@/lib/ui/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -121,24 +123,15 @@ export function CanalGraphParceiroClient() {
 
   return (
     <div className="flex flex-col gap-4" data-testid="canal-graph-parceiro">
-      <Card className="flex flex-col gap-4 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold">
-              {t("Conectar por")} {rotulo}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              {t(
-                "Um número oficial (WhatsApp Business) por um parceiro homologado pela Meta. Você cola só o token: o número e a conta são descobertos sozinhos.",
-              )}
-            </p>
-          </div>
-          {conectado ? (
-            <Badge variant="secondary">{t("Conectado")}</Badge>
-          ) : (
-            <Badge variant="outline">{t("Não conectado")}</Badge>
+      <Card className="flex flex-col gap-5 p-6">
+        <CabecalhoDeCanal
+          icone={<ShieldCheck size={20} aria-hidden />}
+          titulo={`${t("Conectar por")} ${rotulo}`}
+          descricao={t(
+            "Um número oficial (WhatsApp Business) por um parceiro homologado pela Meta. Você cola só o token: o número e a conta são descobertos sozinhos.",
           )}
-        </div>
+          estado={conectado ? <Badge variant="success">{t("Conectado")}</Badge> : <Badge variant="neutral">{t("Não conectado")}</Badge>}
+        />
 
         {conectado && (
           <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">

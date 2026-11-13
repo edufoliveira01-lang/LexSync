@@ -3,6 +3,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { CabecalhoDeCanal } from "./CabecalhoDeCanal";
+import { ShieldCheck } from "@/lib/ui/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -219,24 +221,15 @@ export function CanalParceiroClient() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="flex flex-col gap-4 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold">
-              {t("Conectar por")} {rotulo}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              {t(
-                "Um número oficial (WhatsApp Business) conectado através do seu provedor. As mensagens entram e saem pelo CRM, e os modelos aprovados são os mesmos da sua conta.",
-              )}
-            </p>
-          </div>
-          {conectado ? (
-            <Badge variant="secondary">{t("Conectado")}</Badge>
-          ) : (
-            <Badge variant="outline">{t("Não conectado")}</Badge>
+      <Card className="flex flex-col gap-5 p-6">
+        <CabecalhoDeCanal
+          icone={<ShieldCheck size={20} aria-hidden />}
+          titulo={`${t("Conectar por")} ${rotulo}`}
+          descricao={t(
+            "Um número oficial (WhatsApp Business) conectado através do seu provedor. As mensagens entram e saem pelo CRM, e os modelos aprovados são os mesmos da sua conta.",
           )}
-        </div>
+          estado={conectado ? <Badge variant="success">{t("Conectado")}</Badge> : <Badge variant="neutral">{t("Não conectado")}</Badge>}
+        />
 
         {conectado && (
           <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { CabecalhoDeCanal, PassosDoCanal } from "./CabecalhoDeCanal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -168,22 +169,24 @@ export function CanalVozClient({ wacallsConfigured }: { wacallsConfigured: boole
   const conectado = estado?.paired ?? false;
 
   return (
-    <Card className="flex flex-col gap-4 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold">{t("Chamada de voz por WhatsApp")}</h3>
-          <p className="text-xs text-muted-foreground">
-            {t(
-              "Um segundo aparelho vinculado ao mesmo número já conectado, só para ligar e atender chamadas. Escaneie uma vez para ativar.",
-            )}
-          </p>
-        </div>
-        {conectado ? (
-          <Badge variant="secondary">{t("Conectado")}</Badge>
-        ) : (
-          <Badge variant="outline">{t("Não pareado")}</Badge>
+    <Card className="flex flex-col gap-5 p-6">
+      <CabecalhoDeCanal
+        icone={<Phone size={20} aria-hidden />}
+        titulo={t("Chamada de voz por WhatsApp")}
+        descricao={t(
+          "Um segundo aparelho vinculado ao mesmo número já conectado, só para ligar e atender chamadas. Escaneie uma vez para ativar.",
         )}
-      </div>
+        estado={conectado ? <Badge variant="success">{t("Conectado")}</Badge> : <Badge variant="neutral">{t("Não pareado")}</Badge>}
+      />
+      {!conectado && !qrDataUrl && !pareando && (
+        <PassosDoCanal
+          passos={[
+            t("Clique em Parear chamada de voz."),
+            t("No celular: WhatsApp → Aparelhos conectados → Conectar um aparelho."),
+            t("Escaneie o código que aparece aqui. Pronto: o botão de chamar aparece nos contatos."),
+          ]}
+        />
+      )}
 
       {conectado && (
         <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
@@ -212,7 +215,7 @@ export function CanalVozClient({ wacallsConfigured }: { wacallsConfigured: boole
         </div>
       ) : !conectado ? (
         <div>
-          <Button size="sm" onClick={parear} disabled={pareando}>
+          <Button onClick={parear} disabled={pareando}>
             <Phone size={14} aria-hidden />
             {t("Parear chamada de voz")}
           </Button>

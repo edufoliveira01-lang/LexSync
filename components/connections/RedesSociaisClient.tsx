@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CabecalhoDeCanal } from "./CabecalhoDeCanal";
+import { PlugsConnected } from "@/lib/ui/icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -185,26 +187,25 @@ export function RedesSociaisClient() {
   }
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">{t("Redes sociais")}</h2>
-          <p className="text-sm text-muted-foreground">
-            {t("Conecte suas contas e receba mensagens no atendimento.")} {state?.label}
-          </p>
-        </div>
-        <Button variant="outline" onClick={() => void load()} disabled={!!busy}>
-          {t("Atualizar")}
-        </Button>
-      </div>
+      <CabecalhoDeCanal
+        icone={<PlugsConnected size={20} aria-hidden />}
+        titulo={t("Redes sociais")}
+        descricao={<>{t("Conecte suas contas e receba mensagens no atendimento.")} {state?.label}</>}
+        acoes={
+          <Button variant="outline" onClick={() => void load()} disabled={!!busy}>
+            {t("Atualizar")}
+          </Button>
+        }
+      />
       {params.get("error") && (
-        <p role="alert" className="rounded-md border p-3 text-sm">
+        <p role="alert" className="rounded-md border border-warning bg-warning-bg p-3 text-sm text-warning-fg">
           {t(
             "A autorização não foi concluída. Tente conectar novamente e aceite as permissões necessárias.",
           )}
         </p>
       )}
       {params.get("connected") && (
-        <p role="status" className="rounded-md border p-3 text-sm">
+        <p role="status" className="rounded-md border border-success-border bg-success-bg p-3 text-sm text-success-fg">
           {t(
             "Autorização concluída. Confira a conta na lista e ative o atendimento, quando disponível.",
           )}

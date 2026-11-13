@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { CabecalhoDeCanal } from "./CabecalhoDeCanal";
+import { ShieldCheck } from "@/lib/ui/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -84,6 +86,12 @@ export function CanalOficialClient() {
 
   return (
     <div className="flex flex-col gap-4" data-testid="canal-oficial-root">
+      <CabecalhoDeCanal
+        icone={<ShieldCheck size={20} aria-hidden />}
+        titulo={t("API Oficial (Meta)")}
+        descricao={t("O WhatsApp Business direto da Meta: mais estável, com modelos de mensagem aprovados e janela de 24 horas.")}
+        estado={estado?.connected ? <Badge variant="success">{t("Conectado")}</Badge> : <Badge variant="neutral">{t("Não conectado")}</Badge>}
+      />
       {estado?.connected ? (
         <Card className="p-4" data-testid="canal-conectado">
           <div className="flex flex-wrap items-center gap-2">
