@@ -1,5 +1,6 @@
 "use client";
-import { useState, type MouseEvent, type RefObject } from "react";
+import { useEffect, useState, type MouseEvent, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import { useT } from "@/hooks/i18n/useT";
 import Link from "next/link";
 import {
@@ -127,6 +128,7 @@ export function ConversationHeader({
    */
   const [devolverAoFechar, setDevolverAoFechar] = useState(true);
   const [confirmArquivarOpen, setConfirmArquivarOpen] = useState(false);
+  const slotDeAcoes = useSlotDeAcoesDaConversa();
   const [confirmPessoalOpen, setConfirmPessoalOpen] = useState(false);
 
   const c = conversation.contacts ?? null;
@@ -259,6 +261,71 @@ export function ConversationHeader({
   if (user.support?.access_mode === "support_readonly") return <header className="flex items-center justify-between border-b p-4">
     <strong>{displayName}</strong><span className="text-sm text-muted-foreground">{STATUS_LABEL[status] ?? status} · Somente leitura</span>
   </header>;
+  // Devolver/pausar o automático, Transferir e Lembrar: moram ao lado de "Nota interna" na caixa de resposta (portal para o espaço que
+  // o Composer reserva). Sem esse espaço (testes, telas sem Composer) continuam no menu "Mais ações", como antes.
+  const acoesRapidas = (
+    <>
+    {podeDevolver && (
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={retomar.isPending}
+        data-testid="devolver-ao-automatico"
+        // O ALCANCE DA VOLTA NÃO É SEMPRE O MESMO, e a tela precisa dizer qual é.
+        //
+        // `devolverAtendimentoAoAgente` limpa `contacts.force_human`, que é do
+        // CLIENTE e não desta conversa: quando foi ela que travou, o clique
+        // religa o automático para TODAS as conversas daquela pessoa. Um botão
+        // que às vezes faz mais do que o nome promete precisa dizer quando.
+        title={
+          motivo === "contato_travado"
+            ? t("Religa o atendimento automático para este cliente — vale para todas as conversas dele.")
+            : t("Devolve esta conversa ao atendimento automático.")
+        }
+        onClick={() => retomar.mutate({ conversation_id: conversation.id })}
+      >
+        {retomar.isPending ? t("Devolvendo...") : t("Devolver ao automático")}
+      </Button>
+    )}
+    {podePausar && (
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={pausar.isPending}
+        data-testid="pausar-o-automatico"
+        // `podePausar` já exige dono != null, então este botão NUNCA aparece
+        // sem dono — prometer "você assume" aqui seria prometer o que a rota
+        // não faz: com dono, ela só cala, nunca rouba a conversa de quem a tem.
+        title={t("O atendimento automático para nesta conversa. O dono não muda.")}
+        onClick={() => pausar.mutate({ conversation_id: conversation.id })}
+      >
+        {pausar.isPending ? t("Pausando...") : t("Pausar o automático")}
+      </Button>
+    )}
+    {!encerrada && (
+      <Button
+        size="sm"
+        variant="outline"
+        // GUIA CURTA (#3003): "Transferir" não diz PARA QUEM. A aba Número do
+        // diálogo é a outra metade da resposta — mas ela aparece quando a org
+        // tem outro número com telefone, inclusive fora do ar (com a opção
+        // desabilitada; `outrosNumerosDoContato`), e ela não move esta
+        // conversa: continua o atendimento do contato por lá.
+        title={t("Passa esta conversa para outro atendente. Se houver outro número conectado, dá para continuar o atendimento por ele.")}
+        onClick={() => setReassignOpen(true)}
+      >
+        {t("Transferir")}
+      </Button>
+    )}
+    {!encerrada && (
+      <SnoozeButton
+        conversationId={conversation.id}
+        snoozeUntil={conversation.snooze_until ?? null}
+      />
+    )}
+    </>
+  );
+
   return (
     // `flex-wrap` porque este header travava a LARGURA DA TELA INTEIRA. Ele
     // media 707px de `min-content` — a identidade do contato encolhia bem
@@ -317,7 +384,7 @@ export function ConversationHeader({
           <Badge variant="outline" className="h-4 shrink-0 px-1.5 text-[10px]">
             {t(STATUS_LABEL[status] ?? status)}
           </Badge>
-          <BotaoCopiar texto={phone ? `${displayName} — ${phone}` : displayName} />
+          <BotaoCopiar texto={displayName} rotulo="Copiar nome" testId="copiar-nome" />
           {/* Ao lado do estado, não escondido num painel: a pergunta "dá para
               escrever agora?" se faz ANTES de digitar, não depois de receber um
               `failed` com um código de cinco dígitos. */}
@@ -372,8 +439,9 @@ export function ConversationHeader({
         {phone && (
           // No celular o telefone sai: cada linha do cabeçalho é altura tirada
           // do fio, e o número continua na Ficha.
-          <p className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground max-md:hidden">
+          <p className="mt-0.5 flex shrink-0 items-center gap-1 whitespace-nowrap text-xs text-muted-foreground max-md:hidden">
             <Phone size={11} weight="regular" aria-hidden /> {phone}
+            <BotaoCopiar texto={phone} rotulo="Copiar telefone" testId="copiar-telefone" />
           </p>
         )}
         {/* O aviso pertence à operação automática. Abaixo da barra ele não
@@ -568,64 +636,7 @@ export function ConversationHeader({
 
             O `data-testid` do lado de VOLTA é o mesmo de antes: `escalacao-ciclo`
             o clica, e rótulo/testid visível é contrato. */}
-        {podeDevolver && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={retomar.isPending}
-            data-testid="devolver-ao-automatico"
-            // O ALCANCE DA VOLTA NÃO É SEMPRE O MESMO, e a tela precisa dizer qual é.
-            //
-            // `devolverAtendimentoAoAgente` limpa `contacts.force_human`, que é do
-            // CLIENTE e não desta conversa: quando foi ela que travou, o clique
-            // religa o automático para TODAS as conversas daquela pessoa. Um botão
-            // que às vezes faz mais do que o nome promete precisa dizer quando.
-            title={
-              motivo === "contato_travado"
-                ? t("Religa o atendimento automático para este cliente — vale para todas as conversas dele.")
-                : t("Devolve esta conversa ao atendimento automático.")
-            }
-            onClick={() => retomar.mutate({ conversation_id: conversation.id })}
-          >
-            {retomar.isPending ? t("Devolvendo...") : t("Devolver ao automático")}
-          </Button>
-        )}
-        {podePausar && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={pausar.isPending}
-            data-testid="pausar-o-automatico"
-            // `podePausar` já exige dono != null, então este botão NUNCA aparece
-            // sem dono — prometer "você assume" aqui seria prometer o que a rota
-            // não faz: com dono, ela só cala, nunca rouba a conversa de quem a tem.
-            title={t("O atendimento automático para nesta conversa. O dono não muda.")}
-            onClick={() => pausar.mutate({ conversation_id: conversation.id })}
-          >
-            {pausar.isPending ? t("Pausando...") : t("Pausar o automático")}
-          </Button>
-        )}
-        {!encerrada && (
-          <Button
-            size="sm"
-            variant="outline"
-            // GUIA CURTA (#3003): "Transferir" não diz PARA QUEM. A aba Número do
-            // diálogo é a outra metade da resposta — mas ela aparece quando a org
-            // tem outro número com telefone, inclusive fora do ar (com a opção
-            // desabilitada; `outrosNumerosDoContato`), e ela não move esta
-            // conversa: continua o atendimento do contato por lá.
-            title={t("Passa esta conversa para outro atendente. Se houver outro número conectado, dá para continuar o atendimento por ele.")}
-            onClick={() => setReassignOpen(true)}
-          >
-            {t("Transferir")}
-          </Button>
-        )}
-        {!encerrada && (
-          <SnoozeButton
-            conversationId={conversation.id}
-            snoozeUntil={conversation.snooze_until ?? null}
-          />
-        )}
+        {!slotDeAcoes && acoesRapidas}
         {/* ARQUIVAR (#923): tira da frente sem destruir.
             A conversa já arquivada não mostra o botão — arquivar duas vezes não
             é um gesto que exista, e o botão só reapareceria como um clique que
@@ -818,6 +829,8 @@ export function ConversationHeader({
           no próximo "oi" do cliente. Por isso a descrição só aparece quando
           `!encerrada`: quando já está encerrada, arquivar não muda o
           atendimento, só o lugar onde a conversa mora. */}
+      {slotDeAcoes ? createPortal(acoesRapidas, slotDeAcoes) : null}
+
       <AlertDialog open={confirmArquivarOpen} onOpenChange={setConfirmArquivarOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -871,16 +884,16 @@ export function ConversationHeader({
 }
 
 
-/** Fork Sales: copia "nome — telefone" para a área de transferência. */
-function BotaoCopiar({ texto }: { texto: string }) {
+/** Fork Sales: copia SÓ o texto recebido (o nome, ou o telefone) para a área de transferência. */
+function BotaoCopiar({ texto, rotulo, testId }: { texto: string; rotulo: string; testId: string }) {
   const t = useT();
   const [copiado, setCopiado] = useState(false);
   return (
     <button
       type="button"
-      data-testid="copiar-contato"
-      title={copiado ? t("Copiado") : t("Copiar nome e telefone")}
-      aria-label={t("Copiar nome e telefone")}
+      data-testid={testId}
+      title={copiado ? t("Copiado") : t(rotulo)}
+      aria-label={t(rotulo)}
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(texto);
@@ -895,4 +908,18 @@ function BotaoCopiar({ texto }: { texto: string }) {
       {copiado ? <Check size={13} weight="bold" aria-hidden /> : <Copy size={13} aria-hidden />}
     </button>
   );
+}
+
+
+/** O espaço (ao lado de "Nota interna") que o Composer reserva para as ações rápidas da conversa; `null` enquanto ele não existe. */
+function useSlotDeAcoesDaConversa(): HTMLElement | null {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const achar = () => setSlot(document.getElementById("slot-acoes-da-conversa"));
+    achar();
+    const observador = new MutationObserver(achar);
+    observador.observe(document.body, { childList: true, subtree: true });
+    return () => observador.disconnect();
+  }, []);
+  return slot;
 }

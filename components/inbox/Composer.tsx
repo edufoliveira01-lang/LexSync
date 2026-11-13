@@ -1142,6 +1142,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
           >
             {t("Nota interna")}
           </button>
+          <div id="slot-acoes-da-conversa" className="ml-auto flex flex-wrap items-center justify-end gap-1" />
         </div>
         {/*
           A FAIXA DA CITAÇÃO — o que o atendente escolheu responder.

@@ -786,3 +786,21 @@ button[data-conversation-id] .relative.shrink-0 > span[role="img"] { padding: 0;
   height: 24px !important;
 }
 [data-realtime-status] [role="tablist"] [role="tab"] span { font-size: 10px; }
+
+/* ===== Inbox v8: cabeçalho da conversa e caixa de resposta ===== */
+/* botões do cabeçalho menores */
+.acoes-da-conversa { gap: 6px; }
+.acoes-da-conversa > button { height: 30px !important; padding-inline: 10px !important; font-size: 12px !important; border-radius: 10px !important; }
+.acoes-da-conversa > button[aria-label] { width: 30px !important; padding: 0 !important; }
+/* nome do responsável e telefone sem se sobrepor; o aviso do automático desce para a linha de baixo */
+.linha-de-apoio { gap: 4px 12px !important; flex-wrap: wrap !important; }
+[data-testid="comando-da-conversa"] { min-width: 0; max-width: 14rem; flex: 0 1 auto; }
+[data-testid="comando-da-conversa"] > * { min-width: 0; max-width: 100%; }
+[data-testid="badge-atendimento-humano"] { height: auto !important; white-space: normal !important; max-width: 100%; padding-block: 1px; }
+/* sem o quadro branco atrás da caixa de resposta */
+div:has(> [data-testid="composer"]) { background: transparent !important; border-top: 0 !important; box-shadow: none !important; }
+[data-testid="composer"] { background: var(--color-surface); }
+/* ações rápidas ao lado de "Nota interna": botões pequenos e discretos */
+#slot-acoes-da-conversa button { height: 26px !important; padding-inline: 9px !important; font-size: 11.5px !important; border-radius: 999px !important; font-weight: 600; white-space: nowrap; }
+/* busca dentro da conversa: painel flutuante, sem moldura de foco */
+[data-busca-na-conversa] input { border: 0 !important; box-shadow: none !important; outline: none !important; min-height: 0 !important; height: 28px !important; padding: 0 !important; background: transparent !important; }

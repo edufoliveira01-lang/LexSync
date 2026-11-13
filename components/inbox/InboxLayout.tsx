@@ -1100,13 +1100,14 @@ export function InboxLayout({
               buscaAberta={buscaAberta}
               botaoBuscaRef={botaoBuscaRef}
             />
+            <div className="relative min-h-0 flex-1 overflow-hidden">
             {buscaAberta && (
-              <div className="flex items-center gap-2 border-b border-border px-4 py-1.5">
+              <div data-busca-na-conversa className="absolute right-4 top-3 z-20 flex w-[min(24rem,calc(100%-2rem))] items-center gap-1.5 rounded-full border border-border bg-surface py-1 pl-3 pr-1 shadow-md">
                 <MagnifyingGlass size={16} className="shrink-0 text-muted-foreground" aria-hidden />
                 <input
                   type="search"
                   autoFocus
-                  className="min-w-0 flex-1 bg-transparent py-1 text-base outline-hidden placeholder:text-muted-foreground md:text-sm"
+                  className="min-w-0 flex-1 bg-transparent text-base outline-hidden placeholder:text-muted-foreground md:text-sm"
                   aria-label={t("Buscar nas mensagens carregadas")}
                   placeholder={t("Buscar nas mensagens carregadas")}
                   value={busca.termo}
@@ -1118,7 +1119,7 @@ export function InboxLayout({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-11 shrink-0 px-0 lg:w-8"
+                  className="h-7 w-7 shrink-0 rounded-full px-0"
                   aria-label={t("Fechar busca")}
                   onClick={fecharBusca}
                 >
@@ -1126,7 +1127,6 @@ export function InboxLayout({
                 </Button>
               </div>
             )}
-            <div className="min-h-0 flex-1 overflow-hidden">
               <ChatThread
                 conversationId={selectedConversation.id}
                 searchTerm={buscaAberta ? busca.termo : ""}
