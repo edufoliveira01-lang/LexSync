@@ -289,7 +289,8 @@ export function PipelinePageClient({
       // `components/inbox/InboxLayout.tsx`, e é o que o gate
       // `tests/unit/altura-fixa-le-a-reserva-do-rodape.test.ts` cobra: altura
       // fixa não desconta número próprio, lê a reserva.
-      className="flex h-[calc(100dvh-3.5rem-var(--space-6)-max(var(--space-6),var(--rodape-ocupado,0px)))] min-h-[28rem] flex-col gap-4 px-4 pt-6"
+      data-quadro=""
+      className="flex h-[calc(100dvh-var(--altura-da-barra-do-topo,3.5rem)-2rem-max(2rem,var(--rodape-ocupado,0px)))] min-h-[28rem] flex-col gap-4"
       // OBSERVÁVEL de propósito, e é a razão de existir desta linha: "a
       // assinatura morreu" e "nada aconteceu" produzem o MESMO silêncio na
       // tela, e sem este valor nem o produto nem o teste conseguem separar as
@@ -313,6 +314,7 @@ export function PipelinePageClient({
           limite curto) + botão na mesma linha sem quebra empurrava o botão pra
           fora da viewport em telas estreitas. De `sm:` pra cima volta a ser
           uma linha só, como sempre foi. */}
+      <p className="-mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">{t("CRM")}</p>
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/*
           O TÍTULO É O SELETOR. Com um funil só, `h1` puro (nada para trocar);
@@ -386,16 +388,16 @@ export function PipelinePageClient({
               funil que não recebe mais escrita seria a mesma promessa falsa
               que o "Novo negócio" apagado. Por isso as abas nem aparecem. */}
           {!arquivado && (
-            <div className="flex items-center gap-0.5 rounded-md border bg-muted p-0.5">
+            <div className="flex items-center gap-1 rounded-md border border-border bg-surface p-1 shadow-xs">
               <button
                 type="button"
                 data-testid="visao-quadro"
                 aria-pressed={visao === "quadro"}
                 onClick={() => mudarVisao("quadro")}
                 className={cn(
-                  "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                   visao === "quadro"
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-accent-50 text-accent-700"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -407,9 +409,9 @@ export function PipelinePageClient({
                 aria-pressed={visao === "lista"}
                 onClick={() => mudarVisao("lista")}
                 className={cn(
-                  "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                   visao === "lista"
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-accent-50 text-accent-700"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -421,9 +423,9 @@ export function PipelinePageClient({
                 aria-pressed={visao === "calendario"}
                 onClick={() => mudarVisao("calendario")}
                 className={cn(
-                  "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                   visao === "calendario"
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-accent-50 text-accent-700"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >

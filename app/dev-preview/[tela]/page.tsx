@@ -4,6 +4,7 @@ import { ContactsListClient } from "@/app/app/contacts/_client";
 import { FunisTela } from "@/app/app/kanban/_components/FunisTela";
 import { ContactDetailClient } from "@/app/app/contacts/[id]/_client";
 import { AgendaClient } from "@/app/app/agenda/_client";
+import { PipelinePageClient } from "@/app/app/pipelines/[id]/_client";
 import { RadarTela } from "@/app/app/radar/_components/RadarTela";
 
 /** Telas disponíveis no preview. Cada uma é o componente REAL da tela; os dados vêm do mock de rede. */
@@ -29,6 +30,21 @@ const AGENDAMENTOS = [
 const TELAS: Record<string, () => React.ReactNode> = {
   contacts: () => <ContactsListClient />,
   radar: () => <RadarTela />,
+  quadro: () => (
+    <PipelinePageClient
+      pipelineId="f1"
+      initialName="Captação"
+      role="admin"
+      funis={[{ id: "f1", name: "Captação" }, { id: "f2", name: "Previdenciário" }]}
+      funilInicial={{ id: "f1", name: "Captação", slug: "captacao", description: null, position: 0, is_default: true, is_client_pipeline: false, is_archived: false, settings: {} } as never}
+      etapasIniciais={[
+        { id: "e1", pipeline_id: "f1", name: "Novo", position: 0, is_won: false, is_lost: false, is_archived: false, color: null },
+        { id: "e2", pipeline_id: "f1", name: "Qualificado", position: 1, is_won: false, is_lost: false, is_archived: false, color: null },
+        { id: "e3", pipeline_id: "f1", name: "Contrato enviado", position: 2, is_won: false, is_lost: false, is_archived: false, color: null },
+        { id: "e4", pipeline_id: "f1", name: "Assinado", position: 3, is_won: true, is_lost: false, is_archived: false, color: null },
+      ] as never}
+    />
+  ),
   agenda: () => (
     <AgendaClient
       fusoDaAgenda="America/Sao_Paulo"
