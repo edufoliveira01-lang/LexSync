@@ -317,7 +317,7 @@ describe("no layout — duas divisorias arrastáveis (#2579)", () => {
   beforeEach(() => {
     window.localStorage.clear();
     larguraGrade = 1040;
-    janelaEm(1440); // faixa xl: padrão 272 (lista) / 296 (ficha)
+    janelaEm(1440); // faixa xl: padrão 250 (lista) / 296 (ficha)
     window.HTMLElement.prototype.setPointerCapture = vi.fn();
     window.HTMLElement.prototype.releasePointerCapture = vi.fn();
     window.HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
@@ -346,7 +346,7 @@ describe("no layout — duas divisorias arrastáveis (#2579)", () => {
     const lista = await alca(0);
     const ficha = await alca(1);
     expect(lista).toHaveAttribute("aria-orientation", "vertical");
-    expect(lista).toHaveAttribute("aria-valuenow", "272");
+    expect(lista).toHaveAttribute("aria-valuenow", "250");
     expect(lista).toHaveAttribute("aria-valuemin", "240");
     expect(lista).toHaveAttribute("aria-valuemax", "520");
     expect(lista).toHaveAttribute("tabindex", "0");
@@ -361,18 +361,18 @@ describe("no layout — duas divisorias arrastáveis (#2579)", () => {
     montar();
     const lista = await alca(0);
     fireEvent.keyDown(lista, { key: "ArrowRight" });
-    expect(lista).toHaveAttribute("aria-valuenow", String(272 + PASSO_TECLADO));
+    expect(lista).toHaveAttribute("aria-valuenow", String(250 + PASSO_TECLADO));
     fireEvent.keyDown(lista, { key: "ArrowRight" });
-    expect(lista).toHaveAttribute("aria-valuenow", String(272 + 2 * PASSO_TECLADO));
+    expect(lista).toHaveAttribute("aria-valuenow", String(250 + 2 * PASSO_TECLADO));
     // A tecla que não ajusta largura não muda nada.
     fireEvent.keyDown(lista, { key: "Enter" });
-    expect(lista).toHaveAttribute("aria-valuenow", String(272 + 2 * PASSO_TECLADO));
+    expect(lista).toHaveAttribute("aria-valuenow", String(250 + 2 * PASSO_TECLADO));
 
     expect(JSON.parse(window.localStorage.getItem(CHAVE_XL) ?? "null")).toEqual({
-      lista: 272 + 2 * PASSO_TECLADO,
+      lista: 250 + 2 * PASSO_TECLADO,
       ficha: 296,
     });
-    expect(grade().style.gridTemplateColumns).toBe("304px minmax(0,1fr) 296px");
+    expect(grade().style.gridTemplateColumns).toBe("282px minmax(0,1fr) 296px");
   });
 
   it("arrastar prende no limite e no piso da conversa, e persiste no pointerup", async () => {
@@ -431,7 +431,7 @@ describe("no layout — duas divisorias arrastáveis (#2579)", () => {
     expect(window.localStorage.getItem(CHAVE_XL)).not.toBeNull();
 
     fireEvent.doubleClick(lista);
-    expect(lista).toHaveAttribute("aria-valuenow", "272");
+    expect(lista).toHaveAttribute("aria-valuenow", "250");
     expect(window.localStorage.getItem(CHAVE_XL)).toBeNull();
     expect(grade().style.gridTemplateColumns).toBe("");
   });
@@ -496,7 +496,7 @@ describe("no layout — duas divisorias arrastáveis (#2579)", () => {
     janelaEm(1024); // faixa md: padrão da lista é 300, e sem ficha nenhuma
     montar();
     const lista = await alca(0);
-    expect(lista).toHaveAttribute("aria-valuenow", "300");
+    expect(lista).toHaveAttribute("aria-valuenow", "250");
     expect(screen.getAllByRole("separator")).toHaveLength(1);
     expect(grade().style.gridTemplateColumns).toBe("");
   });
@@ -525,9 +525,9 @@ describe("no layout — duas divisorias arrastáveis (#2579)", () => {
       expect(await screen.findByText("Selecione uma conversa")).toBeInTheDocument();
       const lista = await alca(0);
       fireEvent.keyDown(lista, { key: "ArrowRight" });
-      expect(lista).toHaveAttribute("aria-valuenow", String(272 + PASSO_TECLADO));
+      expect(lista).toHaveAttribute("aria-valuenow", String(250 + PASSO_TECLADO));
       fireEvent.doubleClick(lista);
-      expect(lista).toHaveAttribute("aria-valuenow", "272");
+      expect(lista).toHaveAttribute("aria-valuenow", "250");
     } finally {
       if (original) Object.defineProperty(window, "localStorage", original);
     }

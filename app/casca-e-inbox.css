@@ -181,10 +181,10 @@ main:has([data-realtime-status]:not([data-quadro])) { padding: 0; overflow: hidd
 @media (min-width: 1280px) {
   /* Colunas fixas do Sales (344 lista | conversa | 320 ficha). As divisórias arrastáveis ficam ocultas:
      elas calculam a posição pelos tamanhos padrão do original e apareciam no meio da lista. */
-  [data-realtime-status].grid { grid-template-columns: 200px minmax(0, 1fr) 320px; }
-  [data-realtime-status][data-sem-conversa].grid { grid-template-columns: 200px minmax(0, 1fr); }
+  [data-realtime-status].grid { grid-template-columns: 250px minmax(0, 1fr) 320px; }
+  [data-realtime-status][data-sem-conversa].grid { grid-template-columns: 250px minmax(0, 1fr); }
   /* painel do contato recolhido: só o trilho com o botão de expandir */
-  [data-realtime-status][data-painel-recolhido].grid:not([data-sem-conversa]) { grid-template-columns: 200px minmax(0, 1fr) 44px; }
+  [data-realtime-status][data-painel-recolhido].grid:not([data-sem-conversa]) { grid-template-columns: 250px minmax(0, 1fr) 44px; }
   [data-realtime-status] [data-divisoria] { display: none; }
 }
 
@@ -752,7 +752,7 @@ button[data-conversation-id] .relative.shrink-0 > span[role="img"] { padding: 0;
 /* A coluna de 200px vale em QUALQUER largura de computador (antes a regra só existia a partir de 1280px e, em janelas menores, a
    coluna ficava com os 300px do Tailwind). */
 @media (min-width: 768px) and (max-width: 1279.98px) {
-  [data-realtime-status].grid, [data-realtime-status][data-sem-conversa].grid { grid-template-columns: 200px minmax(0, 1fr); }
+  [data-realtime-status].grid, [data-realtime-status][data-sem-conversa].grid { grid-template-columns: 250px minmax(0, 1fr); }
 }
 
 /* ===== Inbox v6: conversa (fundo mais calmo, balões mais enxutos, eventos discretos, caixa de resposta compacta) ===== */
