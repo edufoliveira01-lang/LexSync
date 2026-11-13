@@ -3,6 +3,7 @@ name: Imagem do Deskcomm (Sales & Associados)
 # Constrói a imagem do APP do DeskcommCRM com a nossa aparência (app/tema-sales.css) e publica no GitHub Container Registry.
 # É a mesma imagem genérica do original (NEXT_PUBLIC_* viram placeholder no build e entram em runtime), só com o nosso tema.
 # O worker (que roda o agente e as ferramentas dele, como crm_enviar_contrato) também sai com o nosso código: deskcomm-sales-worker.
+# App e worker constroem EM PARALELO; o worker só reconstrói quando mudou algo que ele usa (senão a etiqueta nova aponta para a imagem anterior).
 # O scheduler continua sendo a imagem do original. Instalação na VPS: docs/sales/IMAGEM.md.
 on:
   push:
@@ -19,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  construir:
+  app:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -47,6 +48,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # O cache incremental do Next (.next/cache) sobrevive entre construções: só recompila o que mudou.
+      - name: Cache do build do Next
+        id: cache-next
+        uses: actions/cache@v4
+        with:
+          path: next-cache
+          key: next-cache-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            next-cache-${{ hashFiles('pnpm-lock.yaml') }}-
+            next-cache-
+
+      - name: Injeta o cache do Next no build
+        uses: reproducible-containers/buildkit-cache-dance@v3.1.2
+        with:
+          cache-map: |
+            { "next-cache": { "target": "/app/.next/cache", "id": "nextcache" } }
+          skip-extraction: ${{ steps.cache-next.outputs.cache-hit }}
+
       - name: Constrói e publica
         uses: docker/build-push-action@v6
         with:
@@ -66,7 +85,55 @@ jobs:
           cache-from: type=gha,scope=deskcomm-sales
           cache-to: type=gha,mode=max,scope=deskcomm-sales
 
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Versão do original em que nos baseamos
+        id: ver
+        run: |
+          set -euo pipefail
+          BASE="$(grep -m1 -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "versao=${BASE}-sales.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      # O worker roda o agente (workers/, lib/). Mudança só de tela (app/, components/, css, públicos) não o afeta:
+      # nesse caso a etiqueta nova aponta para a imagem anterior (segundos, em vez de minutos).
+      - name: Mudou algo que o worker usa?
+        id: mudou
+        run: |
+          set -uo pipefail
+          ANTES="${{ github.event.before }}"
+          if [ "${{ github.event_name }}" != "push" ] || [ -z "$ANTES" ] || [ "$ANTES" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$ANTES^{commit}" 2>/dev/null; then
+            echo "reconstruir=sim" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if git diff --name-only "$ANTES" "${{ github.sha }}" | grep -qE '^(workers/|lib/|supabase/|patches/|package\.json$|pnpm-lock\.yaml$|tsconfig|Dockerfile\.worker$|\.github/workflows/imagem-sales\.yml$)'; then
+            echo "reconstruir=sim" >> "$GITHUB_OUTPUT"
+          else
+            echo "reconstruir=nao" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Reaproveita a imagem anterior do worker
+        if: steps.mudou.outputs.reconstruir == 'nao'
+        run: |
+          set -euo pipefail
+          IMG=ghcr.io/${{ github.repository_owner }}/deskcomm-sales-worker
+          docker buildx imagetools create -t "$IMG:${{ steps.ver.outputs.versao }}" "$IMG:${{ steps.ver.outputs.base }}-sales"
+
       - name: Constrói e publica o worker (o agente roda nele; sem isto as ferramentas do fork não existem para ele)
+        if: steps.mudou.outputs.reconstruir == 'sim'
         uses: docker/build-push-action@v6
         with:
           context: .

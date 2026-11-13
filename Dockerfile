@@ -43,7 +43,7 @@ ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
 # do Sentry (tree-shake + upload de sourcemap em build-time) é ignorado, mas o
 # Sentry RUNTIME segue ativo (DSN hardcoded nas configs); aqui o ganho de tempo
 # de build é o que importa pro leigo.
-RUN pnpm build
+RUN --mount=type=cache,id=nextcache,target=/app/.next/cache pnpm build
 
 # `outputFileTracingIncludes` (next.config.ts) copia o CONTEÚDO de pdfjs-dist e
 # @napi-rs/canvas pro standalone, mas não os DOIS SYMLINKS que pnpm cria e que a
