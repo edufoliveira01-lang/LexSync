@@ -163,9 +163,9 @@ export function AtendimentoForm({ initial }: { initial: AtendimentoConfig }) {
 
   return (
     <form onSubmit={salvar} className="flex max-w-3xl flex-col gap-6" data-testid="form-atendimento">
-      <Card className="space-y-4 p-4">
+      <Card className="space-y-5 p-6">
         <div>
-          <h2 className="text-sm font-semibold">{t("Quem recebe o cliente novo")}</h2>
+          <h2 className="text-base font-semibold">{t("Quem recebe o cliente novo")}</h2>
           <p className="text-xs text-muted-foreground">
             {t("Vale para conversa que chega sem dono.")}
           </p>
@@ -226,9 +226,9 @@ export function AtendimentoForm({ initial }: { initial: AtendimentoConfig }) {
         ) : null}
       </Card>
 
-      <Card className="space-y-4 p-4">
+      <Card className="space-y-5 p-6">
         <div>
-          <h2 className="text-sm font-semibold">{t("O que cada atendente enxerga")}</h2>
+          <h2 className="text-base font-semibold">{t("O que cada atendente enxerga")}</h2>
           <p className="text-xs text-muted-foreground">
             {t("Restringe apenas quem tem o papel")} <strong>{t("Atendente")}</strong>.{" "}
             {t("Gerente e administrador continuam vendo a operação inteira.")}
@@ -262,9 +262,9 @@ export function AtendimentoForm({ initial }: { initial: AtendimentoConfig }) {
         ) : null}
       </Card>
 
-      <Card className="space-y-4 p-4" data-testid="devolucao-ao-agente">
+      <Card className="space-y-5 p-6" data-testid="devolucao-ao-agente">
         <div>
-          <h2 className="text-sm font-semibold">{t("Quando a pessoa some, a IA volta?")}</h2>
+          <h2 className="text-base font-semibold">{t("Quando a pessoa some, a IA volta?")}</h2>
           <p className="text-xs text-muted-foreground">
             {t(
               "Quando alguém assume uma conversa, o agente de IA para de responder nela até ser devolvido. Se ninguém devolve, o cliente que escreve de novo fica sem resposta.",
@@ -318,9 +318,9 @@ export function AtendimentoForm({ initial }: { initial: AtendimentoConfig }) {
         ) : null}
       </Card>
 
-      <Card className="space-y-4 p-4" data-testid="silencio-apos-resposta-pelo-celular">
+      <Card className="space-y-5 p-6" data-testid="silencio-apos-resposta-pelo-celular">
         <div>
-          <h2 className="text-sm font-semibold">
+          <h2 className="text-base font-semibold">
             {t("Quando alguém responde pelo celular, a IA espera quanto tempo?")}
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -352,9 +352,9 @@ export function AtendimentoForm({ initial }: { initial: AtendimentoConfig }) {
         </div>
       </Card>
 
-      <Card className="space-y-4 p-4" data-testid="conversa-fica-com-quem-atendeu">
+      <Card className="space-y-5 p-6" data-testid="conversa-fica-com-quem-atendeu">
         <div>
-          <h2 className="text-sm font-semibold">
+          <h2 className="text-base font-semibold">
             {t("Quando alguém responde, a conversa fica com essa pessoa?")}
           </h2>
           <p className="text-xs text-muted-foreground">

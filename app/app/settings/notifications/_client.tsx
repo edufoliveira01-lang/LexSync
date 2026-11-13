@@ -113,7 +113,11 @@ export function NotificationPrefsClient() {
   }
 
   return (
-    <Card className="p-0">
+    <Card className="overflow-hidden p-0">
+      <div className="border-b border-border px-6 py-4">
+        <h2 className="text-base font-semibold">{t("Avisos por categoria")}</h2>
+        <p className="text-sm text-muted-foreground">{t("Escolha, para cada tipo de acontecimento, como você quer ser avisado.")}</p>
+      </div>
       <table className="w-full text-sm">
         <thead className="border-b">
           <tr>

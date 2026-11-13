@@ -75,7 +75,7 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-md border border-border bg-surface">
         <Table className="max-md:block">
           <TableHeader className="max-md:hidden">
             <TableRow>
@@ -94,10 +94,15 @@ export function TeamMembersClient({ currentUserId, canManage }: Props) {
                 className="max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-3 max-md:px-4 max-md:py-2"
               >
                 <TableCell className="max-md:basis-full max-md:p-0 max-md:wrap-anywhere">
-                  <div className="font-medium">
-                    {rotuloDoMembro(m, t)}
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-50 text-sm font-semibold text-accent-700" aria-hidden>
+                      {(rotuloDoMembro(m, t) || m.email || "?").slice(0, 1).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{rotuloDoMembro(m, t)}</div>
+                      {m.email ? <div className="truncate text-xs text-muted-foreground">{m.email}</div> : null}
+                    </div>
                   </div>
-                  {m.email ? <div className="text-xs text-muted-foreground">{m.email}</div> : null}
                 </TableCell>
                 <TableCell className="max-md:p-0">
                   {canManage && m.user_id !== currentUserId ? (

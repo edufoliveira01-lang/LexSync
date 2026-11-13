@@ -68,7 +68,7 @@ export function ChannelRoutingForm({ initial }: { initial: ChannelRoutingSetting
         </div>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
-        {initial.members.map((member) => <label key={member.id} className="flex items-center gap-2 rounded-md p-2 hover:bg-muted">
+        {initial.members.map((member) => <label key={member.id} className="flex items-center gap-2 rounded-md border border-transparent p-2 hover:border-accent-300">
           <input type="checkbox" checked={channel.user_ids.includes(member.id)} onChange={(e) => setChannels((current) => current.map((c) => c.id === channel.id ? { ...c, user_ids: e.target.checked ? [...c.user_ids, member.id] : c.user_ids.filter((id) => id !== member.id) } : c))} />
           <span>{t(member.name)}</span>
         </label>)}

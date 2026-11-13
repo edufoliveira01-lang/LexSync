@@ -57,9 +57,9 @@ export function AssinaturaForm({ initial }: { initial: AssinaturaConfig }) {
 
   return (
     <form onSubmit={salvar} className="flex max-w-3xl flex-col gap-4" data-testid="form-assinatura">
-      <Card className="space-y-4 p-4">
+      <Card className="space-y-5 p-6">
         <div>
-          <h2 className="text-sm font-semibold">{t("Quem fala aparece na mensagem?")}</h2>
+          <h2 className="text-base font-semibold">{t("Quem fala aparece na mensagem?")}</h2>
           <p className="text-xs text-muted-foreground">
             {t(
               "Ligado, a mensagem que vai ao cliente ganha o nome de quem fala em negrito, na linha de cima. O histórico do CRM guarda o texto como foi escrito. Campanhas, lembretes e integrações por token não assinam.",

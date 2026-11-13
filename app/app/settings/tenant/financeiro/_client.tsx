@@ -139,8 +139,8 @@ export function CatalogoFinanceiro({
   return (
     <div className="space-y-4" data-testid="catalogo-financeiro">
       {/* ─── contas ─────────────────────────────────────────────────── */}
-      <section className="space-y-3 rounded-xl border p-4">
-        <h2 className="font-semibold">{t("Contas")}</h2>
+      <section className="space-y-4 rounded-md border border-border bg-surface p-6">
+        <h2 className="text-base font-semibold">{t("Contas")}</h2>
         <p className="text-sm text-text-muted">
           {t(
             "Onde o dinheiro fica. O saldo que aparece nos relatórios é sempre somado dos lançamentos — o valor aqui é só o ponto de partida.",
@@ -207,8 +207,8 @@ export function CatalogoFinanceiro({
       </section>
 
       {/* ─── formas de pagamento ────────────────────────────────────── */}
-      <section className="space-y-3 rounded-xl border p-4">
-        <h2 className="font-semibold">{t("Formas de pagamento")}</h2>
+      <section className="space-y-4 rounded-md border border-border bg-surface p-6">
+        <h2 className="text-base font-semibold">{t("Formas de pagamento")}</h2>
         <p className="text-sm text-text-muted">
           {t(
             "Como o cliente paga. A conta escolhida aqui é onde esse dinheiro entra quando a comanda é fechada.",
@@ -292,8 +292,8 @@ export function CatalogoFinanceiro({
       </section>
 
       {/* ─── plano de contas ────────────────────────────────────────── */}
-      <section className="space-y-3 rounded-xl border p-4">
-        <h2 className="font-semibold">{t("Plano de contas")}</h2>
+      <section className="space-y-4 rounded-md border border-border bg-surface p-6">
+        <h2 className="text-base font-semibold">{t("Plano de contas")}</h2>
         <p className="text-sm text-text-muted">
           {t("Como cada lançamento é classificado. Entrada e saída são coisas diferentes.")}
         </p>
@@ -429,22 +429,22 @@ function Lista<T extends { id: string }>({
 }) {
   const t = useT();
   if (carregando) return <p>{t("Carregando…")}</p>;
-  if (itens.length === 0) return <p className="text-sm text-text-muted">{vazio}</p>;
+  if (itens.length === 0) return <p className="rounded-md border border-dashed border-border bg-surface px-4 py-6 text-center text-sm text-text-muted">{vazio}</p>;
   return (
-    <ul className="space-y-1">
+    <ul className="space-y-2">
       {itens.map((i) => (
-        <li key={i.id} className="flex items-center justify-between gap-2 text-sm">
+        <li key={i.id} className="flex items-center justify-between gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm">
           <span>{rotulo(i)}</span>
           {podeEditar ? (
             <span className="flex items-center gap-1">
               {aoEditar ? (
-                <Button variant="ghost" className="min-h-11" onClick={() => aoEditar(i)}>
+                <Button variant="outline" size="sm" onClick={() => aoEditar(i)}>
                   {t("Editar")}
                 </Button>
               ) : null}
               {/* "Remover" seria mentira: a linha continua, inativa, porque
                   lançamento antigo aponta para ela. */}
-              <Button variant="ghost" className="min-h-11" onClick={() => aoRemover(i.id)}>
+              <Button variant="outline" size="sm" onClick={() => aoRemover(i.id)}>
                 {t("Desativar")}
               </Button>
             </span>
