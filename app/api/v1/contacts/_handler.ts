@@ -1119,11 +1119,17 @@ async function contarVinculosRestrict(
   // (texto em pt-BR) segue igual ao da auditoria.
   const por_tabela: Record<string, number> = {};
   for (const vinculo of VINCULOS_RESTRICT_NAO_APAGADOS) {
-    const { count, error } = await supabase
+    let consulta = supabase
       .from(vinculo.tabela)
       .select("id", { count: "exact", head: true })
       .eq("contact_id", contactId)
       .eq("organization_id", ctx.organization_id);
+    // Compromisso encerrado (cancelado, concluído, não compareceu ou já terminado) NÃO barra: sai junto com o contato
+    // (`fn_apagar_compromissos_do_contato`, migration 9112). Só o ativo e futuro barra, a menos que a pessoa confirme.
+    if (vinculo.tabela === "calendar_appointments") {
+      consulta = consulta.in("status", ["pending", "confirmed"]).gt("ends_at", new Date().toISOString());
+    }
+    const { count, error } = await consulta;
     if (error) {
       // Falha da CONTAGEM não autoriza seguir apagando: seguir aqui é cair no
       // defeito que esta pré-checagem existe para impedir (histórico
@@ -1149,6 +1155,8 @@ async function contarVinculosRestrict(
  * existe e ficaria quieto sobre outro.
  */
 /** Os negócios (cards do funil) do contato, por situação. Eles saem junto com o contato (fork Sales): a tela avisa antes de excluir. */
+/** Compromisso futuro e ativo do contato: é o que barra a exclusão até a pessoa confirmar que ele também sai. */
+export interface CompromissoDoContato { id: string; starts_at: string; status: string }
 export interface NegociosDoContato { total: number; abertos: number; ganhos: number; perdidos: number }
 
 async function contarNegociosDoContato(supabase: SB, ctx: HandlerCtx, contactId: string): Promise<NegociosDoContato> {
@@ -1170,19 +1178,29 @@ export async function vinculosDoContatoHandler(
   supabase: SB,
   ctx: HandlerCtx,
   contactId: string,
-): Promise<{ vinculos: string[]; por_tabela: Record<string, number>; negocios: NegociosDoContato }> {
+): Promise<{ vinculos: string[]; por_tabela: Record<string, number>; negocios: NegociosDoContato; compromissos: CompromissoDoContato[] }> {
   await contatoExistente(supabase, ctx, contactId);
   const [vinculos, negocios] = await Promise.all([
     contarVinculosRestrict(supabase, ctx, contactId),
     contarNegociosDoContato(supabase, ctx, contactId),
   ]);
-  return { ...vinculos, negocios };
+  const { data: futuros } = await supabase
+    .from("calendar_appointments")
+    .select("id, starts_at, status")
+    .eq("organization_id", ctx.organization_id)
+    .eq("contact_id", contactId)
+    .in("status", ["pending", "confirmed"])
+    .gt("ends_at", new Date().toISOString())
+    .order("starts_at", { ascending: true })
+    .limit(10);
+  return { ...vinculos, negocios, compromissos: (futuros ?? []) as CompromissoDoContato[] };
 }
 
 export async function deleteContactHandler(
   supabase: SB,
   ctx: HandlerCtx,
   contactId: string,
+  opcoes: { apagarCompromissos?: boolean } = {},
 ): Promise<{ id: string }> {
   await contatoExistente(supabase, ctx, contactId);
 
@@ -1190,7 +1208,7 @@ export async function deleteContactHandler(
 
   const { vinculos, por_tabela } = await contarVinculosRestrict(supabase, ctx, contactId);
 
-  if (vinculos.length > 0) {
+  if (vinculos.length > 0 && opcoes.apagarCompromissos !== true) {
     // O 409 é o MESMO do caminho de FK (mesma causa, mesmo tratamento no
     // cliente), mas aqui ele chega com `messages`/`conversations` intactos.
     // O detalhe que o cliente não vê está na auditoria: `vinculos` diz o que
@@ -1256,6 +1274,16 @@ export async function deleteContactHandler(
       error: err instanceof Error ? err.message : String(err),
     });
   });
+  // Os compromissos que já acabaram (e, com a confirmação da pessoa, os futuros) saem antes da ficha: o RESTRICT da agenda os barraria.
+  // Sem a migration 9112 aplicada a função não existe: segue como antes (o banco recusa só se houver compromisso).
+  {
+    const { error: compErr } = await supabase.rpc("fn_apagar_compromissos_do_contato", {
+      p_contact_id: contactId,
+      p_organization_id: ctx.organization_id,
+      p_incluir_futuros: opcoes.apagarCompromissos === true,
+    });
+    if (compErr && compErr.code !== "42883" && compErr.code !== "PGRST202") throwOnDbError(compErr, ctx.requestId, ctx.idioma);
+  }
   let apagou = false;
   try {
     const { data, error: rpcErr } = await supabase.rpc("fn_apagar_contato_com_historico", {

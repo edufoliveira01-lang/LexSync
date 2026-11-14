@@ -72,8 +72,11 @@ function toastDeBloqueioPorVinculo(err: ApiError): boolean {
 export function useDeleteContact() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (contactId: string) =>
-      apiClient.delete<unknown>(`/api/v1/contacts/${contactId}`),
+    // `apagarCompromissos`: a pessoa confirmou no diálogo que os compromissos FUTUROS do contato também saem.
+    mutationFn: async (alvo: string | { id: string; apagarCompromissos?: boolean }) => {
+      const { id, apagarCompromissos } = typeof alvo === "string" ? { id: alvo, apagarCompromissos: false } : alvo;
+      return apiClient.delete<unknown>(`/api/v1/contacts/${id}${apagarCompromissos ? "?compromissos=apagar" : ""}`);
+    },
     onError: (err) => {
       if (err instanceof ApiError && toastDeBloqueioPorVinculo(err)) return;
       showApiError(err);

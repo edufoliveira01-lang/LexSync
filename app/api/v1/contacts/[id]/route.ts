@@ -179,7 +179,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ): Promise<Response> {
   const supportDenied = await requireSupportWrite();
@@ -205,6 +205,7 @@ export async function DELETE(
         idioma: user.idioma,
       },
       id,
+      { apagarCompromissos: new URL(req.url).searchParams.get("compromissos") === "apagar" },
     );
     return noContent(requestId);
   } catch (err) {

@@ -35,6 +35,8 @@ const rpcs: Array<{ nome: string; args: Record<string, unknown> | undefined }> =
 
 interface CadeiaContagem {
   eq: (coluna: string, valor: unknown) => CadeiaContagem;
+  in: (coluna: string, valores: unknown[]) => CadeiaContagem;
+  gt: (coluna: string, valor: unknown) => CadeiaContagem;
   maybeSingle: () => Promise<{ data: null; error: null }>;
   then: (resolve: (valor: unknown) => unknown) => unknown;
 }
@@ -90,6 +92,9 @@ function clienteFalso(opts?: OpcoesFake): unknown {
                 filtros.push([coluna, valor]);
                 return cadeia;
               },
+              // só o compromisso ATIVO e futuro barra (migration 9112): os filtros extras não mudam a contagem do fake
+              in: () => cadeia,
+              gt: () => cadeia,
               maybeSingle: async () => ({ data: null, error: null }),
               then: (resolve) => {
                 contagens.push({ tabela, filtros });
@@ -329,5 +334,32 @@ describe("aviso dos negócios que saem junto (diálogo Excluir contato)", () => 
     expect(mensagemDeNegociosJuntos({ total: 4, abertos: 2, ganhos: 1, perdidos: 1 }, t)).toBe(
       "Este contato tem 4 negócios no funil (2 em aberto, 1 ganho, 1 perdido); eles também serão excluídos.",
     );
+  });
+});
+
+describe("deleteContactHandler — compromissos da agenda (migration 9112)", () => {
+  beforeEach(() => { rpcs.length = 0; ordem.length = 0; chamadas.length = 0; contagens.length = 0; });
+
+  it("antes da ficha, apaga os compromissos ENCERRADOS (sem os futuros) e só depois chama a função da ficha", async () => {
+    const { deleteContactHandler } = await import("@/app/api/v1/contacts/_handler");
+    await deleteContactHandler(clienteFalso() as never, ctxFalso(), CONTATO);
+    const nomes = rpcs.map((r) => r.nome);
+    expect(nomes.indexOf("fn_apagar_compromissos_do_contato")).toBeGreaterThanOrEqual(0);
+    expect(nomes.indexOf("fn_apagar_compromissos_do_contato")).toBeLessThan(nomes.indexOf(FUNCAO));
+    expect(rpcs.find((r) => r.nome === "fn_apagar_compromissos_do_contato")?.args).toMatchObject({ p_contact_id: CONTATO, p_organization_id: ORG, p_incluir_futuros: false });
+  });
+
+  it("compromisso FUTURO ativo ainda barra (409) e nada é apagado", async () => {
+    const { deleteContactHandler } = await import("@/app/api/v1/contacts/_handler");
+    await expect(deleteContactHandler(clienteFalso({ vinculos: 1 }) as never, ctxFalso(), CONTATO)).rejects.toMatchObject({ status: 409 });
+    expect(rpcs.map((r) => r.nome)).not.toContain("fn_apagar_compromissos_do_contato");
+    expect(rpcs.map((r) => r.nome)).not.toContain(FUNCAO);
+  });
+
+  it("com a confirmação da pessoa, os futuros também saem e a exclusão segue", async () => {
+    const { deleteContactHandler } = await import("@/app/api/v1/contacts/_handler");
+    await deleteContactHandler(clienteFalso({ vinculos: 1 }) as never, ctxFalso(), CONTATO, { apagarCompromissos: true });
+    expect(rpcs.find((r) => r.nome === "fn_apagar_compromissos_do_contato")?.args).toMatchObject({ p_incluir_futuros: true });
+    expect(rpcs.map((r) => r.nome)).toContain(FUNCAO);
   });
 });

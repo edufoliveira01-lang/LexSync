@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -36,8 +37,10 @@ export function ExcluirContatoDialog({
 }) {
   const t = useT();
   const del = useDeleteContact();
+  const [apagarCompromissos, setApagarCompromissos] = useState(false);
   const alvo = contato;
   const alvoId = alvo?.id ?? null;
+  useEffect(() => { setApagarCompromissos(false); }, [alvoId]);
   const vinculos = useQuery({
     queryKey: ["contato-vinculos-para-excluir", alvoId],
     enabled: alvoId !== null,
@@ -49,12 +52,15 @@ export function ExcluirContatoDialog({
           vinculos: string[];
           por_tabela: Record<string, number>;
           negocios?: { total: number; abertos: number; ganhos: number; perdidos: number };
+          compromissos?: Array<{ id: string; starts_at: string; status: string }>;
         };
       }>(`/api/v1/contacts/${alvoId}/vinculos`);
       return corpo.data ?? { vinculos: [], por_tabela: {} };
     },
   });
   const avisoDeVinculo = alvo ? mensagemDeBloqueioPorVinculo(vinculos.data, t) : null;
+  const compromissos = (vinculos.data as { compromissos?: Array<{ id: string; starts_at: string; status: string }> } | undefined)?.compromissos ?? [];
+  const barradoPelaAgenda = avisoDeVinculo !== null;
   const avisoDeNegocios = alvo
     ? mensagemDeNegociosJuntos((vinculos.data as { negocios?: { total: number; abertos: number; ganhos: number; perdidos: number } } | undefined)?.negocios, t)
     : null;
@@ -62,7 +68,7 @@ export function ExcluirContatoDialog({
   async function confirmarExclusao() {
     if (!alvo) return;
     try {
-      await del.mutateAsync(alvo.id);
+      await del.mutateAsync({ id: alvo.id, apagarCompromissos });
       toast.success(t("Contato excluído."));
       onClose();
       aoExcluir?.();
@@ -99,14 +105,37 @@ export function ExcluirContatoDialog({
                 </Link>
               </span>
             ) : null}
+            {compromissos.length > 0 ? (
+              <span data-testid="lista-de-compromissos" className="mt-2 block text-sm text-muted-foreground">
+                {compromissos.map((c) => (
+                  <span key={c.id} className="block">
+                    {new Date(c.starts_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    {" · "}
+                    {c.status === "pending" ? t("aguardando confirmação") : t("confirmado")}
+                  </span>
+                ))}
+              </span>
+            ) : null}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {barradoPelaAgenda ? (
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={apagarCompromissos}
+              onChange={(e) => setApagarCompromissos(e.target.checked)}
+              data-testid="apagar-compromissos"
+            />
+            <span>{t("Apagar também os compromissos futuros deste contato")}</span>
+          </label>
+        ) : null}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={del.isPending}>{t("Cancelar")}</AlertDialogCancel>
           <Button
             variant="destructive"
             onClick={() => void confirmarExclusao()}
-            disabled={del.isPending}
+            disabled={del.isPending || (barradoPelaAgenda && !apagarCompromissos)}
           >
             {del.isPending ? t("Excluindo…") : t("Excluir")}
           </Button>

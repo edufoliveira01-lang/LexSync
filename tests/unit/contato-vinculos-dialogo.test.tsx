@@ -104,6 +104,11 @@ function supabaseFalso() {
       filtros.push([coluna, valor]);
       return cadeia;
     };
+    // só o compromisso ATIVO e futuro barra (migration 9112) e a lista sai ordenada: os filtros extras não mudam a contagem do dublê
+    cadeia.in = () => cadeia;
+    cadeia.gt = () => cadeia;
+    cadeia.order = () => cadeia;
+    cadeia.limit = () => cadeia;
     cadeia.then = (resolver: (v: unknown) => unknown) => {
       const contagem = estado.agenda.filter((linha) =>
         filtros.every(([coluna, valor]) => linha[coluna] === valor),
@@ -166,7 +171,7 @@ describe("GET /api/v1/contacts/[id]/vinculos — a pré-checagem", () => {
     const { status, body } = await consultarRota();
 
     expect(status).toBe(200);
-    expect((body as unknown as { data: unknown }).data).toEqual({
+    expect((body as unknown as { data: unknown }).data).toMatchObject({
       vinculos: ["1 compromisso(s) na agenda"],
       por_tabela: { calendar_appointments: 1 },
     });
@@ -178,7 +183,7 @@ describe("GET /api/v1/contacts/[id]/vinculos — a pré-checagem", () => {
     const { status, body } = await consultarRota();
 
     expect(status).toBe(200);
-    expect((body as unknown as { data: unknown }).data).toEqual({
+    expect((body as unknown as { data: unknown }).data).toMatchObject({
       vinculos: [],
       por_tabela: {},
     });
