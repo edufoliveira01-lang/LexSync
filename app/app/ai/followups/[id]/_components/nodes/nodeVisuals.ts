@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 
-import { Bell, Play, Clock, GitBranch, Brain, ChatCircle, ArrowsClockwise, PaperPlaneTilt, Flag, Question, PuzzlePiece, Funnel, Tag } from "@/lib/ui/icons";
+import { Bell, Note, Play, Clock, GitBranch, Brain, ChatCircle, ArrowsClockwise, PaperPlaneTilt, Flag, Question, PuzzlePiece, Funnel, Tag } from "@/lib/ui/icons";
 import type { FlowNode, NodeType } from "@/lib/followup/graph-schema";
 import { RESULTADOS_DO_FIM } from "@/lib/followup/vocabulario";
 import { NOS_DA_SUPERFICIE } from "@/lib/followup/validate-publish";
@@ -165,6 +165,16 @@ export const NODE_VISUALS: Record<NodeType, NodeVisual> = {
       prioridade: "medium",
     }),
   },
+  // Nota interna: anota na conversa do cliente, só a equipe lê. Nasce com um texto de exemplo (o publish recusa a nota vazia).
+  internal_note: {
+    type: "internal_note",
+    paletteLabel: "Nota interna",
+    icon: Note,
+    chipClassName: "bg-warning-bg text-warning-fg",
+    borderClassName: "border-l-warning",
+    defaultLabel: "Anotar na conversa",
+    defaultConfig: () => ({ texto: "" }),
+  },
   // #2065 — os dois tipos de ação que a issue pede e que NÃO falam com o
   // cliente: mover o card no funil e gravar tag. O `defaultConfig` nasce vazio
   // de propósito (rascunho salva trabalho pela metade); o publish é quem exige
@@ -286,6 +296,10 @@ export function describeNodeConfig(
       const c = config as ConfigOf<"internal_task">;
       const prazo = c.vence_em_dias === 0 ? t("hoje") : `+${c.vence_em_dias}d`;
       return `${c.titulo} · ${prazo} · ${t("sem mensagem ao cliente")}`;
+    }
+    case "internal_note": {
+      const c = config as ConfigOf<"internal_note">;
+      return c.texto.trim() ? `${c.texto.trim().slice(0, 80)} · ${t("só a equipe vê")}` : t("sem texto na nota");
     }
     // #2065 — o rótulo da etapa (nome de banco) não chega aqui: o card diz o
     // QUE faz, e o formulário diz PARA ONDE, com o nome da etapa escolhida.

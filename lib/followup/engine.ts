@@ -58,7 +58,7 @@ import { interpolarDestino, persistirRespostaFollowupSupabase } from "./persisti
 import { funilUnicoDasEtapas, idsDeEtapaCitados } from "./etapas-citadas";
 import { fecharConversaAoFimDoFluxo } from "./fechar-conversa-ao-fim";
 import { desvioAntesDoEnvio } from "./condicao-antes-do-envio";
-import { criarTarefaInterna as criarTarefaNoCrm } from "@/lib/tarefas/criar-tarefa";
+import { criarTarefaInterna as criarTarefaNoCrm, interpolarTitulo } from "@/lib/tarefas/criar-tarefa";
 import { moveLeadHandler } from "@/app/api/v1/leads/_handler";
 import type { HandlerCtx } from "@/lib/api/handlers/types";
 import { ApiError } from "@/lib/api/types";
@@ -220,6 +220,18 @@ export interface AdminClient {
     enrollment_id: string;
     /** O config do nó, já validado pelo `flowGraphSchema.parse`. */
     config: Extract<FlowNode, { type: "internal_task" }>["config"];
+  }): Promise<void>;
+  /**
+   * Nó `internal_note`: grava uma nota interna na CONVERSA do contato (só a equipe lê). Opcional pelas mesmas razões de
+   * `criarTarefaInterna` — o tick nunca trava; omitida, o nó AVANÇA sem anotar.
+   */
+  anotarNaConversa?(item: {
+    organization_id: string;
+    contact_id: string;
+    enrollment_id: string;
+    /** A conversa da inscrição, quando ela a tem; senão a mais recente do contato. */
+    conversation_id: string | null;
+    config: Extract<FlowNode, { type: "internal_note" }>["config"];
   }): Promise<void>;
   /**
    * Nó `move_lead` (#2065): move o card para outra etapa. Mesma razão de
@@ -689,6 +701,26 @@ async function applyResult(
       // de novo no tick seguinte e tentaria a MESMA tarefa — a trava é o
       // evento, que já está gravado). O warn é o que o suporte lê.
       logger.warn("followup_internal_task_failed", {
+        organization_id: enrollment.organization_id,
+        enrollment_id: enrollment.id,
+        node_id: node.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  // Nó `internal_note`: a nota nasce AQUI, depois do evento do passo — o idempotency_key é a trava (replay do tick não repete a nota).
+  if (result.kind === "advance" && !isReplay && node.type === "internal_note") {
+    try {
+      await db.anotarNaConversa?.({
+        organization_id: enrollment.organization_id,
+        contact_id: enrollment.contact_id,
+        enrollment_id: enrollment.id,
+        conversation_id: enrollment.conversation_id,
+        config: node.config,
+      });
+    } catch (err) {
+      logger.warn("followup_internal_note_failed", {
         organization_id: enrollment.organization_id,
         enrollment_id: enrollment.id,
         node_id: node.id,
@@ -1525,6 +1557,42 @@ export function createSupabaseAdminClient(admin: SupabaseClient): AdminClient {
         body: item.body,
         ref_kind: "followup_enrollment",
         ref_id: item.ref_id,
+      });
+      if (error) throw new Error(error.message);
+    },
+    async anotarNaConversa(item) {
+      let conversationId = item.conversation_id;
+      if (!conversationId) {
+        const { data: conversa, error: conversaErr } = await admin
+          .from("conversations")
+          .select("id")
+          .eq("organization_id", item.organization_id)
+          .eq("contact_id", item.contact_id)
+          .order("last_message_at", { ascending: false, nullsFirst: false })
+          .limit(1)
+          .maybeSingle();
+        if (conversaErr) throw new Error(conversaErr.message);
+        conversationId = (conversa as { id: string } | null)?.id ?? null;
+      }
+      if (!conversationId) {
+        logger.warn("followup_internal_note_skipped", { organization_id: item.organization_id, enrollment_id: item.enrollment_id, reason: "sem_conversa" });
+        return;
+      }
+      const [{ data: lead }, { data: contato }] = await Promise.all([
+        admin.from("crm_leads").select("title").eq("organization_id", item.organization_id).eq("contact_id", item.contact_id).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+        admin.from("contacts").select("name, display_name").eq("organization_id", item.organization_id).eq("id", item.contact_id).maybeSingle(),
+      ]);
+      const corpo = interpolarTitulo(item.config.texto, {
+        lead: lead as never,
+        contact: contato as never,
+      });
+      if (!corpo) return;
+      const { error } = await admin.from("conversation_notes").insert({
+        organization_id: item.organization_id,
+        conversation_id: conversationId,
+        body: corpo.slice(0, 4000),
+        created_by_user_id: null,
+        created_by_name: "Follow-up",
       });
       if (error) throw new Error(error.message);
     },

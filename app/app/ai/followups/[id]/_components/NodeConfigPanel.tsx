@@ -18,6 +18,7 @@ import { ClassifyForm } from "./forms/ClassifyForm";
 import { CollectForm } from "./forms/CollectForm";
 import { ConditionForm } from "./forms/ConditionForm";
 import { EndForm } from "./forms/EndForm";
+import { InternalNoteForm } from "./forms/InternalNoteForm";
 import { InternalTaskForm } from "./forms/InternalTaskForm";
 import { MatchReplyForm } from "./forms/MatchReplyForm";
 import { MoveLeadForm } from "./forms/MoveLeadForm";
@@ -158,6 +159,12 @@ export function NodeConfigPanel({
         {type === "internal_task" && (
           <InternalTaskForm
             config={node.data.config as ConfigOf<"internal_task">}
+            onChange={(config) => onChange({ config })}
+          />
+        )}
+        {type === "internal_note" && (
+          <InternalNoteForm
+            config={node.data.config as ConfigOf<"internal_note">}
             onChange={(config) => onChange({ config })}
           />
         )}

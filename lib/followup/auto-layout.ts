@@ -46,6 +46,7 @@ const TYPE_ORDER: Record<NodeType, number> = {
   // Lembrete interno (#1540) entra DEPOIS de tudo que o cliente vê — o layout
   // automático ordena por papel no fluxo, e este nó é o epílogo.
   internal_task: 10,
+  internal_note: 10.1,
   action: 8,
   // #2065 — ações que também não falam com o cliente: entram junto do envio,
   // porque são o MEIO do caminho (mover o card, etiquetar) e não o epílogo.

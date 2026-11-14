@@ -947,6 +947,14 @@ export function processNode(input: {
       return { kind: "advance", next_node_id: edge.target, next_eval_at: clock() };
     }
 
+    case "internal_note": {
+      // Nota interna: passagem, como o `internal_task`. Quem grava a nota é o motor ao aplicar o `advance` (`anotarNaConversa`), guardado
+      // pelo MESMO idempotency_key do evento do passo — replay do tick não repete a nota. Nenhuma mensagem sai daqui.
+      const edge = selectEdge(edges, node.id, { type: "always" });
+      if (!edge) return { kind: "fail", error: `internal_note node "${node.id}" has no outbound edge` };
+      return { kind: "advance", next_node_id: edge.target, next_eval_at: clock() };
+    }
+
     case "move_lead": {
       // #2065 — mover o card de etapa é PASSAGEM no relógio, como o
       // `internal_task`: o nó avança pela aresta única e quem ESCREVE a etapa é

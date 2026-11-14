@@ -49,6 +49,8 @@ export const PUBLISH_ERROR_CODES = [
   'motivo_da_perda_ausente',
   'motivo_da_perda_invalido',
   'tag_ausente',
+  // Nó `internal_note` publicado sem texto: não anotaria nada.
+  'nota_vazia',
   // Seguimento do #3056 — o modelo de mensagem do passo não existe nesta conta
   // (importado de outra, ou apagado): o motor lançaria a cada envio.
   'modelo_inexistente',
@@ -276,8 +278,8 @@ function cicloDoEncadeamento(
  * recusava em silêncio; a recusa aqui é o erro que a pessoa lê no editor.
  */
 export const NOS_DA_SUPERFICIE: Record<FollowupFlowSurface, readonly NodeType[]> = {
-  followup: ['trigger', 'wait', 'condition', 'ai_classify', 'match_reply', 'repeat', 'action', 'internal_task', 'move_lead', 'edit_lead_tag', 'end'],
-  crm_automation: ['trigger', 'wait', 'condition', 'ai_classify', 'match_reply', 'repeat', 'action', 'internal_task', 'move_lead', 'edit_lead_tag', 'end'],
+  followup: ['trigger', 'wait', 'condition', 'ai_classify', 'match_reply', 'repeat', 'action', 'internal_task', 'internal_note', 'move_lead', 'edit_lead_tag', 'end'],
+  crm_automation: ['trigger', 'wait', 'condition', 'ai_classify', 'match_reply', 'repeat', 'action', 'internal_task', 'internal_note', 'move_lead', 'edit_lead_tag', 'end'],
   atendimento: ['trigger', 'collect', 'skill', 'end'],
 };
 
@@ -427,6 +429,7 @@ export const CONTA_NO_TETO: Record<NodeType, boolean> = {
   condition: false, // decide o caminho
   repeat: false, // conta as voltas
   internal_task: false, // lembrete para a equipe
+  internal_note: false, // nota interna na conversa (só a equipe lê)
   move_lead: false, // move o card no funil
   edit_lead_tag: false, // grava tag no lead
   end: false, // desfecho
@@ -911,6 +914,20 @@ function conferirTags(
   }
 }
 
+/** Nó `internal_note` sem texto: o rascunho aceita, mas publicado não anotaria nada. */
+function conferirNota(
+  node: Extract<FlowNode, { type: 'internal_note' }>,
+  errors: PublishValidationError[]
+): void {
+  if (node.config.texto.trim() === '') {
+    errors.push({
+      node_id: node.id,
+      code: 'nota_vazia',
+      message: `A caixa "${node.label}" não tem texto — escreva a nota que o fluxo vai deixar na conversa.`,
+    });
+  }
+}
+
 /**
  * Uma regra de condição que não pode decidir nada. O rascunho aceita todas estas
  * formas — trabalho pela metade precisa salvar —, mas publicada cada uma é uma
@@ -1177,6 +1194,7 @@ export function validateFlowForPublish(
   for (const node of [...nodes].sort(byId)) {
     if (node.type === 'move_lead') conferirEtapaDestino(node, contexto, errors);
     if (node.type === 'edit_lead_tag') conferirTags(node, errors);
+    if (node.type === 'internal_note') conferirNota(node, errors);
     if (node.type === 'action' && contexto.modelos !== undefined) {
       const { prontos, doCanal } = contexto.modelos;
       const cfg = node.config;

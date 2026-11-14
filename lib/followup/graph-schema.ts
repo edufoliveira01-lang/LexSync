@@ -23,6 +23,9 @@ export const NODE_TYPES = [
   // que advocacia, saúde e serviços regulados precisam — o sistema lembra a
   // equipe, a mensagem sai de uma pessoa.
   'internal_task',
+  // Nota interna: grava uma anotação na CONVERSA do cliente (visível só para a equipe) e NÃO envia mensagem. É o registro do que o
+  // fluxo fez ou vai exigir ("cliente sumiu depois da proposta", "pedir o comprovante"), no lugar onde o atendente já olha.
+  'internal_note',
   // #2065: dois tipos de ACAO que não falam com o cliente — o fluxo deixa de
   // só mandar mensagem. `move_lead` move o card para outra etapa (o mesmo
   // escritor de etapa do board/automação), `edit_lead_tag` grava tag no lead
@@ -319,6 +322,15 @@ export const internalTaskConfigSchema = z.strictObject({
     z.strictObject({ usuario_id: z.string().uuid() }),
   ]),
   prioridade: z.enum(PRIORIDADES_DA_TAREFA),
+});
+
+/**
+ * Nó `internal_note`: uma nota interna na conversa do cliente. Só o texto — quem escreve é o fluxo, e a equipe lê no chat (a nota
+ * nunca sai para o cliente). Aceita as variáveis `{{contact.name}}` e `{{lead.title}}`, como o lembrete interno.
+ */
+export const internalNoteConfigSchema = z.strictObject({
+  // Aceita vazio: o rascunho salva trabalho pela metade (como `tags` e `stage_id`). Quem exige o texto é o publish (`nota_vazia`).
+  texto: z.string().max(2000, 'Nota muito longa: máximo de 2000 caracteres.'),
 });
 
 /**
@@ -661,6 +673,17 @@ export const flowNodeSchema = z.discriminatedUnion('type', [
       y: z.number(),
     }),
     config: internalTaskConfigSchema,
+  }),
+  // Nota interna: grava uma anotação na conversa do cliente, nunca envia mensagem
+  z.strictObject({
+    id: z.string().min(1),
+    type: z.literal('internal_note'),
+    label: z.string().min(1).max(60),
+    position: z.strictObject({
+      x: z.number(),
+      y: z.number(),
+    }),
+    config: internalNoteConfigSchema,
   }),
   // Nó de ação (#2065): move o card para outra etapa do funil
   z.strictObject({

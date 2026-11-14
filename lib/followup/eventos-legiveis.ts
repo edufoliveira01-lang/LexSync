@@ -136,6 +136,8 @@ const TIPO_DO_NO: Record<FlowNode["type"], string> = {
   action: "Mensagem",
   // #1540 — não é "Mensagem": é o passo que NÃO fala com o cliente.
   internal_task: "Lembrete interno",
+  // Nota interna: grava uma anotação na conversa, sem mensagem ao cliente.
+  internal_note: "Nota interna",
   // #2065 — as duas ações que também não falam com o cliente.
   move_lead: "Mover no funil",
   edit_lead_tag: "Editar tag",
@@ -207,6 +209,8 @@ export function resumoDoNo(node: FlowNode): NoDoDossie {
       const prazo = node.config.vence_em_dias === 0 ? "hoje" : `em ${node.config.vence_em_dias} dia(s)`;
       return { ...base, resumo: `cria a tarefa "${node.config.titulo}" para ${prazo} — sem mensagem ao cliente` };
     }
+    case "internal_note":
+      return { ...base, resumo: `anota na conversa: "${node.config.texto.length > 60 ? `${node.config.texto.slice(0, 60)}…` : node.config.texto}" — só a equipe vê, sem mensagem ao cliente` };
     case "move_lead":
       return { ...base, resumo: "move o card para outra etapa do funil — sem mensagem ao cliente" };
     case "edit_lead_tag":

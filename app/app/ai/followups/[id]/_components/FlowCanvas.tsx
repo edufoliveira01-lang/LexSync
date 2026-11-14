@@ -60,6 +60,7 @@ import { RepeatNode } from "./nodes/RepeatNode";
 import { ActionNode } from "./nodes/ActionNode";
 import { EndNode } from "./nodes/EndNode";
 import { CollectNode } from "./nodes/CollectNode";
+import { InternalNoteNode } from "./nodes/InternalNoteNode";
 import { InternalTaskNode } from "./nodes/InternalTaskNode";
 import { MoveLeadNode } from "./nodes/MoveLeadNode";
 import { EditLeadTagNode } from "./nodes/EditLeadTagNode";
@@ -83,6 +84,7 @@ const nodeTypes: NodeTypes = {
   // rótulo e sem formulário. Completar o nó é esta linha mais o formulário do
   // painel (`forms/InternalTaskForm`).
   internal_task: InternalTaskNode,
+  internal_note: InternalNoteNode,
   // #2065 — as duas caixas novas da issue: sem estas linhas o React Flow cai
   // no fallback da caixa desconhecida (o mesmo defeito do #1540 medido ali em
   // cima), sem rótulo e sem formulário.

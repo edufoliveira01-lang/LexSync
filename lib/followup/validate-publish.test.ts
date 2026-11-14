@@ -1371,6 +1371,14 @@ describe('validateFlowForPublish — nós de ação (#2065)', () => {
     expect(r.errors[0]!.message).toContain('Antiga · Vendas');
   });
 
+  const anotar = (texto: string): FlowNode => ({ id: 'n1', type: 'internal_note', label: 'Nota', position: pos, config: { texto } });
+
+  it('nota interna: texto vazio ou em branco recusa (nota_vazia); com texto publica, sem mensagem ao cliente', () => {
+    expect(codigos(publicar(comAcao(anotar(''))))).toEqual(['nota_vazia']);
+    expect(codigos(publicar(comAcao(anotar('   '))))).toEqual(['nota_vazia']);
+    expect(publicar(comAcao(anotar('Cliente sumiu depois da proposta.')))).toEqual({ ok: true });
+  });
+
   it('tag vazia ou em branco recusa; tag escrita publica', () => {
     expect(codigos(publicar(comAcao(marcar([]))))).toEqual(['tag_ausente']);
     expect(codigos(publicar(comAcao(marcar(['vip', '  ']))))).toEqual(['tag_ausente']);

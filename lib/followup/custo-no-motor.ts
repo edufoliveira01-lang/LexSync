@@ -33,6 +33,7 @@ export const CUSTO_NO_MOTOR: Record<NodeType, number> = {
   trigger: 1,
   condition: 1,
   internal_task: 1,
+  internal_note: 1,
   move_lead: 1,
   edit_lead_tag: 1,
   end: 1,
