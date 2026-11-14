@@ -9,6 +9,10 @@ describe("agente jurídico: o que o botão configura", () => {
     expect(FERRAMENTAS_DO_AGENTE_JURIDICO.length).toBeLessThanOrEqual(TETO_TOOLS_POR_AGENTE);
     expect(new Set(FERRAMENTAS_DO_AGENTE_JURIDICO).size).toBe(FERRAMENTAS_DO_AGENTE_JURIDICO.length);
   });
+  it("o agente não marca atendimento novo (só a equipe), mas remarca, desmarca e anota no Sales", () => {
+    expect(FERRAMENTAS_DO_AGENTE_JURIDICO).not.toContain("crm_book_appointment");
+    for (const t of ["crm_reschedule_appointment", "crm_cancel_appointment", "crm_anotar_no_sales", "crm_passar_para_agente", "crm_notificar_equipe"]) expect(FERRAMENTAS_DO_AGENTE_JURIDICO).toContain(t);
+  });
   it("liga a passagem para humano, desliga a de 'questão jurídica' e usa mensagens curtas", () => {
     const p = pedacoDoAgenteJuridico({ nomeDoAgente: "Sofia", nomeAtual: "", funis: [], pipelinesAtuais: [] });
     expect(p).toMatchObject({ name: "Sofia", handoff_tool_enabled: true, handoff_legal_enabled: false, split_messages: true, image_vision_enabled: true });

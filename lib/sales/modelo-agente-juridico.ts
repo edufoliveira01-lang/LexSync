@@ -17,6 +17,8 @@ export const FERRAMENTAS_DO_AGENTE_JURIDICO: readonly string[] = [
   "crm_enviar_contrato",
   // dados do cliente: gravados na hora, para não perguntar de novo e o contrato sair só com a confirmação
   "crm_registrar_dados_do_cliente",
+  // anotação na ficha do cliente no Sales (a equipe vê no cadastro)
+  "crm_anotar_no_sales",
   // documentos que o cliente manda pelo chat: o agente classifica e o sistema guarda no drive, depois da assinatura
   "crm_salvar_documento_do_cliente",
   // aviso à equipe por WhatsApp (central de notificações)
@@ -24,8 +26,8 @@ export const FERRAMENTAS_DO_AGENTE_JURIDICO: readonly string[] = [
   "crm_passar_para_agente",
   // base jurídica e cálculo (BPC): responder com a ficha e a conta certa, não de memória
   "crm_consultar_base_juridica", "crm_calcular_renda_per_capita",
-  // agenda (consultas, confirmações)
-  "crm_list_event_types", "crm_find_free_slots", "crm_book_appointment", "crm_list_appointments",
+  // agenda: o agente consulta, confirma, remarca e desmarca; quem MARCA atendimento novo é só a equipe (por isso sem crm_book_appointment)
+  "crm_list_event_types", "crm_find_free_slots", "crm_list_appointments",
   "crm_confirm_appointment", "crm_reschedule_appointment", "crm_cancel_appointment",
 ];
 
