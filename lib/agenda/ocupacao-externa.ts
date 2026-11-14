@@ -69,6 +69,17 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+/**
+ * A listagem traz a ocupação do Google? SÓ quando é a grade da agenda (período pedido) e NÃO quando se filtra por contato.
+ *
+ * O bloco do Google é "Ocupado": não tem contato, não é atendimento de ninguém. Filtrando por contato (a janela "Agendar atendimento"
+ * da conversa), ele entrava na lista como se fosse o "atendimento marcado" do cliente — mostrava um horário que não era dele e o
+ * "Desmarcar" falhava com "Dados inválidos", porque o id do bloco é derivado e não existe em `calendar_appointments`.
+ */
+export function listagemTrazOcupacaoDoGoogle(p: { de?: string | null; ate?: string | null; contactId?: string | null }): boolean {
+  return Boolean(p.de && p.ate) && !p.contactId;
+}
+
 /** Um compromisso externo como a tela o desenha: rótulo, dono e a fatia do recorte. */
 export interface BlocoExternoDaTela {
   id: string;

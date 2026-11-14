@@ -1127,13 +1127,13 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
             )}
           </div>
         )}
-        <div className="mb-1.5 flex items-center gap-2">
-        <div className="flex gap-1">
+        <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <div className="flex shrink-0 gap-1">
           <button
             type="button"
             onClick={() => setMode("reply")}
             className={cn(
-              "min-h-11 rounded-full px-3 py-1 text-xs font-medium transition-colors lg:min-h-0 lg:px-2.5",
+              "min-h-11 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors lg:min-h-0 lg:px-2.5",
               mode === "reply"
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-muted",
@@ -1145,7 +1145,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
             type="button"
             onClick={() => setMode("note")}
             className={cn(
-              "min-h-11 rounded-full px-3 py-1 text-xs font-medium transition-colors lg:min-h-0 lg:px-2.5",
+              "min-h-11 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors lg:min-h-0 lg:px-2.5",
               mode === "note"
                 ? "bg-warning text-warning-fg"
                 : "text-muted-foreground hover:bg-muted",
@@ -1154,7 +1154,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
             {t("Nota interna")}
           </button>
         </div>
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-1 [&_button]:whitespace-nowrap">
             <div id="slot-acoes-da-conversa" className="flex flex-wrap items-center justify-end gap-1" />
             {mode === "reply" ? <AgendarAtendimento conversationId={conversationId} contactId={contactId} contactName={contactName ?? null} somenteLeitura={followupSomenteLeitura} /> : null}
             {mode === "reply" ? <AtivarFollowup conversationId={conversationId} contactId={contactId} somenteLeitura={followupSomenteLeitura} podeParar={podePararFollowup} /> : null}

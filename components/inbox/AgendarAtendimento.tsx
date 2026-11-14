@@ -19,7 +19,7 @@ import { CalendarBlank, CircleNotch } from "@/lib/ui/icons";
 import { cn } from "@/lib/utils";
 
 type Tipo = { id: string; name: string; duration_minutes: number; is_active: boolean; location_kind?: string | null; location_details?: string | null };
-type Marcado = { id: string; titulo: string; iniciaEm: string; fuso: string; situacao: string; revision?: number; tipo?: { nome: string } | null };
+type Marcado = { id: string; origem?: string | null; titulo: string; iniciaEm: string; fuso: string; situacao: string; revision?: number; tipo?: { nome: string } | null };
 type Livres = { slots: HorarioLivre[]; fuso_da_regra: string; publicou_horarios: boolean };
 
 const CHAVE_DO_TIPO = "agendar-atendimento.tipo";
@@ -111,7 +111,8 @@ export function AgendarAtendimento({ conversationId, contactId, contactName, som
         if (cancelado) return;
         const ativos = (Array.isArray(rTipos.data) ? rTipos.data : []).filter((x) => x.is_active);
         const proximos = (Array.isArray(rMarcados.data) ? rMarcados.data : [])
-          .filter((x) => (x.situacao === "pending" || x.situacao === "confirmed") && new Date(x.iniciaEm).getTime() > agora.getTime())
+          // Bloco "Ocupado" do Google não é atendimento do cliente (e não dá para desmarcar): fora, mesmo que o servidor o mande.
+          .filter((x) => x.origem !== "google_sync" && (x.situacao === "pending" || x.situacao === "confirmed") && new Date(x.iniciaEm).getTime() > agora.getTime())
           .sort((a, b) => a.iniciaEm.localeCompare(b.iniciaEm));
         setTipos(ativos);
         setMarcado(proximos[0] ?? null);

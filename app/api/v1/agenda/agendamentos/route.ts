@@ -19,7 +19,7 @@ import { z } from "zod";
 import { listaAgendamentos, type AgendamentoListado } from "@/lib/agenda/consulta";
 import { DURACAO_MAXIMA_MIN, DURACAO_MINIMA_MIN } from "@/lib/agenda/duracao-escolhida";
 import { donosDaAgenda } from "@/lib/agenda/donos-da-agenda";
-import { lerOcupacaoExterna } from "@/lib/agenda/ocupacao-externa";
+import { lerOcupacaoExterna, listagemTrazOcupacaoDoGoogle } from "@/lib/agenda/ocupacao-externa";
 import { resolveAuthDual, tetoDeEscritaDoToken } from "@/lib/api/auth-dual";
 import type { Actor } from "@/lib/api/handlers/types";
 import { ApiError } from "@/lib/api/types";
@@ -286,7 +286,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   // Falha aqui NÃO derruba a listagem: sem ocupação a grade fica pobre; sem
   // agendamento ela fica errada. São consequências de tamanhos diferentes.
   const externos: AgendamentoDaResposta[] = [];
-  if (parsed.data.de && parsed.data.ate) {
+  if (parsed.data.de && parsed.data.ate && listagemTrazOcupacaoDoGoogle({ de: parsed.data.de, ate: parsed.data.ate, contactId: parsed.data.contact_id })) {
     // Leitura ÚNICA da ocupação da tela (`lib/agenda/ocupacao-externa`): a
     // semente do servidor faz a MESMA pergunta e recebe a MESMA resposta. A
     // regra — recorte por INTERSEÇÃO de intervalos, como no motor de

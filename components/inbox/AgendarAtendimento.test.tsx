@@ -70,6 +70,13 @@ describe("Agendar atendimento na conversa", () => {
     expect(api.post.mock.calls[0]![0]).toBe("/api/v1/agenda/agendamentos");
   });
 
+  it("bloco 'Ocupado' do Google que vier na lista NÃO vira o atendimento do cliente (e o formulário abre)", async () => {
+    servidor({ marcados: [{ id: "dono:2026:2027", titulo: "Ocupado", origem: "google_sync", iniciaEm: SLOT.inicio, fuso: "America/Sao_Paulo", situacao: "confirmed" }] });
+    await abrir();
+    expect(screen.queryByText("Atendimento marcado")).toBeNull();
+    expect(await screen.findByRole("button", { name: "14h" })).toBeInTheDocument();
+  });
+
   it("cliente que já tem atendimento marcado vê o atendimento, com Remarcar e Desmarcar", async () => {
     servidor({ marcados: [{ id: "ag-9", titulo: "Consulta", iniciaEm: SLOT.inicio, fuso: "America/Sao_Paulo", situacao: "confirmed", revision: 3, tipo: { nome: "Consulta" } }] });
     await abrir();
