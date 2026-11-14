@@ -21,3 +21,14 @@ describe("cápsula 'assumiu' da passagem entre agentes", () => {
     expect(/autom[aá]tico|\bia\b/.test("Helena (IA) assumiu a conversa".toLowerCase())).toBe(true);
   });
 });
+
+import { fraseDeFalhaDaFerramenta } from "@/lib/inbox/acao-do-agente";
+describe("fraseDeFalhaDaFerramenta", () => {
+  it("diz que tentou e o motivo, sem afirmar que fez", () => {
+    expect(fraseDeFalhaDaFerramenta("crm_enviar_cobranca", "A parcela está vencida.")).toBe("tentou enviar o boleto e o PIX da parcela, mas não concluiu: A parcela está vencida.");
+    expect(fraseDeFalhaDaFerramenta("crm_enviar_cobranca", undefined)).toBe("tentou enviar o boleto e o PIX da parcela, mas não concluiu");
+  });
+  it("ferramenta fora da lista não gera cápsula", () => {
+    expect(fraseDeFalhaDaFerramenta("crm_get_lead", "x")).toBeNull();
+  });
+});

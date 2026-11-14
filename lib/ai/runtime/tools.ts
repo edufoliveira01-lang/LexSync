@@ -11,7 +11,7 @@
  * loop. We wrap that tool's execute to publish a one-shot signal via
  * `runtimeHandoffSignal`, which `runAgent` checks after each step.
  */
-import { frasesDaFerramenta, frasesDeConsulta, anotarMovimentoDoNegocio, anotarNaConversaDoContato, anotarEventoNaConversaDoContato, fraseDeAssuncaoDoAgente } from "@/lib/inbox/acao-do-agente";
+import { fraseDeFalhaDaFerramenta, frasesDaFerramenta, frasesDeConsulta, anotarMovimentoDoNegocio, anotarNaConversaDoContato, anotarEventoNaConversaDoContato, fraseDeAssuncaoDoAgente } from "@/lib/inbox/acao-do-agente";
 import { tool, type Tool } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -549,7 +549,12 @@ function wrapMcpTool(
           input.efeitos?.registrarRecibosDeAgendamento(geracaoDaAgenda, result);
         }
         // Anotação interna do chat (só a equipe vê): o que o agente acabou de fazer. Melhor-esforço, nunca atrasa nem derruba a ferramenta.
-        if (input.contatoDoTurno && def.category === "write" && motivoDoVazio === null) {
+        // A ferramenta respondeu `ok: false` (não fez o que prometia): a cápsula NÃO diz que fez. Para as ferramentas do Sales, a equipe vê o motivo.
+        const naoFez = result && typeof result === "object" && (result as { ok?: unknown }).ok === false ? (result as { erro?: unknown }) : null;
+        if (input.contatoDoTurno && def.category === "write" && motivoDoVazio === null && naoFez) {
+          const frase = fraseDeFalhaDaFerramenta(def.name, naoFez.erro);
+          if (frase) void anotarNaConversaDoContato(input.ctx.organizationId, input.contatoDoTurno, frase);
+        } else if (input.contatoDoTurno && def.category === "write" && motivoDoVazio === null) {
           if (def.name === "crm_move_lead_stage") void anotarMovimentoDoNegocio(input.ctx.organizationId, input.contatoDoTurno);
           else {
             const frase = frasesDaFerramenta(def.name, argsRecord);

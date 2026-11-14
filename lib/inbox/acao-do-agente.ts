@@ -17,6 +17,20 @@ const ROTULOS_DOS_DADOS: Record<string, string> = {
 };
 
 /** A frase da ação, pelo nome da ferramenta e o que foi enviado. `null` = não anota. As frases NUNCA levam o valor do dado (só o nome do campo). */
+/** O que a equipe lê quando uma ferramenta do Sales NÃO fez o que o agente tentou (com o motivo que o Sales deu). Outras ferramentas: sem cápsula. */
+const ROTULO_DA_TENTATIVA: Record<string, string> = {
+  crm_enviar_cobranca: "enviar o boleto e o PIX da parcela",
+  crm_anotar_no_sales: "anotar no cadastro do cliente, no Sales",
+  crm_enviar_contrato: "enviar o contrato",
+  crm_salvar_documento_do_cliente: "guardar o documento do cliente",
+};
+export function fraseDeFalhaDaFerramenta(nome: string, erro: unknown): string | null {
+  const rotulo = ROTULO_DA_TENTATIVA[nome];
+  if (!rotulo) return null;
+  const motivo = typeof erro === "string" ? erro.trim().replace(/\s+/g, " ").slice(0, 200) : "";
+  return motivo ? `tentou ${rotulo}, mas não concluiu: ${motivo}` : `tentou ${rotulo}, mas não concluiu`;
+}
+
 export function frasesDaFerramenta(nome: string, entrada: Record<string, unknown>): string | null {
   switch (nome) {
     case "crm_registrar_dados_do_cliente": {
