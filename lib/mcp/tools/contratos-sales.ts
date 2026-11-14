@@ -438,7 +438,10 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
       if (!enviouPdf) {
         const porque = c.boleto_pdf_base64 ? "o envio do arquivo falhou" : (c.boleto_pdf_motivo ?? "o boleto em PDF não está disponível");
         void anotarNaConversaDoContato(ctx.organizationId, contato, `enviou o link do boleto, mas não o PDF: ${porque}`);
-      } else if (c.pix && !enviouPix) {
+      }
+      if (!c.pix) {
+        void anotarNaConversaDoContato(ctx.organizationId, contato, `não enviou o PIX copia e cola: ${c.pix_motivo ?? "o Asaas não devolveu o código do PIX"}`);
+      } else if (!enviouPix) {
         void anotarNaConversaDoContato(ctx.organizationId, contato, "enviou o boleto, mas a mensagem do PIX copia e cola não saiu");
       }
       if (!enviouTexto && !enviouPdf) return { ok: false, erro: "Gerei a cobrança, mas o envio ao cliente falhou.", proximo_passo: "Diga que a equipe envia o boleto em instantes e use crm_notificar_equipe." };
