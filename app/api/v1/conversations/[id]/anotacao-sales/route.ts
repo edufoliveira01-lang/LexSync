@@ -54,7 +54,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
   const { id } = await ctx.params;
   const authz = await requireRole("agent", { requestId, resource: "conversations" });
   if (!authz.ok) return authz.response;
-  const corpo = (await req.json().catch(() => ({}))) as { pessoa_id?: unknown; processo_id?: unknown; texto?: unknown };
+  const corpo = (await req.json().catch(() => ({}))) as { pessoa_id?: unknown; processo_id?: unknown; texto?: unknown; importante?: unknown };
   const texto = typeof corpo.texto === "string" ? corpo.texto.trim() : "";
   const pessoaId = Number(corpo.pessoa_id);
   const processoId = Number(corpo.processo_id) || undefined;
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<Response> {
     // O cliente precisa ser o dono do telefone DESTA conversa: o atendente não grava anotação em cliente alheio por este caminho.
     const achado = await buscarClienteParaAnotar(slug, telefone);
     if (!achado.encontrado || achado.pessoa?.id !== pessoaId) return fail("validation_error", "Este cliente não corresponde ao telefone da conversa.", 409, { requestId });
-    const r = await anotarNoSales(slug, { pessoa_id: pessoaId, processo_id: processoId, texto: texto.slice(0, 4000), autor_nome: authz.user.full_name ?? authz.user.email, autor_email: authz.user.email });
+    const r = await anotarNoSales(slug, { pessoa_id: pessoaId, processo_id: processoId, texto: texto.slice(0, 4000), importante: corpo.importante === true, autor_nome: authz.user.full_name ?? authz.user.email, autor_email: authz.user.email });
     return ok(r, { requestId });
   } catch (e) {
     const status = e instanceof ErroContratoSales && e.status >= 400 && e.status < 500 ? e.status : 502;

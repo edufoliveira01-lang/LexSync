@@ -98,11 +98,22 @@ export interface ClienteParaAnotar {
   pessoa?: { id: number; nome: string };
   processos?: { id: number; pasta: string; numero: string; titulo: string; status: string }[];
   recentes?: { autor: string; texto: string; criado_em: string; onde: string }[];
+  /** Anotações IMPORTANTES ainda não cumpridas (Sales ≥ 3.33.0; versões antigas não mandam). */
+  pendencias?: PendenciaDoSales[];
 }
+/** Anotação marcada como importante que ninguém deu por cumprida: o aviso que o atendente vê na conversa. */
+export interface PendenciaDoSales { id: number; origem: "cadastro" | "processo"; autor: string; texto: string; criado_em: string; onde: string }
 export const buscarClienteParaAnotar = (slug: string, telefone: string, http: typeof fetch = fetch) =>
   chamar<ClienteParaAnotar>(slug, "POST", "/buscar", { telefone }, http, "anotacoes");
-export const anotarNoSales = (slug: string, dados: { pessoa_id: number; processo_id?: number; texto: string; autor_nome: string; autor_email: string }, http: typeof fetch = fetch) =>
+export const anotarNoSales = (slug: string, dados: { pessoa_id: number; processo_id?: number; texto: string; importante?: boolean; autor_nome: string; autor_email: string }, http: typeof fetch = fetch) =>
   chamar<{ ok: boolean; destino: "cadastro" | "processo" }>(slug, "POST", "", dados, http, "anotacoes");
+
+/** As pendências do cliente desta conversa (só elas, leve): o aviso que fica no chat. */
+export const pendenciasDoClienteNoSales = (slug: string, telefone: string, http: typeof fetch = fetch) =>
+  chamar<{ encontrado: boolean; pessoa?: { id: number; nome: string }; pendencias: PendenciaDoSales[] }>(slug, "POST", "/pendencias", { telefone }, http, "anotacoes");
+/** O atendente dá a pendência por cumprida (ou a reabre): no Sales ela some do aviso e a anotação segue no histórico, com o nome de quem cumpriu. */
+export const cumprirPendenciaNoSales = (slug: string, dados: { origem: "cadastro" | "processo"; id: number; cumprida?: boolean; autor_nome: string; autor_email: string }, http: typeof fetch = fetch) =>
+  chamar<{ ok: boolean }>(slug, "POST", "/cumprir", dados, http, "anotacoes");
 
 /** Correção do cadastro do cliente pelo atendimento: o Sales troca só os campos de contato e endereço (os demais ele ignora) e deixa o histórico na ficha. */
 export interface ResultadoDoCadastroNoSales { ok: boolean; pessoa_id: number; alterados: string[]; iguais: string[]; ignorados: string[] }

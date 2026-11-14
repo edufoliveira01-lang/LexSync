@@ -28,6 +28,7 @@ import { BarraDeAcoesEmLote } from "./BarraDeAcoesEmLote";
 import { InboxFilters, type InboxFiltersValue, type InboxTab } from "./InboxFilters";
 import { ChatThread } from "./ChatThread";
 import { Composer, type ComposerHandle } from "./Composer";
+import { PendenciasDoSales } from "@/components/inbox/PendenciasDoSales";
 import { ConversationHeader } from "./ConversationHeader";
 import { BotaoIniciarConversa } from "./PainelIniciarConversa";
 import { RetentionNotice } from "./RetentionNotice";
@@ -1100,6 +1101,7 @@ export function InboxLayout({
               buscaAberta={buscaAberta}
               botaoBuscaRef={botaoBuscaRef}
             />
+            <PendenciasDoSales key={selectedConversation.id} conversationId={selectedConversation.id} />
             <div className="relative min-h-0 flex-1 overflow-hidden">
             {buscaAberta && (
               <div data-busca-na-conversa className="absolute right-4 top-3 z-20 flex w-[min(24rem,calc(100%-2rem))] items-center gap-1.5 rounded-full border border-border bg-surface py-1 pl-3 pr-1 shadow-md">

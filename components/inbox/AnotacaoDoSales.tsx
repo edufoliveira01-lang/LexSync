@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { useT } from "@/hooks/i18n/useT";
 import { apiClient } from "@/lib/api/client";
+import { EVENTO_PENDENCIAS_ATUALIZAR } from "@/components/inbox/PendenciasDoSales";
 
 /**
  * Fork Sales — anotação rápida na conversa (atalho Alt+N, igual ao do Sales).
@@ -44,6 +45,7 @@ function Janela({ conversationId, onFechar }: { conversationId: string; onFechar
   const [erro, setErro] = useState("");
   const [processoId, setProcessoId] = useState(0);
   const [texto, setTexto] = useState("");
+  const [importante, setImportante] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -64,8 +66,9 @@ function Janela({ conversationId, onFechar }: { conversationId: string; onFechar
     if (texto.trim().length < 2) return void toast.info(t("Escreva a anotação."));
     setSalvando(true);
     try {
-      await apiClient.post(`/api/v1/conversations/${conversationId}/anotacao-sales`, { pessoa_id: achado.pessoa.id, processo_id: processoId || undefined, texto });
-      toast.success(t("Anotação salva no Sales."));
+      await apiClient.post(`/api/v1/conversations/${conversationId}/anotacao-sales`, { pessoa_id: achado.pessoa.id, processo_id: processoId || undefined, texto, importante });
+      toast.success(t(importante ? "Anotação importante salva no Sales." : "Anotação salva no Sales."));
+      window.dispatchEvent(new Event(EVENTO_PENDENCIAS_ATUALIZAR));
       onFechar();
     } catch (e) {
       showApiError(e);
@@ -103,6 +106,10 @@ function Janela({ conversationId, onFechar }: { conversationId: string; onFechar
                 onChange={(e) => setTexto(e.target.value)}
                 onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); void salvar(); } }}
               />
+              <label className={`flex cursor-pointer items-start gap-2.5 rounded-md border px-3 py-2.5 ${importante ? "border-warning/50 bg-warning-bg" : ""}`}>
+                <input type="checkbox" className="mt-0.5" data-testid="anotacao-importante" checked={importante} onChange={(e) => setImportante(e.target.checked)} />
+                <span><b>{t("Importante")}</b><span className="block text-xs text-muted-foreground">{t("Avisa quem abrir este cliente (aqui no chat e no Sales), até alguém dar como cumprido. Ex.: “preciso do documento deste cliente”.")}</span></span>
+              </label>
               {(achado.recentes?.length ?? 0) > 0 && (
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-muted-foreground">{t("Últimas anotações")}</p>
