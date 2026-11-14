@@ -15,6 +15,7 @@ import { enviarPdf, enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
 import { anotarNoSales, buscarClienteParaAnotar, cobrancaDoClienteNoSales, ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
+import { completarCobrancaEmSegundoPlano, textoDoPix } from "@/lib/sales/cobranca-em-segundo-plano";
 import { anotarNaConversaDoContato } from "@/lib/inbox/acao-do-agente";
 import { passarParaAgente } from "@/lib/ai/passagem/passar-para-agente";
 import { propagarCadastroParaOSales, type ResultadoNoSales } from "@/lib/sales/propagar-cadastro-no-sales";
@@ -430,24 +431,25 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
       if (c.linha_digitavel) partes.push(`Linha digitável do boleto:\n${c.linha_digitavel}`);
       const texto = partes.join("\n\n");
       const enviouTexto = await enviarTexto(ctx.organizationId, conversationId, texto);
-      let enviouPix = true;
-      if (c.pix) enviouPix = await enviarTexto(ctx.organizationId, conversationId, `PIX copia e cola (copie a mensagem abaixo e cole no app do banco):\n\n${c.pix}`);
+      const enviouPix = !c.pix ? false : await enviarTexto(ctx.organizationId, conversationId, textoDoPix(c.pix));
       let enviouPdf = false;
       if (c.boleto_pdf_base64) enviouPdf = await enviarPdf(ctx.organizationId, conversationId, c.boleto_pdf_nome ?? `Boleto-${c.vencimento}.pdf`, Buffer.from(c.boleto_pdf_base64, "base64"), "Boleto em PDF");
-      // A equipe vê no chat quando o PDF não foi (e por quê): o cliente recebeu o link, mas quem atende precisa saber.
-      if (!enviouPdf) {
-        const porque = c.boleto_pdf_base64 ? "o envio do arquivo falhou" : (c.boleto_pdf_motivo ?? "o boleto em PDF não está disponível");
-        void anotarNaConversaDoContato(ctx.organizationId, contato, `enviou o link do boleto, mas não o PDF: ${porque}`);
+      if (!enviouTexto && !enviouPdf && !enviouPix) return { ok: false, erro: "Gerei a cobrança, mas o envio ao cliente falhou.", proximo_passo: "Diga que a equipe envia o boleto em instantes e use crm_notificar_equipe." };
+      // O que faltou (PIX ou PDF) NÃO trava a resposta do chat: o sistema continua buscando em segundo plano, com paciência, e manda cada peça na MESMA
+      // conversa quando ficar pronta; se no fim ainda faltar algo, a equipe lê o motivo real na conversa.
+      const falta = !enviouPdf || !enviouPix;
+      if (falta) {
+        completarCobrancaEmSegundoPlano({
+          orgId: ctx.organizationId, contato, conversationId, slug, telefone, lancamentoId: c.lancamento_id,
+          jaEnviou: { pix: enviouPix, pdf: enviouPdf },
+          motivos: { pix: enviouPix ? null : (c.pix_motivo ?? null), pdf: enviouPdf ? null : (c.boleto_pdf_base64 ? "o envio do arquivo falhou" : (c.boleto_pdf_motivo ?? null)) },
+        });
       }
-      if (!c.pix) {
-        void anotarNaConversaDoContato(ctx.organizationId, contato, `não enviou o PIX copia e cola: ${c.pix_motivo ?? "o Asaas não devolveu o código do PIX"}`);
-      } else if (!enviouPix) {
-        void anotarNaConversaDoContato(ctx.organizationId, contato, "enviou o boleto, mas a mensagem do PIX copia e cola não saiu");
-      }
-      if (!enviouTexto && !enviouPdf) return { ok: false, erro: "Gerei a cobrança, mas o envio ao cliente falhou.", proximo_passo: "Diga que a equipe envia o boleto em instantes e use crm_notificar_equipe." };
       return {
-        ok: true, enviado_ao_cliente: true, valor: brl(c.valor_centavos), vencimento: dataBr(c.vencimento), pdf_enviado: enviouPdf, pix_enviado: Boolean(c.pix) && enviouPix, outras_parcelas_em_aberto: c.outras_em_aberto,
-        proximo_passo: "O sistema JÁ enviou ao cliente o link, o PIX e o boleto. NÃO repita o link nem o PIX. Em UMA mensagem curta, diga que enviou o boleto e o PIX da parcela e que o pagamento é conferido automaticamente. Não prometa nada além disso.",
+        ok: true, enviado_ao_cliente: true, valor: brl(c.valor_centavos), vencimento: dataBr(c.vencimento), pdf_enviado: enviouPdf, pix_enviado: enviouPix, pdf_e_pix_a_caminho: falta, outras_parcelas_em_aberto: c.outras_em_aberto,
+        proximo_passo: falta
+          ? "O sistema JÁ enviou ao cliente o link de pagamento e a linha digitável. O PIX copia e cola e o PDF do boleto seguem SOZINHOS, em instantes, na mesma conversa. NÃO repita o link nem a linha digitável e NÃO chame esta ferramenta de novo. Em UMA mensagem curta, diga que o link e o código do boleto já foram enviados, que o PDF e o PIX chegam em seguida e que o pagamento é conferido automaticamente. Não prometa horário."
+          : "O sistema JÁ enviou ao cliente o link, o PIX e o boleto. NÃO repita o link nem o PIX. Em UMA mensagem curta, diga que enviou o boleto e o PIX da parcela e que o pagamento é conferido automaticamente. Não prometa nada além disso.",
       };
     } catch (e) {
       if (e instanceof ErroContratoSales && /CPF ou CNPJ/i.test(e.message) && !/outro cadastro|inválid/i.test(e.message)) {

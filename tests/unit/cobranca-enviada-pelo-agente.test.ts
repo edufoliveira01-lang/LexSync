@@ -11,6 +11,8 @@ const gravados = vi.fn();
 vi.mock("@/lib/sales/dados-do-cliente", async (original) => ({ ...(await original<typeof import("@/lib/sales/dados-do-cliente")>()), lerDadosGravados: (...a: unknown[]) => gravados(...a) }));
 const capsula = vi.fn();
 vi.mock("@/lib/inbox/acao-do-agente", async (original) => ({ ...(await original<typeof import("@/lib/inbox/acao-do-agente")>()), anotarNaConversaDoContato: (...a: unknown[]) => capsula(...a) }));
+const segundoPlano = vi.fn();
+vi.mock("@/lib/sales/cobranca-em-segundo-plano", async (original) => ({ ...(await original<typeof import("@/lib/sales/cobranca-em-segundo-plano")>()), completarCobrancaEmSegundoPlano: (...a: unknown[]) => segundoPlano(...a) }));
 vi.mock("@/lib/sales/contrato-na-conversa", () => ({ slugDaOrg: async () => "alfa", criarContratoNaConversa: vi.fn(), contratoPendenteDaConversa: vi.fn() }));
 
 import { crmEnviarCobranca } from "@/lib/mcp/tools/contratos-sales";
@@ -29,7 +31,7 @@ const ctx = (contatoDoTurno?: string, telefone: string | null = "5513974045973")
 const cobranca = { lancamento_id: 5, descricao: "Honorários 1/3", valor_centavos: 5000, vencimento: "2026-11-14", link: "https://asaas.com/i/1", linha_digitavel: "23793.38128 60000", pix: "000201PIX", boleto_pdf_base64: Buffer.from("%PDF-").toString("base64"), boleto_pdf_nome: "Boleto - venc 14-11-2026.pdf", outras_em_aberto: 0 };
 
 describe("crm_enviar_cobranca — o agente manda o boleto e o PIX da parcela do cliente", () => {
-  beforeEach(() => { capsula.mockReset(); gravados.mockReset(); gravados.mockResolvedValue({}); pedir.mockReset(); texto.mockReset(); pdf.mockReset(); texto.mockResolvedValue(true); pdf.mockResolvedValue(true); pedir.mockResolvedValue(cobranca); });
+  beforeEach(() => { segundoPlano.mockReset(); capsula.mockReset(); gravados.mockReset(); gravados.mockResolvedValue({}); pedir.mockReset(); texto.mockReset(); pdf.mockReset(); texto.mockResolvedValue(true); pdf.mockResolvedValue(true); pedir.mockResolvedValue(cobranca); });
 
   it("é escrita do AGENTE e não recebe id de contato, conversa ou organização: o alvo é o contato do turno", () => {
     expect(crmEnviarCobranca.category).toBe("write");
@@ -90,11 +92,30 @@ describe("crm_enviar_cobranca — o agente manda o boleto e o PIX da parcela do 
     expect(r.falta_cpf).toBeUndefined();
     expect(r.proximo_passo).toContain("crm_notificar_equipe");
   });
-  it("sem PDF: o cliente recebe o link e a equipe lê no chat o motivo", async () => {
-    pedir.mockResolvedValue({ ...cobranca, boleto_pdf_base64: null, boleto_pdf_nome: null, boleto_pdf_motivo: "o Asaas não devolveu o endereço do boleto" });
-    const r = (await crmEnviarCobranca.handler({}, ctx("c1"))) as { ok: boolean; pdf_enviado: boolean };
-    expect(r).toMatchObject({ ok: true, pdf_enviado: false });
+  it("tudo pronto de primeira: nada fica para segundo plano", async () => {
+    const r = (await crmEnviarCobranca.handler({}, ctx("c1"))) as { pdf_e_pix_a_caminho: boolean; proximo_passo: string };
+    expect(r.pdf_e_pix_a_caminho).toBe(false);
+    expect(segundoPlano).not.toHaveBeenCalled();
+  });
+  it("faltou o PDF e o PIX: o link e a linha saem NA HORA e o resto segue em segundo plano, com o último motivo conhecido", async () => {
+    pedir.mockResolvedValue({ ...cobranca, pix: "", boleto_pdf_base64: null, boleto_pdf_nome: null, boleto_pdf_motivo: "o Asaas demorou para liberar o boleto em PDF", pix_motivo: "sem resposta em 8 s" });
+    const r = (await crmEnviarCobranca.handler({}, ctx("c1"))) as { ok: boolean; pdf_enviado: boolean; pix_enviado: boolean; pdf_e_pix_a_caminho: boolean; proximo_passo: string };
+    expect(r).toMatchObject({ ok: true, pdf_enviado: false, pix_enviado: false, pdf_e_pix_a_caminho: true });
+    expect(texto).toHaveBeenCalledTimes(1);
+    expect(texto.mock.calls[0]![2]).toContain("https://asaas.com/i/1");
     expect(pdf).not.toHaveBeenCalled();
-    expect(capsula).toHaveBeenCalledWith("org-1", "c1", expect.stringContaining("não o PDF: o Asaas não devolveu o endereço do boleto"));
+    expect(r.proximo_passo).toContain("seguem SOZINHOS");
+    expect(r.proximo_passo).toContain("NÃO chame esta ferramenta de novo");
+    expect(segundoPlano).toHaveBeenCalledWith(expect.objectContaining({
+      orgId: "org-1", contato: "c1", conversationId: "conv-1", slug: "alfa", telefone: "5513974045973", lancamentoId: 5,
+      jaEnviou: { pix: false, pdf: false },
+      motivos: { pix: "sem resposta em 8 s", pdf: "o Asaas demorou para liberar o boleto em PDF" },
+    }));
+  });
+  it("só faltou o PDF: o PIX já saiu e o segundo plano cuida apenas do PDF", async () => {
+    pedir.mockResolvedValue({ ...cobranca, boleto_pdf_base64: null, boleto_pdf_nome: null, boleto_pdf_motivo: "o Asaas respondeu HTTP 403 ao baixar o boleto (sandbox.asaas.com)" });
+    await crmEnviarCobranca.handler({}, ctx("c1"));
+    expect(texto).toHaveBeenCalledTimes(2);
+    expect(segundoPlano).toHaveBeenCalledWith(expect.objectContaining({ jaEnviou: { pix: true, pdf: false } }));
   });
 });

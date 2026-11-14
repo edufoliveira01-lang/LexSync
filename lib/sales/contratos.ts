@@ -123,7 +123,11 @@ export const atualizarCadastroNoSales = (slug: string, dados: { pessoa_id: numbe
 /** A cobrança (boleto + PIX) de uma parcela em aberto do cliente do telefone. O Sales gera no Asaas (ou devolve a que já existe). */
 export interface CobrancaDoCliente {
   lancamento_id: number; descricao: string; valor_centavos: number; vencimento: string;
-  link: string; linha_digitavel: string; pix: string; boleto_pdf_base64: string | null; boleto_pdf_nome: string | null; boleto_pdf_motivo?: string | null; pix_motivo?: string | null; outras_em_aberto: number;
+  link: string; linha_digitavel: string; pix: string; boleto_pdf_base64: string | null; boleto_pdf_nome: string | null; boleto_pdf_motivo?: string | null; pix_motivo?: string | null; pendente?: boolean; outras_em_aberto: number;
 }
 export const cobrancaDoClienteNoSales = (slug: string, dados: { telefone: string; lancamento_id?: number; cpf?: string }, http: typeof fetch = fetch) =>
   chamar<CobrancaDoCliente>(slug, "POST", "", dados, http, "cobranca");
+
+/** Completa, sem pressa, o PIX e o PDF de uma cobrança já gerada (o Sales busca por até ~40 s por consulta; quem chama repete a intervalos). */
+export const complementoDaCobrancaNoSales = (slug: string, dados: { telefone: string; lancamento_id: number }, http: typeof fetch = fetch) =>
+  chamar<CobrancaDoCliente>(slug, "POST", "/complemento", dados, http, "cobranca");
