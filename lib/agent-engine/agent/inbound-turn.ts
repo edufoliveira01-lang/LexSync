@@ -12,6 +12,7 @@ import {
   type TurnPreview,
 } from './preview';
 import { etiquetarProdutoAposEnvio } from './etiqueta-apos-envio';
+import { criarMarcosDoTurno, FERRAMENTAS_DE_MARCO } from './marcos-apos-envio';
 import { claimOfJob } from '../queue/claim';
 import { currentExecutionBoundary, guardServiceEffect } from '@/lib/atendimento/fronteira-server';
 /**
@@ -3779,6 +3780,9 @@ async function executarTurnoDoAgente(
   // equipe. Os dois dizem que o silêncio foi decisão — só sem eles o motor pede a
   // correção do turno que terminou sem falar com o cliente (ver depois da chamada principal).
   let tentativasDeEnvio = 0;
+  // "Fez, anotou, classificou, seguiu": etapa, etiqueta, nota e aviso pedidos ANTES de a mensagem do turno sair esperam o envio.
+  // Ver `marcos-apos-envio.ts`.
+  const marcosDoTurno = criarMarcosDoTurno(runLog);
   // Veto que manda PARAR (stop/LGPD): pedir a correção seria pedir ao modelo que
   // tente de novo o que a cadeia proíbe — ver `VETOS_IRREVOGAVEIS`.
   let vetoIrrevogavel = false;
@@ -4355,6 +4359,9 @@ async function executarTurnoDoAgente(
         }
         const outcome = chain.outcome;
         outcomes.push(outcome);
+        if (outcome.kind === 'sent' || outcome.kind === 'already_sent' || outcome.kind === 'queued') {
+          await marcosDoTurno.aoEnviar();
+        }
         if (outcome.kind === 'sent' || outcome.kind === 'already_sent') {
           return {
             ok: true,
@@ -5074,6 +5081,10 @@ async function executarTurnoDoAgente(
             contactId: leadId,
             agentId: agentConfig?.agentId ?? null,
           });
+          // A mensagem SAIU (ou o canal a aceitou para sair): agora valem os marcos que o modelo pediu antes dela.
+          if (outcome.kind === 'sent' || outcome.kind === 'already_sent' || outcome.kind === 'queued') {
+            await marcosDoTurno.aoEnviar();
+          }
           switch (outcome.kind) {
             case 'sent':
             case 'already_sent':
@@ -5763,6 +5774,19 @@ async function executarTurnoDoAgente(
       runLog.info('capacidades entregues ao operador — fora do turno do conversador', {
         entregues,
       });
+    }
+
+    // MARCOS DEPOIS DO ENVIO. Só no turno real: a prévia não envia nada nem grava marco.
+    if (!preview) {
+      for (const nome of FERRAMENTAS_DE_MARCO) {
+        const ferramenta = rawTools[nome] as { execute?: (...a: unknown[]) => Promise<unknown> } | undefined;
+        if (ferramenta && typeof ferramenta.execute === 'function') {
+          rawTools[nome] = {
+            ...ferramenta,
+            execute: marcosDoTurno.embrulhar(nome, ferramenta.execute.bind(ferramenta)),
+          } as unknown as (typeof rawTools)[string];
+        }
+      }
     }
 
     // Circuit breaker de tools (F2-15): estado no closure DESTA invocação — zera
@@ -6888,6 +6912,10 @@ async function executarTurnoDoAgente(
       });
     }
 
+    // Fim do turno: o que ainda esperava a mensagem do marco é resolvido aqui (roda se não houve envio; descarta etapa/etiqueta se
+    // houve tentativa e nada saiu). Antes da divergência abaixo, que lê o estágio que o modelo confirmou.
+    await marcosDoTurno.encerrar({ houveTentativaDeEnvio: tentativasDeEnvio > 0 });
+
     // F3-11: divergência classificador×modelo. O classificador sugeriu um estágio; se o
     // modelo confirmou (via update_lead_state — a máquina F2-10) um estágio DIFERENTE, o
     // desacordo vira candidato ao golden set (linha em `golden_candidates` — mesma tabela
@@ -7058,6 +7086,8 @@ async function executarTurnoDoAgente(
   } finally {
     // Turno que terminou sem enviar (veto, handoff, erro) também para de renovar.
     pararDigitando();
+    // Caminho de saída antecipada ou de erro: o que ficou na fila ainda é resolvido ANTES de fechar a conexão das tools.
+    await marcosDoTurno.encerrar({ houveTentativaDeEnvio: tentativasDeEnvio > 0 });
     await mcpCleanup?.();
   }
 }
