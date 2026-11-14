@@ -12,11 +12,12 @@ import type { Note } from "@/lib/types/messaging";
  *   azul = assumiu · roxo = transferiu · âmbar = liberou/devolveu à fila · cinza = fechou/arquivou · verde = reabriu/contrato assinado
  *   índigo = contrato enviado · rosa = automático · verde-água = a IA mexeu no funil (classificou / moveu o negócio) · azul-céu = follow-up (entrou, enviou, respondeu, concluiu).
  */
-export type TipoDeEvento = "programada" | "followup" | "crm" | "assumiu" | "transferiu" | "liberou" | "encerrou" | "reabriu" | "contrato_enviado" | "contrato_assinado" | "automatico" | "outro";
+export type TipoDeEvento = "programada" | "followup" | "crm" | "assumiu" | "transferiu" | "liberou" | "encerrou" | "reabriu" | "contrato_enviado" | "contrato_assinado" | "agenda" | "automatico" | "outro";
 
 export function tipoDoEvento(texto: string): TipoDeEvento {
   const t = texto.toLowerCase();
   if (/programou|programada/.test(t)) return "programada";
+  if (/agendou|remarcou|desmarcou|um compromisso/.test(t)) return "agenda";
   if (/^follow-up/.test(t)) return "followup";
   if (/moveu o neg[óo]cio|marcou o atendimento|atualizou o estado do atendimento/.test(t)) return "crm";
   if (/contrato.*assinad|assinou/.test(t)) return "contrato_assinado";
@@ -41,6 +42,7 @@ const COR: Record<TipoDeEvento, string> = {
   reabriu: "border-emerald-300 bg-emerald-50 text-emerald-700",
   contrato_enviado: "border-indigo-300 bg-indigo-50 text-indigo-700",
   contrato_assinado: "border-emerald-400 bg-emerald-100 text-emerald-800",
+  agenda: "border-cyan-300 bg-cyan-50 text-cyan-700",
   automatico: "border-pink-300 bg-pink-50 text-pink-700",
   outro: "border-border bg-surface text-text-muted",
 };
@@ -56,6 +58,7 @@ const PONTO: Record<TipoDeEvento, string> = {
   reabriu: "bg-emerald-500",
   contrato_enviado: "bg-indigo-500",
   contrato_assinado: "bg-emerald-600",
+  agenda: "bg-cyan-500",
   automatico: "bg-pink-500",
   outro: "bg-muted-foreground",
 };

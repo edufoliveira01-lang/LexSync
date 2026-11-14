@@ -60,6 +60,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ProgramarMensagem } from "./ProgramarMensagem";
 import { AtivarFollowup } from "./AtivarFollowup";
+import { AgendarAtendimento } from "./AgendarAtendimento";
 import { resolveSharedContact } from "@/lib/messaging/contact-card";
 import { BarraDeRecursos } from "@/components/inbox/composer/BarraDeRecursos";
 import { type Recurso } from "@/lib/inbox/recursos";
@@ -1155,6 +1156,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
         </div>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
             <div id="slot-acoes-da-conversa" className="flex flex-wrap items-center justify-end gap-1" />
+            {mode === "reply" ? <AgendarAtendimento conversationId={conversationId} contactId={contactId} contactName={contactName ?? null} somenteLeitura={followupSomenteLeitura} /> : null}
             {mode === "reply" ? <AtivarFollowup conversationId={conversationId} contactId={contactId} somenteLeitura={followupSomenteLeitura} podeParar={podePararFollowup} /> : null}
             {mode === "reply" ? <ProgramarMensagem conversationId={conversationId} /> : null}
           </div>

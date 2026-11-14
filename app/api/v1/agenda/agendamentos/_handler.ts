@@ -40,6 +40,7 @@ import {
   duracaoEscolhidaValida,
 } from "@/lib/agenda/duracao-escolhida";
 import { colide } from "@/lib/agenda/horarios-livres";
+import { registrarAgendamentoNoChat } from "@/lib/agenda/evento-no-chat";
 import {
   atividadeDaTransicao,
   autorParaTimeline,
@@ -1173,6 +1174,19 @@ async function fecharOLaco(
   },
 ): Promise<void> {
   // Pendência Google é derivada da revisão publicável; não emite evento sem consumer.
+
+  // A cápsula na conversa do cliente ("Fulano agendou um atendimento — …"): só quando uma PESSOA da equipe fez a mudança. Melhor-esforço, sem
+  // esperar (a mudança já está gravada), e antes de qualquer early-return abaixo.
+  if (ctx.actor.type === "user") {
+    void registrarAgendamentoNoChat(createAdminClient(), {
+      organizationId: ctx.organization_id,
+      appointmentId: args.appointmentId,
+      contactId: args.contactId,
+      atividade: args.atividade,
+      userId: ctx.actor.id,
+      nomeDoTipo: args.nomeDoTipo,
+    });
+  }
 
   // O gatilho de automação, ANTES de qualquer early-return. Ele não depende de
   // haver negócio aberto: uma regra de "avise a cliente que confirmou" vale
