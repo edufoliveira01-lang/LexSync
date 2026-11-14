@@ -43,6 +43,28 @@ export async function enviarTexto(orgId: string, conversationId: string, body: s
   }
 }
 
+/** Manda um PDF ao cliente (guarda no mesmo armazenamento de mídia da conversa e envia como documento). `false` quando não saiu. */
+export async function enviarPdf(orgId: string, conversationId: string, nomeDoArquivo: string, conteudo: Buffer, legenda?: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const requestId = randomUUID();
+  try {
+    const limpo = nomeDoArquivo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "boleto.pdf";
+    const caminho = `${orgId}/${conversationId}/${Date.now()}-${limpo.endsWith(".pdf") ? limpo : `${limpo}.pdf`}`;
+    const { error: erroUp } = await admin.storage.from("whatsapp-media").upload(caminho, conteudo, { contentType: "application/pdf", upsert: false });
+    if (erroUp) throw new Error(erroUp.message);
+    const ritmo = await depsDoRitmo(admin);
+    const segurado = await segurarEnvioPorToken(ritmo, { organizationId: orgId, conversationId, requestId });
+    const m = await sendMessageHandler(admin, { organization_id: orgId, actor: ATOR, requestId }, sendMessageSchema.parse({
+      conversation_id: conversationId, type: "document", media_storage_path: caminho, media_mime: "application/pdf", media_size_bytes: conteudo.length, ...(legenda ? { body: legenda } : {}),
+    }));
+    await registrarEnvioPorToken(ritmo, orgId, segurado, m.status);
+    return m.status !== "failed";
+  } catch (e) {
+    logger.warn("[sales.cobranca] não consegui enviar o PDF ao cliente", { conversation_id: conversationId, erro: e instanceof Error ? e.message : String(e) });
+    return false;
+  }
+}
+
 export interface ConferenciaDoContrato { pendentes: number; assinados: number; novos: number }
 
 /** Confere os contratos "enviados" desta conversa que ainda não aparecem como assinados e trata o que acabou de ser assinado. */

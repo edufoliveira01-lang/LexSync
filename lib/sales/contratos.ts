@@ -45,7 +45,7 @@ export function assinar(segredo: string, metodo: string, caminho: string, corpo:
   return createHmac("sha256", segredo).update(`${ts}.${metodo.toUpperCase()}.${caminho}.${sha256(corpo)}`).digest("hex");
 }
 
-async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, corpo: unknown, http: typeof fetch, recurso: "contratos" | "agente" | "documentos" | "armazenamento" | "indicadores" | "anotacoes" | "cadastro" = "contratos"): Promise<T> {
+async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, corpo: unknown, http: typeof fetch, recurso: "contratos" | "agente" | "documentos" | "armazenamento" | "indicadores" | "anotacoes" | "cadastro" | "cobranca" = "contratos"): Promise<T> {
   const cfg = configDosContratos();
   if (!cfg) throw new ErroContratoSales("A geração de contratos ainda não foi ligada neste servidor (SALES_PAINEL_URL e CONTRATOS_SEGREDO).", 503);
   const caminho = `/v1/offices/${encodeURIComponent(slug)}/${recurso}${sufixo}`;
@@ -119,3 +119,11 @@ export const cumprirPendenciaNoSales = (slug: string, dados: { origem: "cadastro
 export interface ResultadoDoCadastroNoSales { ok: boolean; pessoa_id: number; alterados: string[]; iguais: string[]; ignorados: string[] }
 export const atualizarCadastroNoSales = (slug: string, dados: { pessoa_id: number; campos: Record<string, string>; autor_nome: string; autor_email?: string }, http: typeof fetch = fetch) =>
   chamar<ResultadoDoCadastroNoSales>(slug, "POST", "", dados, http, "cadastro");
+
+/** A cobrança (boleto + PIX) de uma parcela em aberto do cliente do telefone. O Sales gera no Asaas (ou devolve a que já existe). */
+export interface CobrancaDoCliente {
+  lancamento_id: number; descricao: string; valor_centavos: number; vencimento: string;
+  link: string; linha_digitavel: string; pix: string; boleto_pdf_base64: string | null; boleto_pdf_nome: string | null; outras_em_aberto: number;
+}
+export const cobrancaDoClienteNoSales = (slug: string, dados: { telefone: string; lancamento_id?: number }, http: typeof fetch = fetch) =>
+  chamar<CobrancaDoCliente>(slug, "POST", "", dados, http, "cobranca");

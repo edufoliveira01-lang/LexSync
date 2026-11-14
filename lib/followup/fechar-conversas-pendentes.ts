@@ -69,6 +69,7 @@ export async function fecharConversasPendentesDoRoteiro(agora: Date = new Date()
       const { data: notas } = await admin
         .from("conversation_notes")
         .select("body, created_at")
+        .eq("organization_id", linha.organization_id)
         .eq("conversation_id", linha.conversation_id)
         .gte("created_at", linha.completed_at)
         .order("created_at", { ascending: false })

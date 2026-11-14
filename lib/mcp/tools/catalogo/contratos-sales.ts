@@ -56,6 +56,16 @@ export const TOOLS_CONTRATOS_SALES = declararTools([
     pacotes: ["vender"],
   },
   {
+    name: "crm_enviar_cobranca",
+    category: "write",
+    rotulo: "Enviar boleto e PIX da parcela",
+    explicacao:
+      "Quando o cliente pede o boleto ou o PIX de uma parcela, o agente gera a cobrança no Asaas (pelo Sales) e o sistema envia ao cliente, no WhatsApp, o link de pagamento, o PIX copia e cola, a linha digitável e o PDF do boleto. Só da parcela em aberto do próprio cliente da conversa; parcela vencida fica para a equipe.",
+    oQueToca: "Cobrança no Asaas e mensagens ao cliente",
+    risco: "atencao",
+    pacotes: ["atender"],
+  },
+  {
     name: "crm_anotar_no_sales",
     category: "write",
     rotulo: "Anotar no sistema do escritório (Sales)",

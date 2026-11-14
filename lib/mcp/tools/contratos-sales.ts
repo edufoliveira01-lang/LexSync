@@ -11,10 +11,10 @@ import { carregarBase } from "@/lib/sales/base-juridica/armazem";
 import { formatoPadraoDoContrato } from "@/lib/campos/mascaras";
 import { acharFicha, temasDaBase } from "@/lib/sales/base-juridica/fichas";
 import { calcularRendaPerCapita } from "@/lib/sales/base-juridica/valores";
-import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
+import { enviarPdf, enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
-import { anotarNoSales, buscarClienteParaAnotar, ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
+import { anotarNoSales, buscarClienteParaAnotar, cobrancaDoClienteNoSales, ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
 import { passarParaAgente } from "@/lib/ai/passagem/passar-para-agente";
 import { propagarCadastroParaOSales, type ResultadoNoSales } from "@/lib/sales/propagar-cadastro-no-sales";
 import { enfileirarTurnoDeDestino } from "@/lib/ai/passagem/turno-imediato";
@@ -386,6 +386,58 @@ export const crmAnotarNoSales: McpToolDefinition<typeof anotarShape> = {
     } catch (e) {
       if (e instanceof ErroContratoSales) return { ok: false, erro: e.message, proximo_passo: "Registre um aviso interno com crm_add_case_note." };
       return { ok: false, erro: e instanceof Error ? e.message : "não consegui anotar agora", proximo_passo: "Registre um aviso interno com crm_add_case_note." };
+    }
+  },
+};
+
+const cobrancaShape = {
+  parcela: z.number().int().positive().optional().describe("Número da parcela (`lancamento_id`) SÓ se o cliente pediu uma específica e você já a viu na consulta do financeiro. Sem isso, vale a parcela em aberto mais antiga."),
+};
+
+const brl = (centavos: number) => (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const dataBr = (iso: string) => iso.split("-").reverse().join("/");
+
+/** Boleto + PIX da parcela do PRÓPRIO cliente da conversa: o Sales gera no Asaas e o sistema manda ao cliente no WhatsApp (texto com link/PIX e o PDF do boleto). */
+export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
+  name: "crm_enviar_cobranca",
+  description:
+    "Gera e ENVIA ao cliente, no WhatsApp, o boleto e o PIX de uma parcela em aberto dele (link de pagamento, PIX copia e cola, linha digitável e o PDF do boleto). Use quando o cliente pedir o boleto, o PIX ou o link para pagar uma parcela. " +
+    "O cliente é sempre o da conversa (achado pelo telefone); a parcela é a em aberto mais antiga, a menos que informe `parcela`. O sistema JÁ envia as mensagens (`enviado_ao_cliente`): NÃO reenvie nem copie o PIX ou o link. " +
+    "Parcela vencida não gera sozinha: a equipe precisa definir nova data (nesse caso, diga que vai pedir à equipe e use crm_notificar_equipe ou crm_passar_para_agente conforme o roteiro).",
+  inputSchema: cobrancaShape,
+  category: "write",
+  requiresRole: "ai_operator",
+  requiresScope: "mcp:write",
+  handler: async (input, ctx) => {
+    const contato = ctx.contatoDoTurno;
+    if (!contato) return { ok: false, erro: "Não há contato nesta conversa.", proximo_passo: "Siga a conversa normalmente." };
+    const { data: conv } = await ctx.supabase.from("conversations").select("id").eq("organization_id", ctx.organizationId).eq("contact_id", contato).order("last_inbound_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
+    const conversationId = (conv as { id: string } | null)?.id;
+    if (!conversationId) return { ok: false, erro: "Conversa do contato não encontrada.", proximo_passo: "Diga que a equipe envia o boleto e use crm_notificar_equipe." };
+    const slug = await slugDaOrg(ctx.organizationId);
+    if (!slug) return { ok: false, erro: "Esta empresa não está ligada ao Sales.", proximo_passo: "Diga que a equipe envia o boleto e use crm_notificar_equipe." };
+    const { data: ct } = await ctx.supabase.from("contacts").select("phone_number").eq("id", contato).eq("organization_id", ctx.organizationId).maybeSingle();
+    const telefone = (ct as { phone_number: string | null } | null)?.phone_number;
+    if (!telefone) return { ok: false, erro: "O contato não tem telefone para achar o cadastro.", proximo_passo: "Diga que a equipe envia o boleto e use crm_notificar_equipe." };
+    try {
+      const c = await cobrancaDoClienteNoSales(slug, { telefone, ...(input.parcela ? { lancamento_id: input.parcela } : {}) });
+      const partes = [`Parcela de ${brl(c.valor_centavos)}, vencimento ${dataBr(c.vencimento)}.`];
+      if (c.link) partes.push(`Link para pagar (boleto ou PIX): ${c.link}`);
+      if (c.linha_digitavel) partes.push(`Linha digitável do boleto:\n${c.linha_digitavel}`);
+      const texto = partes.join("\n\n");
+      const enviouTexto = await enviarTexto(ctx.organizationId, conversationId, texto);
+      let enviouPix = true;
+      if (c.pix) enviouPix = await enviarTexto(ctx.organizationId, conversationId, `PIX copia e cola (copie a mensagem abaixo e cole no app do banco):\n\n${c.pix}`);
+      let enviouPdf = false;
+      if (c.boleto_pdf_base64) enviouPdf = await enviarPdf(ctx.organizationId, conversationId, c.boleto_pdf_nome ?? `Boleto-${c.vencimento}.pdf`, Buffer.from(c.boleto_pdf_base64, "base64"), "Boleto em PDF");
+      if (!enviouTexto && !enviouPdf) return { ok: false, erro: "Gerei a cobrança, mas o envio ao cliente falhou.", proximo_passo: "Diga que a equipe envia o boleto em instantes e use crm_notificar_equipe." };
+      return {
+        ok: true, enviado_ao_cliente: true, valor: brl(c.valor_centavos), vencimento: dataBr(c.vencimento), pdf_enviado: enviouPdf, pix_enviado: Boolean(c.pix) && enviouPix, outras_parcelas_em_aberto: c.outras_em_aberto,
+        proximo_passo: "O sistema JÁ enviou ao cliente o link, o PIX e o boleto. NÃO repita o link nem o PIX. Em UMA mensagem curta, diga que enviou o boleto e o PIX da parcela e que o pagamento é conferido automaticamente. Não prometa nada além disso.",
+      };
+    } catch (e) {
+      if (e instanceof ErroContratoSales) return { ok: false, erro: e.message, proximo_passo: "Não invente boleto nem peça nada ao cliente. Explique em uma frase que a equipe vai enviar o boleto e avise a equipe com crm_notificar_equipe (ou passe a conversa, conforme o roteiro)." };
+      return { ok: false, erro: e instanceof Error ? e.message : "não consegui gerar o boleto agora", proximo_passo: "Diga que a equipe envia o boleto e avise a equipe com crm_notificar_equipe." };
     }
   },
 };

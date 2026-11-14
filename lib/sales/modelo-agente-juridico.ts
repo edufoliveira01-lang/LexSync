@@ -19,6 +19,8 @@ export const FERRAMENTAS_DO_AGENTE_JURIDICO: readonly string[] = [
   "crm_registrar_dados_do_cliente",
   // anotação na ficha do cliente no Sales (a equipe vê no cadastro)
   "crm_anotar_no_sales",
+  // cobrança: o agente manda ao cliente o boleto/PIX da parcela dele (gerado no Asaas pelo Sales)
+  "crm_enviar_cobranca",
   // documentos que o cliente manda pelo chat: o agente classifica e o sistema guarda no drive, depois da assinatura
   "crm_salvar_documento_do_cliente",
   // aviso à equipe por WhatsApp (central de notificações)

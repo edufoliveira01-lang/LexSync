@@ -115,6 +115,8 @@ export const ESCOPO_DAS_ESCRITAS: Readonly<Record<string, Readonly<Record<string
   crm_notificar_equipe: {},
   // Fork Sales: anota no Sales (cadastro ou processo) do cliente do telefone da conversa do turno; nenhum id vem do modelo.
   crm_anotar_no_sales: {},
+  // Fork Sales: manda o boleto/PIX da parcela do cliente do telefone da conversa do turno; a parcela é validada no Sales contra esse cliente.
+  crm_enviar_cobranca: {},
   // Fork Sales: passa a conversa do contato do turno para outro agente (e leva o card ao funil indicado); nenhum id vem do modelo.
   crm_passar_para_agente: {},
 };
