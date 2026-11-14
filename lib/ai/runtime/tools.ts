@@ -11,7 +11,7 @@
  * loop. We wrap that tool's execute to publish a one-shot signal via
  * `runtimeHandoffSignal`, which `runAgent` checks after each step.
  */
-import { frasesDaFerramenta, frasesDeConsulta, anotarMovimentoDoNegocio, anotarNaConversaDoContato } from "@/lib/inbox/acao-do-agente";
+import { frasesDaFerramenta, frasesDeConsulta, anotarMovimentoDoNegocio, anotarNaConversaDoContato, anotarEventoNaConversaDoContato, fraseDeAssuncaoDoAgente } from "@/lib/inbox/acao-do-agente";
 import { tool, type Tool } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -553,7 +553,16 @@ function wrapMcpTool(
           if (def.name === "crm_move_lead_stage") void anotarMovimentoDoNegocio(input.ctx.organizationId, input.contatoDoTurno);
           else {
             const frase = frasesDaFerramenta(def.name, argsRecord);
-            if (frase) void anotarNaConversaDoContato(input.ctx.organizationId, input.contatoDoTurno, frase);
+            const assuncao = def.name === "crm_passar_para_agente" ? fraseDeAssuncaoDoAgente(result, argsRecord) : null;
+            if (frase && assuncao) {
+              // As duas cápsulas na ordem certa: primeiro "passou a conversa para…", depois "Helena (IA) assumiu a conversa".
+              const org = input.ctx.organizationId;
+              const contato = input.contatoDoTurno;
+              void (async () => {
+                await anotarNaConversaDoContato(org, contato, frase);
+                await anotarEventoNaConversaDoContato(org, contato, assuncao);
+              })();
+            } else if (frase) void anotarNaConversaDoContato(input.ctx.organizationId, input.contatoDoTurno, frase);
           }
         }
         // Consultas à base jurídica (leitura): a equipe vê na conversa que a resposta veio da ficha e da calculadora.

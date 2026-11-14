@@ -52,6 +52,18 @@ export function frasesDaFerramenta(nome: string, entrada: Record<string, unknown
   }
 }
 
+/**
+ * "Helena (IA) assumiu a conversa": a segunda cápsula da passagem entre agentes. A primeira ("passou a conversa para o agente «Helena»") diz o que o agente
+ * de origem FEZ; esta diz quem passou a atender — como "Fulano assumiu a conversa" diz quando é uma pessoa. `null` = a passagem não deu certo (não anota).
+ * O nome vem do resultado da ferramenta (o nome REAL do agente), e só na falta dele do que o roteiro escreveu.
+ */
+export function fraseDeAssuncaoDoAgente(resultado: unknown, entrada: Record<string, unknown>): string | null {
+  const r = (resultado && typeof resultado === "object" ? resultado : {}) as Record<string, unknown>;
+  if (r.ok !== true) return null;
+  const nome = String(r.agente ?? entrada.agente ?? "").trim();
+  return nome ? `${nome} (IA) assumiu a conversa` : null;
+}
+
 const moeda = (n: unknown) => (typeof n === "number" ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "");
 
 /** As consultas do Sales que o agente faz (nome da ferramenta → o que foi consultado, na frase da conversa). */
@@ -114,6 +126,20 @@ export async function anotarNaConversaDoContato(orgId: string, contactId: string
     });
   } catch (err) {
     logger.warn("[inbox.acao-do-agente] não consegui anotar na conversa", { contact_id: contactId, erro: err instanceof Error ? err.message : String(err) });
+  }
+}
+
+/** Como `anotarNaConversaDoContato`, mas com a frase INTEIRA (sem o "Agente de IA:" na frente): para cápsulas que têm sujeito próprio ("Helena (IA) assumiu a conversa"). */
+export async function anotarEventoNaConversaDoContato(orgId: string, contactId: string, textoCompleto: string): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    const conversationId = await conversaDoContato(admin, orgId, contactId);
+    if (!conversationId) return;
+    await admin.from("conversation_notes").insert({
+      organization_id: orgId, conversation_id: conversationId, body: `${MARCA_DE_EVENTO}${textoCompleto}`, created_by_user_id: null, created_by_name: QUEM_AGENTE,
+    });
+  } catch (err) {
+    logger.warn("[inbox.acao-do-agente] não consegui anotar o evento na conversa", { contact_id: contactId, erro: err instanceof Error ? err.message : String(err) });
   }
 }
 
