@@ -16,6 +16,7 @@ import { audit } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/require-role";
 import { ok, fail } from "@/lib/api/wrappers";
 import { requireSupportWrite } from "@/lib/impersonate/support";
+import { pedirReleituraCompleta } from "@/lib/agenda/google/releitura-completa";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -58,6 +59,9 @@ export async function PATCH(req: Request) {
     .eq("organization_id", org)
     .eq("id", agenda.id);
   if (error) return fail("internal_error", "Não foi possível salvar. Tente de novo.", 500, { requestId });
+
+  // Ligando: a leitura é incremental e os eventos que já estavam lá não voltam; pede a releitura completa para os títulos aparecerem em minutos.
+  if (parsed.data.show_titles) await pedirReleituraCompleta(admin, org, agenda.id);
 
   if (!parsed.data.show_titles) {
     await admin
