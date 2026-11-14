@@ -9,6 +9,7 @@
  * sem I/O de propósito — a precedência entre os sinais é a parte que erra
  * sozinha, e é o que o teste prende.
  */
+import { lerToolIdRemoto } from "@/lib/mcp/servidor-externo/ids";
 import { COBERTA_PELA_NATIVA } from "@/lib/mcp/tools/ferramentas-do-harness";
 import type { ToolRisk } from "@/lib/mcp/tools/pacotes";
 
@@ -135,6 +136,20 @@ export interface MontarUsoInput {
   agora?: number;
 }
 
+/** Ferramenta de servidor externo (as consultas do Sales) não está no catálogo compilado: o nome legível vem daqui, para a aba não chamá-la de "removida". */
+const NOMES_DAS_CONSULTAS_DO_SALES: Record<string, string> = {
+  consultar_cliente: "Consultar o cadastro do cliente (Sales)",
+  andamento_do_processo: "Ver o andamento do processo (Sales)",
+  proximos_compromissos: "Ver os próximos compromissos do cliente (Sales)",
+  documentos_do_cliente: "Ver os documentos do cliente (Sales)",
+  financeiro_do_cliente: "Ver o financeiro do cliente (Sales)",
+};
+function rotuloDaRemota(id: string): string | null {
+  const r = lerToolIdRemoto(id);
+  if (!r) return null;
+  return NOMES_DAS_CONSULTAS_DO_SALES[r.nome] ?? `${r.nome} (servidor externo)`;
+}
+
 /**
  * Junta configuração (o que está ligado) com realidade (o que foi usado).
  *
@@ -179,8 +194,8 @@ export function montarUsoDeCapacidades(input: MontarUsoInput): CapacidadeComUso[
       name,
       // Capacidade que saiu do catálogo entre a configuração e agora: mostrar o
       // id cru é feio, mas sumir com a linha esconderia uso real do agente.
-      rotulo: conhecida?.rotulo ?? name,
-      o_que_toca: conhecida?.o_que_toca ?? "Capacidade removida do sistema",
+      rotulo: conhecida?.rotulo ?? rotuloDaRemota(name) ?? name,
+      o_que_toca: conhecida?.o_que_toca ?? (lerToolIdRemoto(name) ? "Servidor de ferramentas externo (consulta)" : "Capacidade removida do sistema"),
       risco: conhecida?.risco ?? "atencao",
       ligada,
       total,

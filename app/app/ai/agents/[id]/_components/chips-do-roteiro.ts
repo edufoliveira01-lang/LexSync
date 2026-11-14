@@ -6,6 +6,8 @@
  * A tela mostra cada uma como uma etiqueta colorida (uma cor por tipo). O texto antigo, com o bloco longo "⚙ AÇÃO — …", continua sendo lido.
  */
 
+import { lerToolIdRemoto, toolIdRemoto } from "@/lib/mcp/servidor-externo/ids";
+
 export type TipoDeAcao =
   | "mensagem" | "chamar_equipe" | "retorno" | "avisar"
   | "anotar_sales" | "etapa" | "etiqueta_add" | "etiqueta_rem" | "responsavel" | "dados" | "salvar_documento" | "notificar" | "passar_agente"
@@ -49,16 +51,40 @@ export const ACOES: readonly DefDaAcao[] = [
   { tipo: "contrato", grupo: "Contrato", rotulo: "Enviar o contrato", dica: "Link de assinatura", prefixo: "Enviar contrato", icone: "📄", cor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200", escolhe: "nenhuma", ferramentas: ["crm_enviar_contrato"], legenda: "envie o contrato para assinatura (crm_enviar_contrato), uma única vez e somente depois da confirmação dos dados pelo cliente." },
   { tipo: "base", grupo: "Consultas", rotulo: "Consultar a base jurídica", dica: "Responder com a ficha do tema", prefixo: "Base jurídica: ", icone: "⚖", cor: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200", escolhe: "tema", ferramentas: ["crm_consultar_base_juridica"], legenda: "consulte a ficha do tema (crm_consultar_base_juridica) e responda com base nela." },
   { tipo: "renda", grupo: "Consultas", rotulo: "Calcular a renda por pessoa", dica: "BPC: 1/4 e 1/2 do salário mínimo", prefixo: "Calcular renda", icone: "🧮", cor: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200", escolhe: "nenhuma", ferramentas: ["crm_calcular_renda_per_capita"], legenda: "calcule a renda por pessoa da família com crm_calcular_renda_per_capita; nunca calcule de cabeça nem cite o salário mínimo de memória." },
-  { tipo: "cliente", grupo: "Consultas", rotulo: "Consultar o cliente", dica: "Cadastro, processos e contrato", prefixo: "Consultar cliente", icone: "🔎", cor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200", escolhe: "nenhuma", ferramentas: [], legenda: "use consultar_cliente (acha o cadastro pelo telefone da conversa)." },
-  { tipo: "andamento", grupo: "Consultas", rotulo: "Andamento do processo", dica: "Fase, publicações e prazos", prefixo: "Andamento do processo", icone: "📑", cor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200", escolhe: "nenhuma", ferramentas: [], legenda: "use andamento_do_processo e responda só com o que a ferramenta devolveu." },
-  { tipo: "compromissos", grupo: "Consultas", rotulo: "Próximos compromissos", dica: "Perícias e audiências", prefixo: "Próximos compromissos", icone: "📆", cor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200", escolhe: "nenhuma", ferramentas: [], legenda: "use proximos_compromissos e confirme dia, horário e local que a ferramenta trouxe." },
-  { tipo: "documentos", grupo: "Consultas", rotulo: "Documentos do cliente", dica: "O que chegou e o que falta", prefixo: "Documentos do cliente", icone: "🗂", cor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200", escolhe: "nenhuma", ferramentas: [], legenda: "use documentos_do_cliente." },
-  { tipo: "financeiro", grupo: "Consultas", rotulo: "Financeiro do cliente", dica: "Parcelas e pagamentos", prefixo: "Financeiro do cliente", icone: "💰", cor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200", escolhe: "nenhuma", ferramentas: [], legenda: "use financeiro_do_cliente somente se o cliente perguntar; não negocie valores." },
+  { tipo: "cliente", grupo: "Consultas", rotulo: "Consultar o cliente", dica: "Cadastro, processos e contrato", prefixo: "Consultar cliente", icone: "🔎", cor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200", escolhe: "nenhuma", ferramentas: [toolIdRemoto("consultar_cliente", "leitura")], legenda: "use consultar_cliente (acha o cadastro pelo telefone da conversa)." },
+  { tipo: "andamento", grupo: "Consultas", rotulo: "Andamento do processo", dica: "Fase, publicações e prazos", prefixo: "Andamento do processo", icone: "📑", cor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200", escolhe: "nenhuma", ferramentas: [toolIdRemoto("andamento_do_processo", "leitura")], legenda: "use andamento_do_processo e responda só com o que a ferramenta devolveu." },
+  { tipo: "compromissos", grupo: "Consultas", rotulo: "Próximos compromissos", dica: "Perícias e audiências", prefixo: "Próximos compromissos", icone: "📆", cor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200", escolhe: "nenhuma", ferramentas: [toolIdRemoto("proximos_compromissos", "leitura")], legenda: "use proximos_compromissos e confirme dia, horário e local que a ferramenta trouxe." },
+  { tipo: "documentos", grupo: "Consultas", rotulo: "Documentos do cliente", dica: "O que chegou e o que falta", prefixo: "Documentos do cliente", icone: "🗂", cor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200", escolhe: "nenhuma", ferramentas: [toolIdRemoto("documentos_do_cliente", "leitura")], legenda: "use documentos_do_cliente." },
+  { tipo: "financeiro", grupo: "Consultas", rotulo: "Financeiro do cliente", dica: "Parcelas e pagamentos", prefixo: "Financeiro do cliente", icone: "💰", cor: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200", escolhe: "nenhuma", ferramentas: [toolIdRemoto("financeiro_do_cliente", "leitura")], legenda: "use financeiro_do_cliente somente se o cliente perguntar; não negocie valores." },
   { tipo: "horarios", grupo: "Agenda", rotulo: "Ver horários livres", dica: "Consulta a agenda", prefixo: "Horários livres", icone: "🕒", cor: "bg-pink-100 text-pink-800 dark:bg-pink-950 dark:text-pink-200", escolhe: "nenhuma", ferramentas: ["crm_find_free_slots"], legenda: "consulte os horários livres (crm_find_free_slots)." },
   { tipo: "marcar", grupo: "Agenda", rotulo: "Marcar um compromisso", dica: "Agenda para o cliente", prefixo: "Marcar compromisso", icone: "📌", cor: "bg-pink-100 text-pink-800 dark:bg-pink-950 dark:text-pink-200", escolhe: "nenhuma", ferramentas: ["crm_book_appointment"], legenda: "marque o compromisso (crm_book_appointment) no horário que o cliente escolheu." },
   { tipo: "remarcar", grupo: "Agenda", rotulo: "Remarcar um compromisso", dica: "Troca o horário", prefixo: "Remarcar compromisso", icone: "🔁", cor: "bg-pink-100 text-pink-800 dark:bg-pink-950 dark:text-pink-200", escolhe: "nenhuma", ferramentas: ["crm_reschedule_appointment"], legenda: "remarque o compromisso (crm_reschedule_appointment)." },
   { tipo: "cancelar", grupo: "Agenda", rotulo: "Cancelar um compromisso", dica: "Libera o horário", prefixo: "Cancelar compromisso", icone: "🚫", cor: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200", escolhe: "nenhuma", ferramentas: ["crm_cancel_appointment"], legenda: "cancele o compromisso (crm_cancel_appointment)." },
 ];
+
+/**
+ * A ferramenta que a ação pede está LIGADA no agente? Ferramenta remota (as consultas do Sales) vale por NOME: quem a ligou pelo servidor compartilhado
+ * (`mcp_externo:leitura:nome`) ou pelo servidor do agente (`mcp_externo:<servidor>:leitura:nome`) cobre a ação do mesmo jeito.
+ */
+export function ferramentaLigada(id: string, ligadas: readonly string[]): boolean {
+  const pedida = lerToolIdRemoto(id);
+  if (!pedida) return ligadas.includes(id);
+  return ligadas.some((t) => lerToolIdRemoto(t)?.nome === pedida.nome);
+}
+
+const CONSULTAS_DO_SALES: Record<string, string> = {
+  consultar_cliente: "Consultar o cadastro do cliente",
+  andamento_do_processo: "Andamento do processo",
+  proximos_compromissos: "Próximos compromissos",
+  documentos_do_cliente: "Documentos do cliente",
+  financeiro_do_cliente: "Financeiro do cliente",
+};
+
+/** O nome que a pessoa lê no aviso: as consultas do Sales têm nome de gente, não o id técnico. */
+export function rotuloDaFerramenta(id: string): string {
+  const r = lerToolIdRemoto(id);
+  return r ? `${CONSULTAS_DO_SALES[r.nome] ?? r.nome} (consultas do Sales)` : id;
+}
 
 export const GRUPOS: readonly DefDaAcao["grupo"][] = ["Conversa", "CRM", "Contrato", "Consultas", "Agenda"];
 export const defDaAcao = (tipo: TipoDeAcao): DefDaAcao => ACOES.find((a) => a.tipo === tipo)!;

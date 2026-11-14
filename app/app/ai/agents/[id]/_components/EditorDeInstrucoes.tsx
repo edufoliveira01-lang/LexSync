@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { FunilDaResposta } from "@/hooks/pipelines/usePipelines";
 import { cn } from "@/lib/utils";
 
-import { defDaAcao, legendaDasAcoes, linhaDaAcao, tipoDaLinha } from "./chips-do-roteiro";
+import { defDaAcao, ferramentaLigada, legendaDasAcoes, linhaDaAcao, rotuloDaFerramenta, tipoDaLinha } from "./chips-do-roteiro";
 import { EditorComChips, type AlvoDoArroba, type ManejoDoEditor } from "./EditorComChips";
 import { MenuDeAcoes, type TipoDeAcao } from "./MenuDeAcoes";
 
@@ -107,8 +107,11 @@ export function EditorDeInstrucoes({
     return (linha: string): string | null => {
       const tipo = tipoDaLinha(linha);
       if (!tipo) return null;
-      const faltam = defDaAcao(tipo).ferramentas.filter((f) => !toolIds.includes(f));
-      return faltam.length ? `${t("Esta ação precisa de uma ferramenta que está desligada. Ligue em “O que ele faz”:")} ${faltam.join(", ")}` : null;
+      const faltam = defDaAcao(tipo).ferramentas.filter((f) => !ferramentaLigada(f, toolIds));
+      if (faltam.length === 0) return null;
+      const dasConsultas = faltam.some((f) => f.startsWith("mcp_externo:"));
+      const onde = dasConsultas ? t("Ligue em “Avançado” (consultas do Sales) ou em “O que ele faz”:") : t("Ligue em “O que ele faz”:");
+      return `${t("Esta ação precisa de uma ferramenta que está desligada.")} ${onde} ${faltam.map(rotuloDaFerramenta).join(", ")}`;
     };
   }, [toolIds, t]);
 

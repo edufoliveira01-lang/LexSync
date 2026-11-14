@@ -14421,6 +14421,10 @@ export const DICIONARIO: Traducoes = {
 
   // ─── lib/ai/agents/uso-de-capacidades.ts (painel "Uso das capacidades") ───
   "Capacidade removida do sistema": { es: "Capacidad eliminada del sistema" },
+  "Servidor de ferramentas externo (consulta)": { es: "Servidor de herramientas externo (consulta)" },
+  "Esta ação precisa de uma ferramenta que está desligada.": { es: "Esta acción necesita una herramienta que está desactivada." },
+  "Ligue em “O que ele faz”:": { es: "Actívela en “Qué hace”:" },
+  "Ligue em “Avançado” (consultas do Sales) ou em “O que ele faz”:": { es: "Actívela en “Avanzado” (consultas de Sales) o en “Qué hace”:" },
   "Ligada há pouco tempo. Ainda não houve atendimento em que ela fosse útil — volte aqui depois de alguns dias.": {
     es: "Se activó hace poco. Aún no ha habido ninguna atención en la que fuera útil. Vuelve a revisar en unos días.",
   },
