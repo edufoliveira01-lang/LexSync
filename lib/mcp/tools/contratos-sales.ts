@@ -14,8 +14,9 @@ import { calcularRendaPerCapita } from "@/lib/sales/base-juridica/valores";
 import { enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
-import { ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
+import { anotarNoSales, buscarClienteParaAnotar, ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
 import { passarParaAgente } from "@/lib/ai/passagem/passar-para-agente";
+import { propagarCadastroParaOSales, type ResultadoNoSales } from "@/lib/sales/propagar-cadastro-no-sales";
 import { enfileirarTurnoDeDestino } from "@/lib/ai/passagem/turno-imediato";
 import { dispararNotificacoes } from "@/lib/notificacoes-equipe/disparar";
 import { listarDocumentosRecebidos, salvarDocumentoRecebido, TIPOS_DE_DOCUMENTO_DO_CHAT } from "@/lib/sales/documentos-do-chat";
@@ -101,6 +102,13 @@ export const crmEnviarContrato: McpToolDefinition<typeof inputShape> = {
   },
 };
 
+/** O que o agente pode dizer ao cliente sobre o Sales depois de gravar o dado (nunca "atualizado" sem a confirmação do Sales). */
+function avisoDoSales(r: ResultadoNoSales): string {
+  const atualizado = r.atualizados.length > 0 ? `O cadastro do cliente no Sales foi atualizado (${r.atualizados.join(", ")}). ` : "";
+  const pedido = r.pedido_registrado.length > 0 ? `Para ${r.pedido_registrado.join(", ")} a equipe confirma a identidade antes de mudar o cadastro: o pedido ficou registrado para ela. Diga isso ao cliente com gentileza e NUNCA afirme que o dado já foi alterado no Sales. ` : "";
+  return `${atualizado}${pedido}`.trim();
+}
+
 const dadosShape = {
   nome: z.string().max(200).optional().describe("Nome do cliente (no começo o primeiro nome basta; o contrato exige nome e sobrenome)."),
   email: z.string().max(254).optional(), data_nascimento: z.string().max(20).optional(), nome_da_mae: z.string().max(120).optional(),
@@ -126,7 +134,17 @@ export const crmRegistrarDadosDoCliente: McpToolDefinition<typeof dadosShape> = 
       const novos = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined)) as Partial<Record<CampoDoCliente, string>>;
       const gravado = Object.keys(novos).length ? await gravarDadosDoCliente(ctx.organizationId, contato, novos) : await lerDadosGravados(ctx.organizationId, contato);
       const falta = faltaParaOContrato(gravado);
-      return { ok: true, gravado, cpf_para_confirmar: cpfMascarado(gravado.cpf) || undefined, falta_obrigatorios_para_o_contrato: falta.obrigatorios, falta_recomendados: falta.recomendados, proximo_passo: "Não pergunte de novo o que já está em `gravado`. Os campos em `falta_*` só se pedem na COLETA DE DADOS DO CONTRATO, depois que a pessoa aceitou a proposta: antes disso, não os peça (nem CPF, nem RG, nem endereço); apenas siga a conversa. Na coleta, uma pergunta por vez, em blocos curtos." };
+      // Quem JÁ é cliente no Sales: o que mudou chega também lá (endereço, e-mail, profissão e estado civil direto; o resto vira pedido para a equipe).
+      let noSales: ResultadoNoSales | null = null;
+      if (Object.keys(novos).length > 0) {
+        const { data: ct } = await ctx.supabase.from("contacts").select("phone_number").eq("id", contato).eq("organization_id", ctx.organizationId).maybeSingle();
+        noSales = await propagarCadastroParaOSales({ organizationId: ctx.organizationId, telefone: (ct as { phone_number: string | null } | null)?.phone_number ?? null, novos });
+      }
+      return {
+        ok: true, gravado, cpf_para_confirmar: cpfMascarado(gravado.cpf) || undefined, falta_obrigatorios_para_o_contrato: falta.obrigatorios, falta_recomendados: falta.recomendados,
+        ...(noSales && noSales.situacao !== "nada_a_fazer" && noSales.situacao !== "nao_e_cliente" && noSales.situacao !== "indisponivel" ? { no_sales: noSales, aviso_do_sales: avisoDoSales(noSales) } : {}),
+        proximo_passo: "Não pergunte de novo o que já está em `gravado`. Os campos em `falta_*` só se pedem na COLETA DE DADOS DO CONTRATO, depois que a pessoa aceitou a proposta: antes disso, não os peça (nem CPF, nem RG, nem endereço); apenas siga a conversa. Na coleta, uma pergunta por vez, em blocos curtos.",
+      };
     } catch (e) {
       return { ok: false, erro: e instanceof Error ? e.message : "não consegui gravar agora", proximo_passo: "Siga a conversa e registre uma nota com o dado, para a equipe." };
     }
@@ -327,5 +345,47 @@ export const crmPassarParaAgente: McpToolDefinition<typeof passarShape> = {
         ? `A conversa agora é atendida por «${r.agente}», que já se apresentou ao cliente. NÃO escreva mais nenhuma mensagem: encerre o turno.`
         : `A conversa agora é atendida por «${r.agente}», que assume na próxima mensagem do cliente. Se ainda não avisou, diga em uma frase curta que outro atendente vai continuar, e não escreva mais nada sobre o caso.`,
     };
+  },
+};
+
+const anotarShape = {
+  texto: z.string().trim().min(3).max(1500).describe("A anotação para a equipe, em 1 a 3 frases claras (o que o cliente disse ou pediu). Sem CPF, senha ou dado de saúde detalhado."),
+  processo: z.string().trim().max(60).optional().describe("Número (ou parte) ou pasta do processo, SÓ se a anotação for sobre um processo específico do cliente. Sem isso, a anotação vai para o cadastro do cliente."),
+};
+
+/** Anotação no sistema Sales: no cadastro do cliente ou num processo dele, no nome "Assistente virtual (atendimento)". Só para quem já é cliente no Sales. */
+export const crmAnotarNoSales: McpToolDefinition<typeof anotarShape> = {
+  name: "crm_anotar_no_sales",
+  description:
+    "Deixa uma anotação para a equipe no SISTEMA SALES do escritório (no cadastro do cliente ou, se informar `processo`, no processo dele). Use para registrar o que o cliente pediu ou informou e a equipe precisa saber (ex.: pediu para remarcar a perícia, mudou de cidade). " +
+    "Só funciona para quem já é cliente (o Sales acha o cadastro pelo telefone da conversa). Não é para dúvida de direito nem para dado de contrato.",
+  inputSchema: anotarShape,
+  category: "write",
+  requiresRole: "ai_operator",
+  requiresScope: "mcp:write",
+  handler: async (input, ctx) => {
+    const contato = ctx.contatoDoTurno;
+    if (!contato) return { ok: false, erro: "Não há contato nesta conversa.", proximo_passo: "Siga a conversa normalmente." };
+    try {
+      const slug = await slugDaOrg(ctx.organizationId);
+      if (!slug) return { ok: false, erro: "Esta empresa não está ligada ao Sales.", proximo_passo: "Registre um aviso interno com crm_add_case_note." };
+      const { data: ct } = await ctx.supabase.from("contacts").select("phone_number").eq("id", contato).eq("organization_id", ctx.organizationId).maybeSingle();
+      const telefone = (ct as { phone_number: string | null } | null)?.phone_number;
+      if (!telefone) return { ok: false, erro: "O contato não tem telefone para achar o cadastro.", proximo_passo: "Registre um aviso interno com crm_add_case_note." };
+      const achou = await buscarClienteParaAnotar(slug, telefone);
+      if (!achou.encontrado || !achou.pessoa) return { ok: false, erro: "Este telefone não está no cadastro de clientes do Sales: não há onde anotar.", proximo_passo: "Registre um aviso interno com crm_add_case_note." };
+      let processoId: number | undefined;
+      if (input.processo) {
+        const alvo = input.processo.replace(/\D/g, "") || input.processo.toLowerCase();
+        const p = (achou.processos ?? []).find((x) => x.numero.replace(/\D/g, "").includes(alvo) || x.pasta.toLowerCase() === input.processo!.toLowerCase());
+        if (!p) return { ok: false, erro: `Não achei esse processo entre os do cliente: ${(achou.processos ?? []).slice(0, 6).map((x) => x.numero).join("; ") || "nenhum"}.`, proximo_passo: "Anote sem `processo` (vai para o cadastro) ou pergunte de qual processo se trata." };
+        processoId = p.id;
+      }
+      const r = await anotarNoSales(slug, { pessoa_id: achou.pessoa.id, ...(processoId ? { processo_id: processoId } : {}), texto: input.texto, autor_nome: "Assistente virtual", autor_email: "" });
+      return { ok: true, destino: r.destino, proximo_passo: "A anotação ficou registrada no Sales para a equipe. Não precisa avisar o cliente sobre ela." };
+    } catch (e) {
+      if (e instanceof ErroContratoSales) return { ok: false, erro: e.message, proximo_passo: "Registre um aviso interno com crm_add_case_note." };
+      return { ok: false, erro: e instanceof Error ? e.message : "não consegui anotar agora", proximo_passo: "Registre um aviso interno com crm_add_case_note." };
+    }
   },
 };

@@ -44,7 +44,7 @@ import {
   crmResumeAiAttendance,
 } from "./escalacao";
 import { crmRequestHumanHandoff } from "./handoff";
-import { crmCalcularRendaPerCapita, crmConsultarBaseJuridica, crmEnviarContrato, crmNotificarEquipe, crmPassarParaAgente, crmRegistrarDadosDoCliente, crmSalvarDocumentoDoCliente } from "./contratos-sales";
+import { crmAnotarNoSales, crmCalcularRendaPerCapita, crmConsultarBaseJuridica, crmEnviarContrato, crmNotificarEquipe, crmPassarParaAgente, crmRegistrarDadosDoCliente, crmSalvarDocumentoDoCliente } from "./contratos-sales";
 import {
   crmSearchKnowledge,
   crmListKnowledgeSources,
@@ -190,6 +190,7 @@ export const allTools: ReadonlyArray<McpToolDefinition> = [
   crmRegistrarDadosDoCliente,
   crmSalvarDocumentoDoCliente,
   crmNotificarEquipe,
+  crmAnotarNoSales,
   crmPassarParaAgente,
   // handoff (special)
   crmRequestHumanHandoff,

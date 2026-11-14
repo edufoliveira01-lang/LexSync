@@ -56,6 +56,16 @@ export const TOOLS_CONTRATOS_SALES = declararTools([
     pacotes: ["vender"],
   },
   {
+    name: "crm_anotar_no_sales",
+    category: "write",
+    rotulo: "Anotar no sistema do escritório (Sales)",
+    explicacao:
+      "O agente deixa uma anotação para a equipe no cadastro do cliente (ou num processo dele) no Sales, no nome do atendimento virtual: o que o cliente pediu ou informou e a equipe precisa saber. Só para quem já é cliente do escritório.",
+    oQueToca: "Anotações do cliente no Sales",
+    risco: "atencao",
+    pacotes: ["atender"],
+  },
+  {
     name: "crm_consultar_base_juridica",
     category: "read",
     rotulo: "Consultar a base jurídica",

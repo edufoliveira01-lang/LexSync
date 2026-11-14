@@ -45,7 +45,7 @@ export function assinar(segredo: string, metodo: string, caminho: string, corpo:
   return createHmac("sha256", segredo).update(`${ts}.${metodo.toUpperCase()}.${caminho}.${sha256(corpo)}`).digest("hex");
 }
 
-async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, corpo: unknown, http: typeof fetch, recurso: "contratos" | "agente" | "documentos" | "armazenamento" | "indicadores" | "anotacoes" = "contratos"): Promise<T> {
+async function chamar<T>(slug: string, metodo: "GET" | "POST", sufixo: string, corpo: unknown, http: typeof fetch, recurso: "contratos" | "agente" | "documentos" | "armazenamento" | "indicadores" | "anotacoes" | "cadastro" = "contratos"): Promise<T> {
   const cfg = configDosContratos();
   if (!cfg) throw new ErroContratoSales("A geração de contratos ainda não foi ligada neste servidor (SALES_PAINEL_URL e CONTRATOS_SEGREDO).", 503);
   const caminho = `/v1/offices/${encodeURIComponent(slug)}/${recurso}${sufixo}`;
@@ -103,3 +103,8 @@ export const buscarClienteParaAnotar = (slug: string, telefone: string, http: ty
   chamar<ClienteParaAnotar>(slug, "POST", "/buscar", { telefone }, http, "anotacoes");
 export const anotarNoSales = (slug: string, dados: { pessoa_id: number; processo_id?: number; texto: string; autor_nome: string; autor_email: string }, http: typeof fetch = fetch) =>
   chamar<{ ok: boolean; destino: "cadastro" | "processo" }>(slug, "POST", "", dados, http, "anotacoes");
+
+/** Correção do cadastro do cliente pelo atendimento: o Sales troca só os campos de contato e endereço (os demais ele ignora) e deixa o histórico na ficha. */
+export interface ResultadoDoCadastroNoSales { ok: boolean; pessoa_id: number; alterados: string[]; iguais: string[]; ignorados: string[] }
+export const atualizarCadastroNoSales = (slug: string, dados: { pessoa_id: number; campos: Record<string, string>; autor_nome: string; autor_email?: string }, http: typeof fetch = fetch) =>
+  chamar<ResultadoDoCadastroNoSales>(slug, "POST", "", dados, http, "cadastro");

@@ -156,6 +156,8 @@ export const ALVO_DE_FUNIL: Record<string, AlvoDeFunil> = {
   crm_salvar_documento_do_cliente: "sem_funil",
   // Fork Sales: aciona uma notificação já cadastrada pelo dono; não recebe `lead_id`/`pipeline_id`. Barreiras: `ai_operator` e a lista de notificações do escritório.
   crm_notificar_equipe: "sem_funil",
+  // Fork Sales: anota no Sales, fora do funil do CRM; não recebe `lead_id`/`pipeline_id`. Barreiras: `ai_operator` e o telefone do contato do turno.
+  crm_anotar_no_sales: "sem_funil",
   // Fork Sales: age no negócio aberto do contato do turno (o do próprio agente) e o leva ao funil que o dono escreveu no Roteiro. Barreiras: `ai_operator` e nomes resolvidos no escritório.
   crm_passar_para_agente: "sem_funil",
   // Rascunho sugerido por integração (#1611): opera por `conversation_id`,

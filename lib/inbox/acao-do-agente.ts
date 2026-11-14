@@ -27,6 +27,7 @@ export function frasesDaFerramenta(nome: string, entrada: Record<string, unknown
       const ag = String(entrada.agente ?? "").trim();
       return ag ? `passou a conversa para o agente «${ag}»${String(entrada.funil ?? "").trim() ? ` (funil ${String(entrada.funil).trim()})` : ""}` : null;
     }
+    case "crm_anotar_no_sales": return String(entrada.processo ?? "").trim() ? "anotou no processo do cliente, no Sales" : "anotou no cadastro do cliente, no Sales";
     case "crm_notificar_equipe": {
       const nome = String(entrada.notificacao ?? "").trim();
       return nome ? `avisou a equipe por WhatsApp («${nome}»)` : null;
