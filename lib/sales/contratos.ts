@@ -125,5 +125,5 @@ export interface CobrancaDoCliente {
   lancamento_id: number; descricao: string; valor_centavos: number; vencimento: string;
   link: string; linha_digitavel: string; pix: string; boleto_pdf_base64: string | null; boleto_pdf_nome: string | null; outras_em_aberto: number;
 }
-export const cobrancaDoClienteNoSales = (slug: string, dados: { telefone: string; lancamento_id?: number }, http: typeof fetch = fetch) =>
+export const cobrancaDoClienteNoSales = (slug: string, dados: { telefone: string; lancamento_id?: number; cpf?: string }, http: typeof fetch = fetch) =>
   chamar<CobrancaDoCliente>(slug, "POST", "", dados, http, "cobranca");

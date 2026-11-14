@@ -420,7 +420,10 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
     const telefone = (ct as { phone_number: string | null } | null)?.phone_number;
     if (!telefone) return { ok: false, erro: "O contato não tem telefone para achar o cadastro.", proximo_passo: "Diga que a equipe envia o boleto e use crm_notificar_equipe." };
     try {
-      const c = await cobrancaDoClienteNoSales(slug, { telefone, ...(input.parcela ? { lancamento_id: input.parcela } : {}) });
+      // O CPF que o cliente já informou na conversa (gravado com crm_registrar_dados_do_cliente) segue junto: o Asaas exige CPF/CNPJ e o cadastro do Sales pode não tê-lo.
+      const gravados = await lerDadosGravados(ctx.organizationId, contato).catch(() => ({} as Record<string, string | undefined>));
+      const cpf = String((gravados as { cpf?: string }).cpf ?? "").replace(/\D/g, "");
+      const c = await cobrancaDoClienteNoSales(slug, { telefone, ...(input.parcela ? { lancamento_id: input.parcela } : {}), ...(cpf ? { cpf } : {}) });
       const partes = [`Parcela de ${brl(c.valor_centavos)}, vencimento ${dataBr(c.vencimento)}.`];
       if (c.link) partes.push(`Link para pagar (boleto ou PIX): ${c.link}`);
       if (c.linha_digitavel) partes.push(`Linha digitável do boleto:\n${c.linha_digitavel}`);
@@ -436,6 +439,12 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
         proximo_passo: "O sistema JÁ enviou ao cliente o link, o PIX e o boleto. NÃO repita o link nem o PIX. Em UMA mensagem curta, diga que enviou o boleto e o PIX da parcela e que o pagamento é conferido automaticamente. Não prometa nada além disso.",
       };
     } catch (e) {
+      if (e instanceof ErroContratoSales && /CPF ou CNPJ/i.test(e.message) && !/outro cadastro|inválid/i.test(e.message)) {
+        return {
+          ok: false, falta_cpf: true, erro: e.message,
+          proximo_passo: "Falta o CPF do cliente para emitir a cobrança. Peça o CPF (só os números) ao cliente, grave com crm_registrar_dados_do_cliente (campo cpf) e chame crm_enviar_cobranca de novo. Se ele não quiser informar, diga que a equipe envia o boleto e avise a equipe com crm_notificar_equipe.",
+        };
+      }
       if (e instanceof ErroContratoSales) return { ok: false, erro: e.message, proximo_passo: "Não invente boleto nem peça nada ao cliente. Explique em uma frase que a equipe vai enviar o boleto e avise a equipe com crm_notificar_equipe (ou passe a conversa, conforme o roteiro)." };
       return { ok: false, erro: e instanceof Error ? e.message : "não consegui gerar o boleto agora", proximo_passo: "Diga que a equipe envia o boleto e avise a equipe com crm_notificar_equipe." };
     }
