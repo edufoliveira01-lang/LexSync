@@ -5,6 +5,7 @@ import { useRealtimeChannel } from "@/hooks/realtime/useRealtimeChannel";
 import { useRefetchDeSeguranca } from "@/hooks/realtime/useRefetchDeSeguranca";
 import { agendarRecargaDasConversas } from "@/hooks/inbox/recargaDasConversas";
 import { apiClient } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/types";
 import { showApiError } from "@/components/feedback/ApiErrorToast";
 import type { Message } from "@/lib/types/messaging";
 
@@ -33,10 +34,16 @@ export function useMessagesRealtime(conversationId: string | null) {
           `/api/v1/conversations/${conversationId}/messages?${qs.toString()}`,
         );
       } catch (err) {
-        showApiError(err);
+        // Falha de servidor (5xx) é tentada de novo em silêncio (ver `retry`); a tela já mostra
+        // "Erro ao carregar" com o botão se esgotar. Só os outros erros avisam na hora.
+        if (!(err instanceof ApiError && err.status >= 500)) showApiError(err);
         throw err;
       }
     },
+    // A carga do histórico logo depois de um documento chegar já falhou uma vez por oscilação do banco e
+    // funcionou na tentativa seguinte: duas retentativas curtas evitam a tela de erro para quem só olhava.
+    retry: (count, err) => err instanceof ApiError && err.status >= 500 && count < 2,
+    retryDelay: (count) => 800 * (count + 1),
     getNextPageParam: (last) =>
       last.meta?.has_more && last.meta.cursor ? last.meta.cursor : undefined,
     /**
