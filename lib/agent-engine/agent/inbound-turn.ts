@@ -229,6 +229,7 @@ import {
   skillsDoAgente,
   skillsPuxadasPeloRoteiro,
 } from './skills';
+import { medirComposicaoDoPrompt } from './composicao-do-prompt';
 import { readSkillReference, skillHasReferences } from './skill-references';
 import { READ_ONLY_TOOLS, wrapToolsWithBreaker, type ToolBreakerThresholds } from './tool-breaker';
 import {
@@ -6201,6 +6202,8 @@ async function executarTurnoDoAgente(
     // este corpo inteiro. Escoltar aqui deixaria de fora as chamadas de modelo dos
     // auxiliares (`classifyStage`, `maybeCompact`), que rodam ANTES desta e por
     // isso são as que estouram primeiro.
+    // Onde está o peso da entrada: partes medidas, só para o log (ver composicao-do-prompt.ts).
+    runLog.info('composição do prompt do turno', { ...medirComposicaoDoPrompt({ system, messages: openingMessages, tools: tools as Record<string, unknown> }) });
     const turn = await runModelCall(
       pool,
       deps.llmCfg,
