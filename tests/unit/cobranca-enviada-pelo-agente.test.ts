@@ -9,6 +9,8 @@ vi.mock("@/lib/sales/contratos", async (original) => ({ ...(await original<typeo
 vi.mock("@/lib/sales/acompanhar-contratos", () => ({ enviarTexto: (...a: unknown[]) => texto(...a), enviarPdf: (...a: unknown[]) => pdf(...a) }));
 const gravados = vi.fn();
 vi.mock("@/lib/sales/dados-do-cliente", async (original) => ({ ...(await original<typeof import("@/lib/sales/dados-do-cliente")>()), lerDadosGravados: (...a: unknown[]) => gravados(...a) }));
+const capsula = vi.fn();
+vi.mock("@/lib/inbox/acao-do-agente", async (original) => ({ ...(await original<typeof import("@/lib/inbox/acao-do-agente")>()), anotarNaConversaDoContato: (...a: unknown[]) => capsula(...a) }));
 vi.mock("@/lib/sales/contrato-na-conversa", () => ({ slugDaOrg: async () => "alfa", criarContratoNaConversa: vi.fn(), contratoPendenteDaConversa: vi.fn() }));
 
 import { crmEnviarCobranca } from "@/lib/mcp/tools/contratos-sales";
@@ -27,7 +29,7 @@ const ctx = (contatoDoTurno?: string, telefone: string | null = "5513974045973")
 const cobranca = { lancamento_id: 5, descricao: "Honorários 1/3", valor_centavos: 5000, vencimento: "2026-11-14", link: "https://asaas.com/i/1", linha_digitavel: "23793.38128 60000", pix: "000201PIX", boleto_pdf_base64: Buffer.from("%PDF-").toString("base64"), boleto_pdf_nome: "Boleto - venc 14-11-2026.pdf", outras_em_aberto: 0 };
 
 describe("crm_enviar_cobranca — o agente manda o boleto e o PIX da parcela do cliente", () => {
-  beforeEach(() => { gravados.mockReset(); gravados.mockResolvedValue({}); pedir.mockReset(); texto.mockReset(); pdf.mockReset(); texto.mockResolvedValue(true); pdf.mockResolvedValue(true); pedir.mockResolvedValue(cobranca); });
+  beforeEach(() => { capsula.mockReset(); gravados.mockReset(); gravados.mockResolvedValue({}); pedir.mockReset(); texto.mockReset(); pdf.mockReset(); texto.mockResolvedValue(true); pdf.mockResolvedValue(true); pedir.mockResolvedValue(cobranca); });
 
   it("é escrita do AGENTE e não recebe id de contato, conversa ou organização: o alvo é o contato do turno", () => {
     expect(crmEnviarCobranca.category).toBe("write");
@@ -87,5 +89,12 @@ describe("crm_enviar_cobranca — o agente manda o boleto e o PIX da parcela do 
     const r = (await crmEnviarCobranca.handler({}, ctx("c1"))) as { falta_cpf?: boolean; proximo_passo: string };
     expect(r.falta_cpf).toBeUndefined();
     expect(r.proximo_passo).toContain("crm_notificar_equipe");
+  });
+  it("sem PDF: o cliente recebe o link e a equipe lê no chat o motivo", async () => {
+    pedir.mockResolvedValue({ ...cobranca, boleto_pdf_base64: null, boleto_pdf_nome: null, boleto_pdf_motivo: "o Asaas não devolveu o endereço do boleto" });
+    const r = (await crmEnviarCobranca.handler({}, ctx("c1"))) as { ok: boolean; pdf_enviado: boolean };
+    expect(r).toMatchObject({ ok: true, pdf_enviado: false });
+    expect(pdf).not.toHaveBeenCalled();
+    expect(capsula).toHaveBeenCalledWith("org-1", "c1", expect.stringContaining("não o PDF: o Asaas não devolveu o endereço do boleto"));
   });
 });

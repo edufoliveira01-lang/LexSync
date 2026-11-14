@@ -15,6 +15,7 @@ import { enviarPdf, enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
 import { anotarNoSales, buscarClienteParaAnotar, cobrancaDoClienteNoSales, ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
+import { anotarNaConversaDoContato } from "@/lib/inbox/acao-do-agente";
 import { passarParaAgente } from "@/lib/ai/passagem/passar-para-agente";
 import { propagarCadastroParaOSales, type ResultadoNoSales } from "@/lib/sales/propagar-cadastro-no-sales";
 import { enfileirarTurnoDeDestino } from "@/lib/ai/passagem/turno-imediato";
@@ -433,6 +434,13 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
       if (c.pix) enviouPix = await enviarTexto(ctx.organizationId, conversationId, `PIX copia e cola (copie a mensagem abaixo e cole no app do banco):\n\n${c.pix}`);
       let enviouPdf = false;
       if (c.boleto_pdf_base64) enviouPdf = await enviarPdf(ctx.organizationId, conversationId, c.boleto_pdf_nome ?? `Boleto-${c.vencimento}.pdf`, Buffer.from(c.boleto_pdf_base64, "base64"), "Boleto em PDF");
+      // A equipe vê no chat quando o PDF não foi (e por quê): o cliente recebeu o link, mas quem atende precisa saber.
+      if (!enviouPdf) {
+        const porque = c.boleto_pdf_base64 ? "o envio do arquivo falhou" : (c.boleto_pdf_motivo ?? "o boleto em PDF não está disponível");
+        void anotarNaConversaDoContato(ctx.organizationId, contato, `enviou o link do boleto, mas não o PDF: ${porque}`);
+      } else if (c.pix && !enviouPix) {
+        void anotarNaConversaDoContato(ctx.organizationId, contato, "enviou o boleto, mas a mensagem do PIX copia e cola não saiu");
+      }
       if (!enviouTexto && !enviouPdf) return { ok: false, erro: "Gerei a cobrança, mas o envio ao cliente falhou.", proximo_passo: "Diga que a equipe envia o boleto em instantes e use crm_notificar_equipe." };
       return {
         ok: true, enviado_ao_cliente: true, valor: brl(c.valor_centavos), vencimento: dataBr(c.vencimento), pdf_enviado: enviouPdf, pix_enviado: Boolean(c.pix) && enviouPix, outras_parcelas_em_aberto: c.outras_em_aberto,
