@@ -6469,6 +6469,8 @@ export const DICIONARIO: Traducoes = {
   },
   "Uso por tenant": { es: "Uso por tenant" },
   "Exportar CSV": { es: "Exportar CSV" },
+  "Agenda do Google": { es: "Agenda de Google" },
+  "Ocupado na agenda do Google": { es: "Ocupado en la agenda de Google" },
   "Pendência cumprida.": { es: "Pendencia cumplida." },
   "Pendências do cliente": { es: "Pendencias del cliente" },
   "Há 1 pendência neste cliente": { es: "Hay 1 pendencia en este cliente" },

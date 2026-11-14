@@ -68,6 +68,8 @@ export type Agendamento = {
   local?: string;
   origem: OrigemDoAgendamento;
   situacao: SituacaoDoAgendamento;
+  /** Para a legenda do bloco do Google: o nome da agenda de onde ele vem (só quando o título está ligado). */
+  agendaDoGoogle?: string;
 };
 
 /** Um horário oferecido pelo painel de marcação. */

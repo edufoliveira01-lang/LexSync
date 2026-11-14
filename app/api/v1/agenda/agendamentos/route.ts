@@ -45,7 +45,7 @@ import {
  * A tela precisa distinguir, porque bloco vindo do Google não abre, não arrasta
  * e não se clica.
  */
-type AgendamentoDaResposta = AgendamentoListado & { origem?: "google_sync" };
+type AgendamentoDaResposta = AgendamentoListado & { origem?: "google_sync"; agendaDoGoogle?: string };
 
 const listarSchema = z.object({
   collective_only: z.enum(["true", "false"]).transform((value) => value === "true").optional(),
@@ -340,6 +340,7 @@ export async function GET(req: NextRequest): Promise<Response> {
         contatoId: null,
         contatoNome: null,
         origem: "google_sync",
+        ...(e.agenda ? { agendaDoGoogle: e.agenda } : {}),
       });
     }
   }

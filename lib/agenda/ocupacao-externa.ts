@@ -91,6 +91,8 @@ export interface BlocoExternoDaTela {
   terminaEm: string;
   /** O título do evento, SÓ de agenda do Google com "mostrar título" ligado (9110). Ausente = "Ocupado". */
   titulo?: string | null;
+  /** O nome da agenda do Google do evento (para a legenda), só junto do título (9111). */
+  agenda?: string | null;
 }
 
 export interface RecorteDaAgenda {
@@ -131,6 +133,8 @@ interface LinhaDaOcupacaoDoGoogle {
   connection_status?: string | null;
   /** Só vem de `fn_agenda_ocupacao_google_com_titulo`, e só das agendas com título ligado. */
   title?: string | null;
+  /** Só vem junto do título, das agendas com `show_titles` (9111). */
+  calendar_name?: string | null;
 }
 
 const instante = (iso: string): number => new Date(iso).getTime();
@@ -210,7 +214,7 @@ export async function lerOcupacaoExterna(
           // PostgREST. Quem lê a lista de fora não tem como saber qual é qual.
           iniciaEm: fatiaDe(linha.starts_at, recorte),
           terminaEm: fatiaAte(linha.ends_at, recorte),
-          ...(linha.title ? { titulo: linha.title } : {}),
+          ...(linha.title ? { titulo: linha.title, ...(linha.calendar_name ? { agenda: linha.calendar_name } : {}) } : {}),
         })),
     );
 

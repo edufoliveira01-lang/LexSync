@@ -223,6 +223,8 @@ const CAMPOS_DO_BLOCO_DA_TELA = [
   // continua "Ocupado". O título só sai de `fn_agenda_ocupacao_google_com_titulo`, que o devolve APENAS das agendas marcadas
   // — o teste "o título só vem da função que confere show_titles" abaixo guarda esse lado do banco.
   "titulo",
+  // 9111: o nome da agenda do Google, so junto do titulo (a funcao so devolve de agenda com show_titles).
+  "agenda",
 ];
 
 /** A interface que o módulo entrega a quem desenha, sem os comentários. */
@@ -293,7 +295,7 @@ describe("a ocupação do Google não leva o nome do evento para a tela", () => 
     // agendas marcadas): o campo `title` da linha que ela devolve e a leitura dele. Qualquer outra menção continua reprovando.
     const fonte = semComentarios(fs.readFileSync(DONO_DA_LEITURA, "utf8"))
       .replace(/^\s*title\?: string \| null;\s*$/m, "")
-      .replace(/\.\.\.\(linha\.title \? \{ titulo: linha\.title \} : \{\}\),/, "");
+      .replace(/\.\.\.\(linha\.title \? \{ titulo: linha\.title, \.\.\.\(linha\.calendar_name \? \{ agenda: linha\.calendar_name \} : \{\}\) \} : \{\}\),/, "");
     const dono = path.relative(RAIZ, DONO_DA_LEITURA);
 
     const achados = [...fonte.matchAll(CAMPOS_DE_CONTEUDO_DO_EVENTO)].map(
@@ -357,6 +359,14 @@ describe("a ocupação do Google não leva o nome do evento para a tela", () => 
     // A coluna original continua sem título (0261 intacta): esta migração não a reabre.
     expect(sql).not.toMatch(/grant\s+select\s*\(\s*title/i);
     expect(sql).not.toMatch(/update public\.calendar_external_events/i);
+  });
+
+  it("o nome da agenda só sai junto do título, de agenda com show_titles; a janela cobre 30 dias atrás (9111)", () => {
+    const sql = fs.readFileSync(path.join(RAIZ, "supabase/migrations/20261114160000_9111_janela_de_30_dias_e_nome_da_agenda.sql"), "utf8");
+    expect(sql).toMatch(/case when k\.show_titles then k\.name else null end/);
+    expect(sql).toContain("now()-interval ''30 days''");
+    expect(sql).not.toContain("execute replace(def, 'now()-interval ''30");
+    expect(sql).toMatch(/revoke execute on function public\.fn_agenda_ocupacao_google_com_titulo/);
   });
 
   it("o retorno da função não oferece `title` — o contrato do banco preso no tipo", () => {

@@ -99,6 +99,7 @@ export function useAgendamentos(recorte: RecorteDaGrade | null) {
           // Campo novo é optional e a rota pode ainda não mandá-lo — `?? undefined`
           // mantém o wire tolerante a servidor mais velho que o cliente.
           quemSeraAtendido: a.contatoNome ?? undefined,
+          agendaDoGoogle: (a as { agendaDoGoogle?: string | null }).agendaDoGoogle ?? undefined,
         }));
       } catch (err) {
         showApiError(err);

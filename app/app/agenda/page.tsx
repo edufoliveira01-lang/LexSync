@@ -345,6 +345,7 @@ export default async function AgendaPage() {
             termina: e.terminaEm,
             origem: "google_sync" as const,
             situacao: "confirmed" as const,
+            ...(e.agenda ? { agendaDoGoogle: e.agenda } : {}),
           };
         }) as AgendamentoDaTela[],
       )}

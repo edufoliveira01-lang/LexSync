@@ -491,10 +491,20 @@ function BlocoDeAgendamento({
   const trilha = pessoa?.trilha ?? 1;
   const doGoogle = agendamento.origem === "google_sync";
   const cancelado = agendamento.situacao === "cancelled";
+  // A LEGENDA ao passar o mouse: o bloco é estreito e o título corta ("LIGAÇÃO ORIENTAR PM…"). Aqui vai tudo — título inteiro, horário,
+  // de qual agenda do Google ele vem e de quem é. `title` nativo porque funciona também em bloco desabilitado (o do Google) e no celular.
+  const legenda = [
+    agendamento.titulo,
+    `${rotuloHora(comeca, fuso)} ${t("às")} ${rotuloHora(termina, fuso)}`,
+    doGoogle ? (agendamento.agendaDoGoogle ? `${t("Agenda do Google")}: ${agendamento.agendaDoGoogle}` : t("Ocupado na agenda do Google")) : "",
+    pessoa ? `${t("Responsável")}: ${pessoa.nome}` : "",
+    agendamento.quemSeraAtendido ? `${t("Com")}: ${agendamento.quemSeraAtendido}` : "",
+  ].filter(Boolean).join("\n");
 
   return (
     <button
       type="button"
+      title={legenda}
       data-testid={`agendamento-${agendamento.id}`}
       data-origem={agendamento.origem}
       data-trilha={trilha}
@@ -584,7 +594,7 @@ function BlocoDeAgendamento({
         className="absolute inset-y-0 left-0 w-[3px] rounded-l-sm"
         style={{ backgroundColor: doGoogle ? "var(--color-border-strong)" : corDaTrilha(trilha) }}
       />
-      <span className="ml-1 truncate text-[11px] font-semibold leading-4 text-text">
+      <span title={legenda} className="ml-1 truncate text-[11px] font-semibold leading-4 text-text">
         {agendamento.titulo}
       </span>
       {duracao >= 45 && (
