@@ -45,6 +45,11 @@ export interface AgentRunRow {
   steps_count: number | null;
   tool_calls: unknown;
   is_dry_run: boolean;
+  /** Qual ponto de IA gerou a chamada (agent_turn, checkpoint, sentiment_classify…) e o nome dele na tela. */
+  purpose?: string | null;
+  ponto_rotulo?: string | null;
+  /** O que a pessoa vê no negócio quando este ponto falha (só em linha de falha). */
+  consequencia?: string | null;
   started_at: string;
   completed_at: string | null;
   created_at: string;

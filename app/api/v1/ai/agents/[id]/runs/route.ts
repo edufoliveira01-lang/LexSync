@@ -50,6 +50,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { runsListQuerySchema } from "@/lib/ai/agents/validation";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { PONTO_POR_ID } from "@/lib/ai/pontos/registro";
 
 export const dynamic = "force-dynamic";
 
@@ -127,6 +128,12 @@ export function paraLinhaDeExecucao(c: LlmCallRow): Record<string, unknown> {
     // isso que chega a `llm_calls.contact_id`. Versão e run do teste não estão em
     // `llm_calls`.
     is_dry_run: c.purpose === "agent_preview" && c.contact_id === null,
+    // O QUE foi esta chamada. Sem isto a aba mostrava, como "execução do agente que falhou", o classificador de sentimento sem
+    // crédito (0 token, ~300 ms) igual a uma resposta que quebrou: quem investigava não tinha como distinguir.
+    purpose: c.purpose,
+    ponto_rotulo: (c.purpose ? PONTO_POR_ID.get(c.purpose)?.rotulo : undefined) ?? c.purpose,
+    // O que a pessoa vê no negócio quando ESTE ponto falha (só em falha).
+    consequencia: c.status === "erro" && c.purpose ? (PONTO_POR_ID.get(c.purpose)?.sintomaDeFalha ?? null) : null,
     started_at: c.created_at,
     completed_at: c.created_at,
     created_at: c.created_at,

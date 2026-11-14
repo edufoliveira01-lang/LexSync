@@ -119,4 +119,13 @@ describe("aba de Execuções — llm_calls traduzido para a tela", () => {
     const linha = paraLinhaDeExecucao(chamada());
     expect(linha["agent_id"]).toBe(AGENTE);
   });
+
+  it("diz QUE chamada foi: o classificador sem crédito não se passa por resposta do agente que quebrou", () => {
+    const falha = paraLinhaDeExecucao(chamada({ purpose: "sentiment_classify", status: "erro", error_code: "limite_ou_saldo" }));
+    expect(falha.purpose).toBe("sentiment_classify");
+    expect(falha.ponto_rotulo).not.toBe("sentiment_classify");
+    expect(typeof falha.consequencia).toBe("string");
+    const ok = paraLinhaDeExecucao(chamada({ purpose: "agent_turn", status: "ok" }));
+    expect(ok.consequencia).toBeNull();
+  });
 });

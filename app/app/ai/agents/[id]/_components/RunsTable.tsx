@@ -121,12 +121,14 @@ export function RunsTable({ agentId, active }: Props) {
                 </TableCell>
                 <TableCell className="text-xs max-md:hidden">
                   {r.is_dry_run ? (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="mr-1 text-xs">
                       {t("teste")}
                     </Badge>
-                  ) : (
-                    <span className="text-muted-foreground">{t("produção")}</span>
-                  )}
+                  ) : null}
+                  <span className="text-muted-foreground">{r.ponto_rotulo ? t(r.ponto_rotulo) : t("produção")}</span>
+                  {r.status === "failed" && r.consequencia ? (
+                    <span className="mt-0.5 block text-[11px] text-destructive">{t(r.consequencia)}</span>
+                  ) : null}
                 </TableCell>
                 <TableCell className="font-mono text-xs max-md:hidden">
                   {(r.tokens_in ?? 0).toLocaleString()} /{" "}
