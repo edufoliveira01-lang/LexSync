@@ -7282,7 +7282,10 @@ export function createInboundTurnHandler(deps: InboundTurnDeps) {
       conversationId: payload.conversation_id,
       jobId: job.id,
     };
-    if (await ultimaInboundJaRespondida(pool, alvo)) {
+    // Turno IMEDIATO da passagem entre agentes (`lib/ai/passagem/turno-imediato.ts`): o agente de origem já respondeu ou viu esta mensagem, e é
+    // justamente ao mesmo pedido que o agente de destino precisa responder. A régua não se aplica a ele.
+    const passagemImediata = (payload as Record<string, unknown>).passagem_imediata === true;
+    if (!passagemImediata && (await ultimaInboundJaRespondida(pool, alvo))) {
       deps.log.info('turno pulado — outro turno já viu e respondeu a última mensagem do cliente', {
         job_id: job.id,
         conversation_id: payload.conversation_id,

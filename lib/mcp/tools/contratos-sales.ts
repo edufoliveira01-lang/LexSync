@@ -16,6 +16,7 @@ import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
 import { ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
 import { passarParaAgente } from "@/lib/ai/passagem/passar-para-agente";
+import { enfileirarTurnoDeDestino } from "@/lib/ai/passagem/turno-imediato";
 import { dispararNotificacoes } from "@/lib/notificacoes-equipe/disparar";
 import { listarDocumentosRecebidos, salvarDocumentoRecebido, TIPOS_DE_DOCUMENTO_DO_CHAT } from "@/lib/sales/documentos-do-chat";
 import type { McpToolDefinition } from "../types";
@@ -306,6 +307,17 @@ export const crmPassarParaAgente: McpToolDefinition<typeof passarShape> = {
       handlerCtx: { organization_id: ctx.organizationId, actor: ctx.actor, requestId: ctx.requestId },
     });
     if (!r.ok) return { ok: false, erro: r.motivo, proximo_passo: "Não repita a tentativa. Chame a equipe com um resumo curto e siga a conversa." };
+    // O agente de destino RESPONDE NA HORA ao pedido que o cliente acabou de fazer (um turno novo para a mesma mensagem), em vez de esperar a
+    // próxima mensagem. Com o turno imediato a abertura fixa deixa de ser necessária: o destino se apresenta na própria resposta.
+    const imediato = await enfileirarTurnoDeDestino({ admin: ctx.supabase, organizationId: ctx.organizationId, contactId: contato, jobDeOrigemId: ctx.sourceJobId });
+    if (imediato.enfileirado) {
+      return {
+        ok: true,
+        agente: r.agente,
+        funil: r.funil ?? null,
+        proximo_passo: `A conversa agora é atendida por «${r.agente}», que vai responder ao cliente em seguida, lendo toda a conversa. NÃO escreva mais nenhuma mensagem: encerre o turno.`,
+      };
+    }
     const abriu = r.abertura ? await enviarTexto(ctx.organizationId, conversationId, r.abertura) : false;
     return {
       ok: true,
