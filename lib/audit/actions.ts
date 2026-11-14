@@ -792,6 +792,7 @@ export const AUDIT_ACTIONS = [
   // funcionando — sem ele, esses eventos teriam virado compromisso fantasma.
   "agenda.google.sync_executado",
   "agenda.google_selection_updated",
+  "agenda.google_titulos_alterado",
   "agenda.google_catalog_updated",
   "agenda.meet_action_requested",
   "agenda.google_resolution_requested",

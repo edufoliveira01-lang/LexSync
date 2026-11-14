@@ -17,6 +17,47 @@ export function mensagemDaRecusaDeLeitura(erro: unknown): string {
 /** Ids por consulta de vínculo: mantém a URL do `.in` bem abaixo de 8 KB. */
 const IDS_POR_CONSULTA = 50;
 
+/**
+ * Grava o título dos eventos do lote, SÓ quando a agenda tem `show_titles` (padrão desligado).
+ * Melhor esforço: se falhar, o bloco segue como "Ocupado" e a leitura não é derrubada — o título
+ * é um extra e a ocupação (o que protege o horário) já foi gravada pelo lote.
+ */
+export async function gravarTitulosDoLote(
+  db: SupabaseClient,
+  org: string,
+  connectionId: string,
+  externalCalendarId: string,
+  calendarId: string,
+  titulos: ReadonlyMap<string, string>,
+): Promise<void> {
+  if (titulos.size === 0) return;
+  try {
+    const { data } = await db
+      .from("calendar_connection_calendars")
+      .select("show_titles")
+      .eq("organization_id", org)
+      .eq("id", calendarId)
+      .maybeSingle();
+    if ((data as { show_titles?: boolean } | null)?.show_titles !== true) return;
+    const linhas = [...titulos].map(([external_event_id, title]) => ({
+      organization_id: org,
+      connection_id: connectionId,
+      external_calendar_id: externalCalendarId,
+      external_event_id,
+      title,
+      updated_at: new Date().toISOString(),
+    }));
+    for (let i = 0; i < linhas.length; i += 100) {
+      const { error } = await db
+        .from("calendar_external_event_titles")
+        .upsert(linhas.slice(i, i + 100), { onConflict: "organization_id,connection_id,external_calendar_id,external_event_id" });
+      if (error) return;
+    }
+  } catch {
+    /* extra: a ocupação já foi gravada */
+  }
+}
+
 export async function refreshCatalog(
   db: SupabaseClient,
   org: string,
@@ -100,6 +141,8 @@ export async function syncCalendar(
       }
     }
     const items: Record<string, unknown>[] = [];
+    // Títulos só das agendas com `show_titles` (decisão do dono, 9110). O espelho (`calendar_external_events.title`) continua nulo.
+    const titulos = new Map<string, string>();
     const pruneIds = new Set<string>();
     const windowStart = Date.parse(c.sync_cursor.window_start);
     const windowEnd = Date.parse(c.sync_cursor.window_end);
@@ -143,6 +186,8 @@ export async function syncCalendar(
         pruneIds.add(eventId);
         continue;
       }
+      const titulo = event.summary?.trim();
+      if (titulo) titulos.set(eventId, titulo.slice(0, 300));
       items.push({
         ...read.evento,
         title: null,
@@ -165,6 +210,7 @@ export async function syncCalendar(
         },
       }),
     );
+    await gravarTitulosDoLote(db, org, c.connection_id, c.external_calendar_id, calendarId, titulos);
     // O cursor mudou no commit. Release só usa aquisição, não o cursor anterior.
     fence.cursor = saved.sync_cursor ?? fence.cursor;
     return saved.sync_cursor ? "partial" : "complete";

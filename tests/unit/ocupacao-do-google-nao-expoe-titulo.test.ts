@@ -213,7 +213,17 @@ const CAMPOS_DE_CONTEUDO_DO_EVENTO = /\b(?:title|summary|description|location)\b
  * onde alguém teria de escrever, de propósito, que a tela passou a carregar
  * mais do que a fatia de tempo.
  */
-const CAMPOS_DO_BLOCO_DA_TELA = ["id", "donoId", "iniciaEm", "terminaEm"];
+const CAMPOS_DO_BLOCO_DA_TELA = [
+  "id",
+  "donoId",
+  "iniciaEm",
+  "terminaEm",
+  // 9110 — DECISÃO DO DONO (14/11/2026): o título do evento passa a chegar à tela, POR AGENDA e DESLIGADO POR PADRÃO.
+  // Quem decide é a pessoa dona da agenda, agenda a agenda (`calendar_connection_calendars.show_titles`); agenda pessoal
+  // continua "Ocupado". O título só sai de `fn_agenda_ocupacao_google_com_titulo`, que o devolve APENAS das agendas marcadas
+  // — o teste "o título só vem da função que confere show_titles" abaixo guarda esse lado do banco.
+  "titulo",
+];
 
 /** A interface que o módulo entrega a quem desenha, sem os comentários. */
 const DECLARACAO_DO_BLOCO = /export interface BlocoExternoDaTela \{([\s\S]*?)\n\}/;
@@ -279,7 +289,11 @@ describe("a ocupação do Google não leva o nome do evento para a tela", () => 
     // `select("title")`, tudo passa por escrever a palavra. O módulo trata só
     // de OCUPAÇÃO do Google, então nenhum desses nomes tem ali uso legítimo, e
     // é isso que faz esta varredura ser possível sem allowlist.
-    const fonte = semComentarios(fs.readFileSync(DONO_DA_LEITURA, "utf8"));
+    // 9110: as DUAS únicas menções permitidas ao nome da coluna, ambas ligadas à função COM título (que só devolve o título das
+    // agendas marcadas): o campo `title` da linha que ela devolve e a leitura dele. Qualquer outra menção continua reprovando.
+    const fonte = semComentarios(fs.readFileSync(DONO_DA_LEITURA, "utf8"))
+      .replace(/^\s*title\?: string \| null;\s*$/m, "")
+      .replace(/\.\.\.\(linha\.title \? \{ titulo: linha\.title \} : \{\}\),/, "");
     const dono = path.relative(RAIZ, DONO_DA_LEITURA);
 
     const achados = [...fonte.matchAll(CAMPOS_DE_CONTEUDO_DO_EVENTO)].map(
@@ -330,6 +344,19 @@ describe("a ocupação do Google não leva o nome do evento para a tela", () => 
         "inteiro, fuso) é legítimo: acrescente-o à lista acima, e a revisão passa a ver a " +
         "decisão.",
     ).toEqual([]);
+  });
+
+  it("o título só vem da função que confere `show_titles`, e o padrão é desligado (9110)", () => {
+    const sql = fs.readFileSync(path.join(RAIZ, "supabase/migrations/20261114140000_9110_titulo_dos_eventos_do_google_por_agenda.sql"), "utf8");
+    // Padrão desligado: agenda nova nunca expõe título sem a pessoa ligar.
+    expect(sql).toMatch(/add column if not exists show_titles boolean not null default false/);
+    // A função só devolve o título quando a agenda do evento está marcada.
+    expect(sql).toMatch(/case when k\.show_titles then t\.title else null end/);
+    // O título mora em tabela à parte, sem acesso direto de quem usa a tela.
+    expect(sql).toMatch(/revoke all on public\.calendar_external_event_titles from public, anon, authenticated/);
+    // A coluna original continua sem título (0261 intacta): esta migração não a reabre.
+    expect(sql).not.toMatch(/grant\s+select\s*\(\s*title/i);
+    expect(sql).not.toMatch(/update public\.calendar_external_events/i);
   });
 
   it("o retorno da função não oferece `title` — o contrato do banco preso no tipo", () => {

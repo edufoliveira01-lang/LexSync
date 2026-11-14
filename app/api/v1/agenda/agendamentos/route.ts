@@ -324,10 +324,10 @@ export async function GET(req: NextRequest): Promise<Response> {
     for (const e of blocos) {
       externos.push({
         id: e.id,
-        // Rótulo, NUNCA o título do evento: a tabela tem a coluna `title` e esta
-        // resposta não o lê. Despejar o conteúdo da agenda pessoal na tela de
-        // trabalho é o que a consulta da semente também recusa.
-        titulo: "Ocupado",
+        // Rótulo "Ocupado", e NUNCA o conteúdo da agenda pessoal: esta resposta não lê a coluna `title`.
+        // A única exceção é o título que `fn_agenda_ocupacao_google_com_titulo` entrega, e só das agendas
+        // que o dono ligou como "mostrar título" (9110) — agenda pessoal segue "Ocupado".
+        titulo: e.titulo ?? "Ocupado",
         donoId: e.donoId,
         iniciaEm: e.iniciaEm,
         terminaEm: e.terminaEm,

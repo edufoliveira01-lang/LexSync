@@ -21,6 +21,8 @@ export interface CalendarCatalog {
     name: string;
     is_destination: boolean;
     counts_for_conflicts: boolean;
+    /** Só existe depois da migração 9110; ausente = recurso ainda não disponível nesta instalação. */
+    show_titles?: boolean;
     can_read: boolean;
     can_write: boolean;
     available: boolean;
@@ -151,6 +153,40 @@ export function AgendasConectadas() {
                     {t("Destino dos novos compromissos")}
                   </label>
                 </div>
+                {calendar.show_titles !== undefined && (
+                  <div className="space-y-0.5 text-sm">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        data-testid={`mostrar-titulo-${calendar.id}`}
+                        checked={calendar.show_titles}
+                        disabled={busy || !sources.includes(calendar.id)}
+                        onChange={(e) => {
+                          const ligar = e.target.checked;
+                          if (
+                            ligar &&
+                            !window.confirm(
+                              t(
+                                "A equipe passará a ver o título dos eventos desta agenda na Agenda do sistema (por exemplo, o nome do cliente). Ligue só em agendas de trabalho, nunca na agenda pessoal. Continuar?",
+                              ),
+                            )
+                          )
+                            return;
+                          void execute(() =>
+                            apiClient.patch("/api/v1/agenda/google/calendarios/titulos", {
+                              calendar_id: calendar.id,
+                              show_titles: ligar,
+                            }),
+                          );
+                        }}
+                      />
+                      {t("Mostrar o título dos eventos para a equipe")}
+                    </label>
+                    <p className="pl-6 text-xs text-muted-foreground">
+                      {t("Desligado, a equipe vê só “Ocupado”. A agenda precisa estar marcada como “Conta como ocupado”.")}
+                    </p>
+                  </div>
+                )}
                 {!calendar.can_write && (
                   <p className="text-xs text-muted-foreground">
                     {t(

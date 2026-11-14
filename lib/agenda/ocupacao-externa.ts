@@ -78,6 +78,8 @@ export interface BlocoExternoDaTela {
   iniciaEm: string;
   /** ISO — fim da fatia visível (nunca depois de `ate`). */
   terminaEm: string;
+  /** O título do evento, SÓ de agenda do Google com "mostrar título" ligado (9110). Ausente = "Ocupado". */
+  titulo?: string | null;
 }
 
 export interface RecorteDaAgenda {
@@ -116,6 +118,8 @@ interface LinhaDaOcupacaoDoGoogle {
   transparency?: string | null;
   status?: string | null;
   connection_status?: string | null;
+  /** Só vem de `fn_agenda_ocupacao_google_com_titulo`, e só das agendas com título ligado. */
+  title?: string | null;
 }
 
 const instante = (iso: string): number => new Date(iso).getTime();
@@ -150,14 +154,13 @@ export async function lerOcupacaoExterna(
   // o começo (`starts_at >= de`) descartava o compromisso que ATRAVESSA o limite
   // — a grade mostrava livre o horário que a marcação recusa, e quem atende só
   // descobria no erro (issue #525).
+  // A função COM título (9110) devolve as mesmas colunas + `title` (só das agendas ligadas). Antes de o dono aplicar a
+  // migração ela não existe: a leitura cai na função de sempre e o bloco segue como "Ocupado".
   const leituras = await Promise.all(
     donos.map(async (dono) => {
-      const { data, error } = await supabase.rpc("fn_agenda_ocupacao_google_do_dono", {
-        p_org: recorte.organizationId,
-        p_owner: dono,
-        p_de: recorte.de,
-        p_ate: recorte.ate,
-      });
+      const argumentos = { p_org: recorte.organizationId, p_owner: dono, p_de: recorte.de, p_ate: recorte.ate };
+      let { data, error } = await supabase.rpc("fn_agenda_ocupacao_google_com_titulo", argumentos);
+      if (error) ({ data, error } = await supabase.rpc("fn_agenda_ocupacao_google_do_dono", argumentos));
       return { dono, linhas: (data ?? []) as unknown as LinhaDaOcupacaoDoGoogle[], error };
     }),
   );
@@ -196,6 +199,7 @@ export async function lerOcupacaoExterna(
           // PostgREST. Quem lê a lista de fora não tem como saber qual é qual.
           iniciaEm: fatiaDe(linha.starts_at, recorte),
           terminaEm: fatiaAte(linha.ends_at, recorte),
+          ...(linha.title ? { titulo: linha.title } : {}),
         })),
     );
 

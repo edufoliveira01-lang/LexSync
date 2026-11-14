@@ -338,7 +338,8 @@ export default async function AgendaPage() {
         externos.map((e) => {
           return {
             id: e.id,
-            titulo: "Ocupado",
+            // "Ocupado" por padrão; o título do evento só vem das agendas com "mostrar título" ligado (9110).
+            titulo: e.titulo ?? "Ocupado",
             responsavelId: e.donoId ?? "",
             comeca: e.iniciaEm,
             termina: e.terminaEm,
