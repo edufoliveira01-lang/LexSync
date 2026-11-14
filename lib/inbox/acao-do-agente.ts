@@ -53,6 +53,15 @@ export function frasesDaFerramenta(nome: string, entrada: Record<string, unknown
 
 const moeda = (n: unknown) => (typeof n === "number" ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "");
 
+/** As consultas do Sales que o agente faz (nome da ferramenta → o que foi consultado, na frase da conversa). */
+const CONSULTAS_DO_SALES: Record<string, string> = {
+  consultar_cliente: "o cadastro do cliente",
+  andamento_do_processo: "o andamento do processo",
+  proximos_compromissos: "os próximos compromissos do cliente",
+  financeiro_do_cliente: "o financeiro do cliente",
+  documentos_do_cliente: "os documentos do cliente",
+};
+
 /**
  * O que o agente CONSULTOU na base jurídica (leituras não gravam nada, então não passavam pela anotação): a equipe vê na conversa que a resposta veio da
  * ficha (com a data da revisão e a fonte) e da calculadora, e não da memória do modelo. `null` = não anota.
@@ -66,6 +75,20 @@ export function frasesDeConsulta(nome: string, resultado: unknown): string | nul
     const hosts = [...new Set((f.fontes ?? []).map((x) => { try { return new URL(String(x.url)).hostname.replace(/^www\./, ""); } catch { return ""; } }).filter(Boolean))].slice(0, 3);
     const aviso = Array.isArray(r.aviso) && r.aviso.length > 0 ? " · com ressalva (ficha ainda sem a conferência de um advogado)" : "";
     return `consultou a base jurídica: ${f.titulo} (revisada em ${f.revisado_em ?? "?"}${hosts.length ? ` · fontes: ${hosts.join(", ")}` : ""})${aviso}`;
+  }
+  // As consultas do Sales (servidor MCP externo, só leitura): a equipe vê na conversa que o agente consultou o cadastro e o que voltou. O resultado vem como
+  // `{ texto, dados }`; `dados.encontrado` diz se o telefone está no cadastro. A frase NUNCA leva nome, CPF, número de processo nem valor: só o desfecho.
+  const base = nome.replace(/^.*__/, "");
+  const objeto = CONSULTAS_DO_SALES[base];
+  if (objeto) {
+    const dados = (r.dados && typeof r.dados === "object" ? r.dados : {}) as Record<string, unknown>;
+    if (dados.encontrado === false) return `consultou ${objeto}: nenhum cliente localizado pelo telefone da conversa`;
+    if (dados.ambiguo === true) return `consultou ${objeto}: mais de um cadastro com este telefone (a identidade precisa ser confirmada)`;
+    if (base === "consultar_cliente") {
+      const n = Array.isArray(dados.processos) ? dados.processos.length : null;
+      return `consultou ${objeto}: cliente localizado${n !== null ? ` (${n} ${n === 1 ? "processo" : "processos"})` : ""}`;
+    }
+    return `consultou ${objeto}`;
   }
   if (nome === "crm_calcular_renda_per_capita") {
     if (typeof r.renda_per_capita !== "number") return null;
