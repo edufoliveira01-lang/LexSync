@@ -102,7 +102,8 @@ export function AgendarAtendimento({ conversationId, contactId, contactName, som
     void (async () => {
       try {
         const agora = new Date();
-        const ate = new Date(agora.getTime() + 365 * 86_400_000);
+        // A listagem recusa períodos acima de 62 dias (`agenda_listagem_janela_invalida`): 60 dias é também a janela em que a agenda aceita marcar.
+        const ate = new Date(agora.getTime() + 60 * 86_400_000);
         const [rTipos, rMarcados] = await Promise.all([
           apiClient.get<{ data: Tipo[] }>("/api/v1/agenda/tipos"),
           apiClient.get<{ data: Marcado[] }>(`/api/v1/agenda/agendamentos?contact_id=${encodeURIComponent(contactId)}&de=${encodeURIComponent(agora.toISOString())}&ate=${encodeURIComponent(ate.toISOString())}`),

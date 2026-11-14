@@ -18,7 +18,14 @@ const SLOT = { inicio: amanha.toISOString(), fim: new Date(amanha.getTime() + 3_
 function servidor(opcoes: { tipos?: unknown[]; marcados?: unknown[]; livres?: unknown } = {}) {
   api.get.mockImplementation(async (url: string) => {
     if (url.startsWith("/api/v1/agenda/tipos")) return { data: opcoes.tipos ?? [TIPO] };
-    if (url.startsWith("/api/v1/agenda/agendamentos")) return { data: opcoes.marcados ?? [] };
+    if (url.startsWith("/api/v1/agenda/agendamentos")) {
+      // O servidor real recusa período acima de 62 dias (`agenda_listagem_janela_invalida`): o simulado também,
+      // senão o teste não pega o pedido grande demais — que foi o defeito do "Não foi possível carregar a agenda".
+      const q = new URL(url, "http://x").searchParams;
+      const dias = (Date.parse(q.get("ate") ?? "") - Date.parse(q.get("de") ?? "")) / 86_400_000;
+      if (!(dias <= 62)) throw new Error("agenda_listagem_janela_invalida");
+      return { data: opcoes.marcados ?? [] };
+    }
     if (url.startsWith("/api/v1/agenda/horarios-livres")) return { data: opcoes.livres ?? { slots: [SLOT], fuso_da_regra: "America/Sao_Paulo", publicou_horarios: true } };
     throw new Error(`rota inesperada: ${url}`);
   });
