@@ -115,8 +115,8 @@ export interface TurnoDoRoteiro {
 
 /**
  * "Ao concluir: fechar a conversa". Fecha DEPOIS de a IA responder (alguns segundos): fechar no meio do turno trocaria a revisão do
- * atendimento e derrubaria a resposta que ainda vai sair. Melhor esforço — se o processo reiniciar neste intervalo, a conversa
- * simplesmente continua aberta para a equipe.
+ * atendimento e derrubaria a resposta que ainda vai sair. Caminho rápido: se o processo reiniciar neste intervalo, a rodada
+ * `fecharConversasPendentesDoRoteiro` (lib/followup/fechar-conversas-pendentes.ts, ligada em instrumentation.ts) fecha em até ~1 min.
  */
 const ESPERA_ANTES_DE_FECHAR_MS = 25_000;
 function fecharConversaDepoisDaResposta(deps: { pool: { query: (sql: string, p?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }; log: Logger }, organizationId: string, conversationId: string): void {

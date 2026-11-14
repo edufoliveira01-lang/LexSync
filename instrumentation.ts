@@ -11,6 +11,8 @@ export async function register() {
     void import("./lib/sales/indicadores-do-atendimento").then((m) => m.iniciarEnvioDosIndicadores()).catch(() => undefined);
     // Fork Sales: envia as mensagens que os atendentes programaram no Inbox, na hora marcada (o agendador da imagem original não conhece a tarefa).
     void import("./lib/sales/envio-de-mensagens-programadas").then((m) => m.iniciarEnvioDeMensagensProgramadas()).catch(() => undefined);
+    // Fork Sales: rede de segurança do "fechar a conversa ao concluir o roteiro" (o temporizador do turno some se o servidor reiniciar).
+    void import("./lib/followup/fechar-conversas-pendentes").then((m) => m.iniciarFechamentoDeConversasDoRoteiro()).catch(() => undefined);
     // Fork Sales: a base jurídica se atualiza sozinha a partir de fontes oficiais (só liga com BASE_JURIDICA_AUTO=1 e a chave definida).
     void import("./lib/sales/base-juridica/atualizar").then((m) => m.iniciarAtualizacaoDaBaseJuridica()).catch(() => undefined);
   }
