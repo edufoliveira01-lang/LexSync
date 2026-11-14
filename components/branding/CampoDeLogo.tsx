@@ -124,6 +124,10 @@ const ERRO_EM_PORTUGUES: Record<string, string> = {
 const RAZAO_DO_TETO =
   "O logo precisa ter até 512 KB. Arquivo maior vai inteiro para o navegador em toda página.";
 
+/** O "Escolher arquivo" no padrão do sistema: o seletor nativo do navegador aparece em inglês ("Choose File / No file chosen"). */
+const BOTAO_DE_ARQUIVO =
+  "inline-flex cursor-pointer items-center rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:border-primary/40 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-disabled:cursor-not-allowed peer-disabled:opacity-50";
+
 export function CampoDeLogo({
   escopo,
   logoDaCamada,
@@ -348,8 +352,11 @@ export function CampoDeLogo({
               const arquivo = e.target.files?.[0];
               if (arquivo) void enviar(arquivo);
             }}
-            className="max-w-xs text-sm file:mr-3 file:cursor-pointer file:rounded-sm file:border file:border-border file:bg-surface-elevated file:px-3 file:py-1.5 file:text-sm"
+            className="peer sr-only"
           />
+          <label htmlFor={`logo-${escopo}`} className={BOTAO_DE_ARQUIVO}>
+            {enviando ? t("Enviando…") : t("Escolher arquivo")}
+          </label>
           {logoGravado ? (
             <Button
               type="button"
@@ -382,8 +389,11 @@ export function CampoDeLogo({
               if (arquivo) void enviar(arquivo, "escuro");
               e.target.value = "";
             }}
-            className="max-w-xs text-sm file:mr-3 file:cursor-pointer file:rounded-sm file:border file:border-border file:bg-surface-elevated file:px-3 file:py-1.5 file:text-sm"
+            className="peer sr-only"
           />
+          <label htmlFor={`logo-escuro-${escopo}`} className={BOTAO_DE_ARQUIVO}>
+            {enviando ? t("Enviando…") : t("Escolher arquivo")}
+          </label>
           {logoEscuroGravado ? (
             <Button
               type="button"

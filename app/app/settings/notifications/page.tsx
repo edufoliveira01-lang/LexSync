@@ -58,7 +58,7 @@ export default async function NotificationsPage() {
     <div className="flex h-full flex-col gap-6 p-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">{t("Notificações")}</h1>
-        <p className="text-sm text-muted-foreground">{t("Canais e categorias.")}</p>
+        <p className="text-sm text-muted-foreground">{t("Escolha como e por onde você quer ser avisado de cada acontecimento: por e-mail, dentro do sistema ou no celular.")}</p>
         <Link
           href="/app/settings/aplicativo"
           data-testid="link-app-no-celular"
