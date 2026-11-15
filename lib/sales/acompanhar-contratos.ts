@@ -62,6 +62,8 @@ export async function enviarPdfDetalhado(orgId: string, conversationId: string, 
     etapa = "enviar ao cliente";
     const m = await sendMessageHandler(admin, { organization_id: orgId, actor: ATOR, requestId }, sendMessageSchema.parse({
       conversation_id: conversationId, type: "document", media_storage_path: caminho, media_mime: "application/pdf", media_size_bytes: conteudo.length, ...(legenda ? { body: legenda } : {}),
+      // o nome bonito que o cliente vê (a chave do storage acima é só uma chave segura)
+      metadata: { media_filename: nomeDoArquivo.endsWith(".pdf") ? nomeDoArquivo : `${nomeDoArquivo}.pdf` },
     }));
     await registrarEnvioPorToken(ritmo, orgId, segurado, m.status);
     if (m.status === "failed") return { ok: false, motivo: "o canal de WhatsApp recusou o envio do arquivo" };

@@ -51,6 +51,7 @@ import { estadoDaJanela } from "@/lib/channels/janela";
 import { isMediaPathOwnedBy } from "@/lib/messaging/media/upload-validation";
 import { assertUrlDeMidiaSegura } from "@/lib/messaging/media/url-de-midia-externa";
 import { semChavesDaDerivacao } from "@/lib/messaging/media/leitura-adiada";
+import { nomeOriginalDaMensagem } from "@/lib/messaging/media/nome-de-arquivo";
 import {
   buildVcard,
   normalizePhoneForDisplay,
@@ -1272,7 +1273,9 @@ export async function sendMessageHandler(
         if (signErr || !signed?.signedUrl) {
           throw new Error(`storage_sign_failed: ${signErr?.message ?? "no_url"}`);
         }
-        const filename = input.media_storage_path.split("/").pop() ?? undefined;
+        // O nome que o CLIENTE vê: o que quem enviou deu em `metadata.media_filename` (ex.: "Boleto - Honorários 1-3 - R$ 10,00 - venc 15-11-2026.pdf");
+        // o último trecho do caminho de storage é só uma chave segura (sem acento nem espaço) e fica como reserva.
+        const filename = nomeOriginalDaMensagem(input.metadata) ?? input.media_storage_path.split("/").pop() ?? undefined;
         await checkBoundary();
         ({ externalId } = await adapter.send({
           beforeSend: checkBoundary,
