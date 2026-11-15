@@ -33,7 +33,14 @@ export const FERRAMENTAS_DO_AGENTE_JURIDICO: readonly string[] = [
   "crm_confirm_appointment", "crm_reschedule_appointment", "crm_cancel_appointment",
 ];
 
-export const PALAVRAS_DE_PASSAGEM_JURIDICO: readonly string[] = ["falar com humano", "atendente", "pessoa real", "advogado", "advogada", "falar com o advogado"];
+/**
+ * Palavras que passam a conversa à equipe. A busca é por TRECHO do que o cliente escreve: "advogado" solto disparava a passagem em "preciso pagar o
+ * advogado" ou "meu advogado antigo", antes de a IA ler a mensagem. Por isso só entram PEDIDOS explícitos de falar com alguém.
+ */
+export const PALAVRAS_DE_PASSAGEM_JURIDICO: readonly string[] = [
+  "falar com humano", "falar com um humano", "atendente", "pessoa real",
+  "falar com o advogado", "falar com a advogada", "falar com advogado", "falar com um advogado", "falar com uma advogada",
+];
 
 export const SLUG_DO_FUNIL_JURIDICO = "atendimento-juridico";
 

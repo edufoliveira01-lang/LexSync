@@ -41,3 +41,28 @@ describe("agente jurídico: o que o botão configura", () => {
     expect(pedacoDoAgenteJuridico({ nomeDoAgente: "", nomeAtual: "x", funis: [funis[0]!], pipelinesAtuais: [] }).pipeline_ids).toBeUndefined();
   });
 });
+
+import { PALAVRAS_DE_PASSAGEM_JURIDICO } from "./modelo-agente-juridico";
+import { matchesHandoffKeyword, palavrasDePassagem } from "@/lib/agent-engine/agent/agent-config";
+
+describe("palavras de passagem do escritório não disparam em conversa normal", () => {
+  const palavras = palavrasDePassagem([...PALAVRAS_DE_PASSAGEM_JURIDICO]);
+  it.each([
+    "Olá preciso pagar o advogado",
+    "meu advogado antigo não me atendeu",
+    "o advogado do INSS negou",
+    "Preciso pagar os honorários",
+    "Quero o boleto da advogada",
+  ])("%s → continua com a IA", (frase) => {
+    expect(matchesHandoffKeyword(frase, palavras)).toBe(false);
+  });
+  it.each([
+    "quero falar com o advogado",
+    "Preciso falar com a advogada",
+    "quero falar com um humano",
+    "chama um atendente",
+    "quero uma pessoa real",
+  ])("%s → passa para a equipe", (frase) => {
+    expect(matchesHandoffKeyword(frase, palavras)).toBe(true);
+  });
+});
