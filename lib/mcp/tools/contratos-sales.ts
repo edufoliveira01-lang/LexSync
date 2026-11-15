@@ -393,7 +393,8 @@ export const crmAnotarNoSales: McpToolDefinition<typeof anotarShape> = {
 };
 
 const cobrancaShape = {
-  parcela: z.number().int().positive().optional().describe("Número da parcela (`lancamento_id`) SÓ se o cliente pediu uma específica e você já a viu na consulta do financeiro. Sem isso, vale a parcela em aberto mais antiga."),
+  valor_reais: z.number().positive().max(10_000_000).optional().describe("O VALOR da parcela que o CLIENTE pediu, em reais (ex.: 10 ou 50.5). Informe sempre que o cliente disser qual parcela quer (\"a de 10 reais\")."),
+  vencimento: z.string().trim().max(10).optional().describe("Vencimento da parcela pedida, dia/mês (15/11) ou 2026-11-15. Só quando houver duas parcelas do mesmo valor, ou quando o cliente falou da data."),
 };
 
 const brl = (centavos: number) => (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -403,9 +404,10 @@ const dataBr = (iso: string) => iso.split("-").reverse().join("/");
 export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
   name: "crm_enviar_cobranca",
   description:
-    "Gera e ENVIA ao cliente, no WhatsApp, o boleto e o PIX de uma parcela em aberto dele (link de pagamento, PIX copia e cola, linha digitável e o PDF do boleto). Use quando o cliente pedir o boleto, o PIX ou o link para pagar uma parcela. " +
-    "O cliente é sempre o da conversa (achado pelo telefone); a parcela é a em aberto mais antiga, a menos que informe `parcela`. O sistema JÁ envia as mensagens (`enviado_ao_cliente`): NÃO reenvie nem copie o PIX ou o link. " +
-    "Parcela vencida não gera sozinha: a equipe precisa definir nova data (nesse caso, diga que vai pedir à equipe e use crm_notificar_equipe ou crm_passar_para_agente conforme o roteiro).",
+    "Gera e ENVIA ao cliente, no WhatsApp, o boleto e o PIX de uma parcela em aberto dele (link de pagamento, linha digitável, PIX copia e cola e o PDF do boleto). Use quando o cliente pedir o boleto, o PIX ou o link para pagar uma parcela. " +
+    "QUAL PARCELA: se o cliente tem UMA parcela em aberto, não precisa informar nada. Se tem MAIS DE UMA, pergunte de qual ele precisa e passe `valor_reais` (e `vencimento` se houver duas do mesmo valor). NUNCA escolha a parcela por ele: boleto de outra parcela leva o cliente a pagar o valor errado. " +
+    "O cliente é sempre o da conversa (achado pelo telefone). O sistema JÁ envia as mensagens (`enviado_ao_cliente`): NÃO reenvie nem copie o PIX ou o link. " +
+    "Parcela vencida sem cobrança não gera sozinha: a equipe precisa definir nova data (nesse caso, diga que vai pedir à equipe e use crm_notificar_equipe ou crm_passar_para_agente conforme o roteiro).",
   inputSchema: cobrancaShape,
   category: "write",
   requiresRole: "ai_operator",
@@ -425,7 +427,7 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
       // O CPF que o cliente já informou na conversa (gravado com crm_registrar_dados_do_cliente) segue junto: o Asaas exige CPF/CNPJ e o cadastro do Sales pode não tê-lo.
       const gravados = await lerDadosGravados(ctx.organizationId, contato).catch(() => ({} as Record<string, string | undefined>));
       const cpf = String((gravados as { cpf?: string }).cpf ?? "").replace(/\D/g, "");
-      const c = await cobrancaDoClienteNoSales(slug, { telefone, ...(input.parcela ? { lancamento_id: input.parcela } : {}), ...(cpf ? { cpf } : {}) });
+      const c = await cobrancaDoClienteNoSales(slug, { telefone, ...(input.valor_reais ? { valor_centavos: Math.round(input.valor_reais * 100) } : {}), ...(input.vencimento ? { vencimento: input.vencimento } : {}), ...(cpf ? { cpf } : {}) });
       const partes = [`Parcela de ${brl(c.valor_centavos)}, vencimento ${dataBr(c.vencimento)}.`];
       if (c.link) partes.push(`Link para pagar (boleto ou PIX): ${c.link}`);
       if (c.linha_digitavel) partes.push(`Linha digitável do boleto:\n${c.linha_digitavel}`);
@@ -452,6 +454,12 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
           : "O sistema JÁ enviou ao cliente o link, o PIX e o boleto. NÃO repita o link nem o PIX. Em UMA mensagem curta, diga que enviou o boleto e o PIX da parcela e que o pagamento é conferido automaticamente. Não prometa nada além disso.",
       };
     } catch (e) {
+      if (e instanceof ErroContratoSales && /parcelas em aberto|Mais de uma parcela|Não achei parcela|Data de vencimento inválida/i.test(e.message)) {
+        return {
+          ok: false, escolher_parcela: true, erro: e.message,
+          proximo_passo: "NENHUM boleto foi gerado ou enviado. Mostre ao cliente as parcelas em aberto (valor e vencimento, como estão no erro) e pergunte de qual ele precisa. Quando ele responder, chame crm_enviar_cobranca de novo com valor_reais (e vencimento, se houver duas do mesmo valor). Não escolha por ele e não chame a equipe por isso.",
+        };
+      }
       if (e instanceof ErroContratoSales && /CPF ou CNPJ/i.test(e.message) && !/outro cadastro|inválid/i.test(e.message)) {
         return {
           ok: false, falta_cpf: true, erro: e.message,

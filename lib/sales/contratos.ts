@@ -125,7 +125,7 @@ export interface CobrancaDoCliente {
   lancamento_id: number; descricao: string; valor_centavos: number; vencimento: string;
   link: string; linha_digitavel: string; pix: string; boleto_pdf_base64: string | null; boleto_pdf_nome: string | null; boleto_pdf_motivo?: string | null; pix_motivo?: string | null; pendente?: boolean; outras_em_aberto: number;
 }
-export const cobrancaDoClienteNoSales = (slug: string, dados: { telefone: string; lancamento_id?: number; cpf?: string }, http: typeof fetch = fetch) =>
+export const cobrancaDoClienteNoSales = (slug: string, dados: { telefone: string; lancamento_id?: number; valor_centavos?: number; vencimento?: string; cpf?: string }, http: typeof fetch = fetch) =>
   chamar<CobrancaDoCliente>(slug, "POST", "", dados, http, "cobranca");
 
 /** Completa, sem pressa, o PIX e o PDF de uma cobrança já gerada (o Sales busca por até ~40 s por consulta; quem chama repete a intervalos). */

@@ -52,9 +52,21 @@ describe("crm_enviar_cobranca — o agente manda o boleto e o PIX da parcela do 
     expect(pdf).toHaveBeenCalledWith("org-1", "conv-1", expect.stringContaining("Boleto"), expect.any(Buffer), "Boleto em PDF");
     expect(r.proximo_passo).toContain("NÃO repita");
   });
-  it("só passa a parcela quando o modelo a informou", async () => {
-    await crmEnviarCobranca.handler({ parcela: 5 }, ctx("c1"));
-    expect(pedir).toHaveBeenCalledWith("alfa", { telefone: "5513974045973", lancamento_id: 5 });
+  it("passa ao Sales o VALOR (e o vencimento) que o cliente escolheu — nunca um id que o modelo não tem", async () => {
+    await crmEnviarCobranca.handler({ valor_reais: 10 }, ctx("c1"));
+    expect(pedir).toHaveBeenCalledWith("alfa", { telefone: "5513974045973", valor_centavos: 1000 });
+    await crmEnviarCobranca.handler({ valor_reais: 50.5, vencimento: "15/11" }, ctx("c1"));
+    expect(pedir).toHaveBeenLastCalledWith("alfa", { telefone: "5513974045973", valor_centavos: 5050, vencimento: "15/11" });
+    expect(Object.keys(crmEnviarCobranca.inputSchema)).toEqual(["valor_reais", "vencimento"]);
+  });
+  it("mais de uma parcela e nenhuma escolhida: nada é enviado e o agente é mandado PERGUNTAR ao cliente (não chamar a equipe)", async () => {
+    pedir.mockRejectedValue(new ErroContratoSales("O cliente tem 2 parcelas em aberto: R$ 50,00 (venc. 14/11, vencida); R$ 10,00 (venc. 15/11). Pergunte de qual delas ele precisa e informe o valor.", 409));
+    const r = (await crmEnviarCobranca.handler({}, ctx("c1"))) as { ok: boolean; escolher_parcela?: boolean; proximo_passo: string };
+    expect(r).toMatchObject({ ok: false, escolher_parcela: true });
+    expect(r.proximo_passo).toContain("NENHUM boleto");
+    expect(r.proximo_passo).toContain("valor_reais");
+    expect(r.proximo_passo).not.toContain("crm_notificar_equipe");
+    expect(texto).not.toHaveBeenCalled();
   });
   it("sem contato no turno ou sem telefone, não pede nada ao Sales", async () => {
     expect(((await crmEnviarCobranca.handler({}, ctx(undefined))) as { ok: boolean }).ok).toBe(false);
