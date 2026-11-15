@@ -8,7 +8,7 @@
  *
  * Uma só rodada por (conversa, parcela) por vez; o que já saiu nunca é reenviado.
  */
-import { enviarPdf, enviarTexto } from "@/lib/sales/acompanhar-contratos";
+import { enviarPdfDetalhado, enviarTexto, type ResultadoDoPdf } from "@/lib/sales/acompanhar-contratos";
 import { complementoDaCobrancaNoSales, type CobrancaDoCliente } from "@/lib/sales/contratos";
 import { anotarNaConversaDoContato } from "@/lib/inbox/acao-do-agente";
 import { logger } from "@/lib/logger";
@@ -31,7 +31,7 @@ export interface DepsDoComplemento {
   esperas?: readonly number[];
   pedir?: typeof complementoDaCobrancaNoSales;
   texto?: typeof enviarTexto;
-  pdf?: typeof enviarPdf;
+  pdf?: (orgId: string, conversationId: string, nome: string, conteudo: Buffer, legenda?: string) => Promise<ResultadoDoPdf>;
   capsula?: typeof anotarNaConversaDoContato;
 }
 
@@ -50,7 +50,7 @@ export async function rodar(e: EntradaDoComplemento, deps: DepsDoComplemento = {
   const esperar = deps.esperar ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const pedir = deps.pedir ?? complementoDaCobrancaNoSales;
   const texto = deps.texto ?? enviarTexto;
-  const pdf = deps.pdf ?? enviarPdf;
+  const pdf = deps.pdf ?? enviarPdfDetalhado;
   const capsula = deps.capsula ?? anotarNaConversaDoContato;
   const estado = { ...e.jaEnviou };
   const motivos = { pix: e.motivos?.pix ?? null, pdf: e.motivos?.pdf ?? null };
@@ -68,8 +68,9 @@ export async function rodar(e: EntradaDoComplemento, deps: DepsDoComplemento = {
     }
     if (!estado.pdf) {
       if (c.boleto_pdf_base64) {
-        if (await pdf(e.orgId, e.conversationId, c.boleto_pdf_nome ?? "Boleto.pdf", Buffer.from(c.boleto_pdf_base64, "base64"), "Boleto em PDF")) { estado.pdf = true; motivos.pdf = null; }
-        else motivos.pdf = "o envio do arquivo ao cliente falhou";
+        const r = await pdf(e.orgId, e.conversationId, c.boleto_pdf_nome ?? "Boleto.pdf", Buffer.from(c.boleto_pdf_base64, "base64"), "Boleto em PDF");
+        if (r.ok) { estado.pdf = true; motivos.pdf = null; }
+        else motivos.pdf = r.motivo;
       } else motivos.pdf = c.boleto_pdf_motivo ?? motivos.pdf;
     }
   }
@@ -78,6 +79,9 @@ export async function rodar(e: EntradaDoComplemento, deps: DepsDoComplemento = {
   } else {
     const faltou = [!estado.pdf ? `PDF do boleto (${motivos.pdf ?? "indisponível"})` : null, !estado.pix ? `PIX copia e cola (${motivos.pix ?? "indisponível"})` : null].filter(Boolean).join("; ");
     await capsula(e.orgId, e.contato, `não conseguiu enviar depois de ${tentativas} tentativa(s): ${faltou}. O cliente já tem o link de pagamento.`);
+    // O cliente foi avisado de que o PDF e o PIX "chegam em seguida": se não chegaram, ele precisa saber, sem ficar esperando.
+    const oQue = !estado.pdf && !estado.pix ? "o PDF do boleto e o PIX copia e cola" : !estado.pdf ? "o PDF do boleto" : "o PIX copia e cola";
+    await texto(e.orgId, e.conversationId, `Não consegui enviar ${oQue} por aqui. Para pagar, use o link que mandei acima (ele abre o boleto e o PIX). Se precisar do arquivo, é só me avisar que a equipe envia.`);
   }
   return { ...estado, tentativas };
 }

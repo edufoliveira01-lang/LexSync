@@ -11,7 +11,7 @@ import { carregarBase } from "@/lib/sales/base-juridica/armazem";
 import { formatoPadraoDoContrato } from "@/lib/campos/mascaras";
 import { acharFicha, temasDaBase } from "@/lib/sales/base-juridica/fichas";
 import { calcularRendaPerCapita } from "@/lib/sales/base-juridica/valores";
-import { enviarPdf, enviarTexto } from "@/lib/sales/acompanhar-contratos";
+import { enviarPdfDetalhado, enviarTexto } from "@/lib/sales/acompanhar-contratos";
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
 import { anotarNoSales, buscarClienteParaAnotar, cobrancaDoClienteNoSales, ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
@@ -435,7 +435,12 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
       const enviouTexto = await enviarTexto(ctx.organizationId, conversationId, texto);
       const enviouPix = !c.pix ? false : await enviarTexto(ctx.organizationId, conversationId, textoDoPix(c.pix));
       let enviouPdf = false;
-      if (c.boleto_pdf_base64) enviouPdf = await enviarPdf(ctx.organizationId, conversationId, c.boleto_pdf_nome ?? `Boleto-${c.vencimento}.pdf`, Buffer.from(c.boleto_pdf_base64, "base64"), "Boleto em PDF");
+      let motivoDoEnvioDoPdf: string | null = null;
+      if (c.boleto_pdf_base64) {
+        const r = await enviarPdfDetalhado(ctx.organizationId, conversationId, c.boleto_pdf_nome ?? `Boleto-${c.vencimento}.pdf`, Buffer.from(c.boleto_pdf_base64, "base64"), "Boleto em PDF");
+        enviouPdf = r.ok;
+        if (!r.ok) motivoDoEnvioDoPdf = r.motivo;
+      }
       if (!enviouTexto && !enviouPdf && !enviouPix) return { ok: false, erro: "Gerei a cobrança, mas o envio ao cliente falhou.", proximo_passo: "Diga que a equipe envia o boleto em instantes e use crm_notificar_equipe." };
       // O que faltou (PIX ou PDF) NÃO trava a resposta do chat: o sistema continua buscando em segundo plano, com paciência, e manda cada peça na MESMA
       // conversa quando ficar pronta; se no fim ainda faltar algo, a equipe lê o motivo real na conversa.
@@ -444,7 +449,7 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
         completarCobrancaEmSegundoPlano({
           orgId: ctx.organizationId, contato, conversationId, slug, telefone, lancamentoId: c.lancamento_id,
           jaEnviou: { pix: enviouPix, pdf: enviouPdf },
-          motivos: { pix: enviouPix ? null : (c.pix_motivo ?? null), pdf: enviouPdf ? null : (c.boleto_pdf_base64 ? "o envio do arquivo falhou" : (c.boleto_pdf_motivo ?? null)) },
+          motivos: { pix: enviouPix ? null : (c.pix_motivo ?? null), pdf: enviouPdf ? null : (motivoDoEnvioDoPdf ?? c.boleto_pdf_motivo ?? null) },
         });
       }
       return {

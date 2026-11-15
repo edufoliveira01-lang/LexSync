@@ -6,7 +6,7 @@ const pedir = vi.fn();
 const texto = vi.fn();
 const pdf = vi.fn();
 vi.mock("@/lib/sales/contratos", async (original) => ({ ...(await original<typeof import("@/lib/sales/contratos")>()), cobrancaDoClienteNoSales: (...a: unknown[]) => pedir(...a) }));
-vi.mock("@/lib/sales/acompanhar-contratos", () => ({ enviarTexto: (...a: unknown[]) => texto(...a), enviarPdf: (...a: unknown[]) => pdf(...a) }));
+vi.mock("@/lib/sales/acompanhar-contratos", () => ({ enviarTexto: (...a: unknown[]) => texto(...a), enviarPdfDetalhado: (...a: unknown[]) => pdf(...a) }));
 const gravados = vi.fn();
 vi.mock("@/lib/sales/dados-do-cliente", async (original) => ({ ...(await original<typeof import("@/lib/sales/dados-do-cliente")>()), lerDadosGravados: (...a: unknown[]) => gravados(...a) }));
 const capsula = vi.fn();
@@ -31,7 +31,7 @@ const ctx = (contatoDoTurno?: string, telefone: string | null = "5513974045973")
 const cobranca = { lancamento_id: 5, descricao: "Honorários 1/3", valor_centavos: 5000, vencimento: "2026-11-14", link: "https://asaas.com/i/1", linha_digitavel: "23793.38128 60000", pix: "000201PIX", boleto_pdf_base64: Buffer.from("%PDF-").toString("base64"), boleto_pdf_nome: "Boleto - venc 14-11-2026.pdf", outras_em_aberto: 0 };
 
 describe("crm_enviar_cobranca — o agente manda o boleto e o PIX da parcela do cliente", () => {
-  beforeEach(() => { segundoPlano.mockReset(); capsula.mockReset(); gravados.mockReset(); gravados.mockResolvedValue({}); pedir.mockReset(); texto.mockReset(); pdf.mockReset(); texto.mockResolvedValue(true); pdf.mockResolvedValue(true); pedir.mockResolvedValue(cobranca); });
+  beforeEach(() => { segundoPlano.mockReset(); capsula.mockReset(); gravados.mockReset(); gravados.mockResolvedValue({}); pedir.mockReset(); texto.mockReset(); pdf.mockReset(); texto.mockResolvedValue(true); pdf.mockResolvedValue({ ok: true }); pedir.mockResolvedValue(cobranca); });
 
   it("é escrita do AGENTE e não recebe id de contato, conversa ou organização: o alvo é o contato do turno", () => {
     expect(crmEnviarCobranca.category).toBe("write");
@@ -82,7 +82,7 @@ describe("crm_enviar_cobranca — o agente manda o boleto e o PIX da parcela do 
     expect(texto).not.toHaveBeenCalled();
   });
   it("se nada saiu ao cliente, não diz que enviou", async () => {
-    texto.mockResolvedValue(false); pdf.mockResolvedValue(false);
+    texto.mockResolvedValue(false); pdf.mockResolvedValue({ ok: false, motivo: "x" });
     const r = (await crmEnviarCobranca.handler({}, ctx("c1"))) as { ok: boolean };
     expect(r.ok).toBe(false);
   });
@@ -129,5 +129,11 @@ describe("crm_enviar_cobranca — o agente manda o boleto e o PIX da parcela do 
     await crmEnviarCobranca.handler({}, ctx("c1"));
     expect(texto).toHaveBeenCalledTimes(2);
     expect(segundoPlano).toHaveBeenCalledWith(expect.objectContaining({ jaEnviou: { pix: true, pdf: false } }));
+  });
+  it("PDF entregue pelo Sales mas o ENVIO ao cliente falhou: o motivo exato vai para o segundo plano (não um \"falhou\" genérico)", async () => {
+    pdf.mockResolvedValue({ ok: false, motivo: "falhou ao guardar o arquivo no armazenamento: Bucket not found" });
+    const r = (await crmEnviarCobranca.handler({}, ctx("c1"))) as { pdf_enviado: boolean };
+    expect(r.pdf_enviado).toBe(false);
+    expect(segundoPlano).toHaveBeenCalledWith(expect.objectContaining({ jaEnviou: { pix: true, pdf: false }, motivos: { pix: null, pdf: "falhou ao guardar o arquivo no armazenamento: Bucket not found" } }));
   });
 });

@@ -10,7 +10,7 @@ function deps(respostas: Array<unknown>) {
   const esperas: number[] = [];
   const pedir = vi.fn(async () => { const r = respostas.shift(); if (r instanceof Error) throw r; return r as never; });
   const texto = vi.fn(async () => true);
-  const pdf = vi.fn(async () => true);
+  const pdf = vi.fn(async () => ({ ok: true }) as { ok: true } | { ok: false; motivo: string });
   const capsula = vi.fn(async () => undefined);
   return { esperas, pedir, texto, pdf, capsula, d: { esperar: async (ms: number) => { esperas.push(ms); }, esperas: [10, 40, 90, 150], pedir: pedir as never, texto: texto as never, pdf: pdf as never, capsula: capsula as never } };
 }
@@ -43,16 +43,26 @@ describe("cobrança em segundo plano — o PIX e o PDF que chegam depois", () =>
     const x = deps([semNada, semNada, new Error("O painel recusou o pedido (504)."), semNada]);
     const r = await rodar({ ...base, jaEnviou: { pix: false, pdf: false } }, x.d);
     expect(r).toEqual({ pix: false, pdf: false, tentativas: 4 });
-    expect(x.texto).not.toHaveBeenCalled();
     const frase = (x.capsula.mock.calls[0] as unknown as [string, string, string])[2];
     expect(frase).toContain("4 tentativa(s)");
     expect(frase).toContain("PDF do boleto (o Asaas demorou)");
     expect(frase).toContain("PIX copia e cola (sem resposta em 40 s)");
     expect(frase).toContain("já tem o link de pagamento");
+    // o cliente, que ouviu "chegam em seguida", é avisado com honestidade e levado ao link
+    expect(x.texto).toHaveBeenCalledTimes(1);
+    expect((x.texto.mock.calls[0] as unknown as [string, string, string])[2]).toMatch(/Não consegui enviar o PDF do boleto e o PIX copia e cola.*use o link/);
+  });
+  it("o motivo EXATO do envio do arquivo aparece na cápsula final", async () => {
+    const x = deps([completa, completa, completa, completa]);
+    x.pdf.mockResolvedValue({ ok: false, motivo: "falhou ao guardar o arquivo no armazenamento: Bucket not found" });
+    const r = await rodar({ ...base, jaEnviou: { pix: true, pdf: false } }, x.d);
+    expect(r.pdf).toBe(false);
+    expect((x.capsula.mock.calls[0] as unknown as [string, string, string])[2]).toContain("PDF do boleto (falhou ao guardar o arquivo no armazenamento: Bucket not found)");
+    expect((x.texto.mock.calls[0] as unknown as [string, string, string])[2]).toMatch(/Não consegui enviar o PDF do boleto por aqui/);
   });
   it("falha ao enviar o arquivo ao cliente conta como pendente e tenta de novo", async () => {
     const x = deps([completa, completa]);
-    x.pdf.mockResolvedValueOnce(false);
+    x.pdf.mockResolvedValueOnce({ ok: false, motivo: "falhou ao enviar ao cliente: timeout" });
     const r = await rodar({ ...base, jaEnviou: { pix: true, pdf: false } }, x.d);
     expect(r.pdf).toBe(true);
     expect(x.pdf).toHaveBeenCalledTimes(2);

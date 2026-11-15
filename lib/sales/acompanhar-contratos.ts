@@ -43,26 +43,39 @@ export async function enviarTexto(orgId: string, conversationId: string, body: s
   }
 }
 
-/** Manda um PDF ao cliente (guarda no mesmo armazenamento de mídia da conversa e envia como documento). `false` quando não saiu. */
-export async function enviarPdf(orgId: string, conversationId: string, nomeDoArquivo: string, conteudo: Buffer, legenda?: string): Promise<boolean> {
+export type ResultadoDoPdf = { ok: true } | { ok: false; motivo: string };
+
+/** Igual a `enviarPdf`, mas diz POR QUE não saiu (cada etapa com o seu nome): quem atende precisa do motivo, não de um "falhou". */
+export async function enviarPdfDetalhado(orgId: string, conversationId: string, nomeDoArquivo: string, conteudo: Buffer, legenda?: string): Promise<ResultadoDoPdf> {
   const admin = createAdminClient();
   const requestId = randomUUID();
+  let etapa = "preparar o arquivo";
   try {
     const limpo = nomeDoArquivo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "boleto.pdf";
     const caminho = `${orgId}/${conversationId}/${Date.now()}-${limpo.endsWith(".pdf") ? limpo : `${limpo}.pdf`}`;
+    etapa = "guardar o arquivo no armazenamento";
     const { error: erroUp } = await admin.storage.from("whatsapp-media").upload(caminho, conteudo, { contentType: "application/pdf", upsert: false });
     if (erroUp) throw new Error(erroUp.message);
+    etapa = "respeitar o ritmo de envio";
     const ritmo = await depsDoRitmo(admin);
     const segurado = await segurarEnvioPorToken(ritmo, { organizationId: orgId, conversationId, requestId });
+    etapa = "enviar ao cliente";
     const m = await sendMessageHandler(admin, { organization_id: orgId, actor: ATOR, requestId }, sendMessageSchema.parse({
       conversation_id: conversationId, type: "document", media_storage_path: caminho, media_mime: "application/pdf", media_size_bytes: conteudo.length, ...(legenda ? { body: legenda } : {}),
     }));
     await registrarEnvioPorToken(ritmo, orgId, segurado, m.status);
-    return m.status !== "failed";
+    if (m.status === "failed") return { ok: false, motivo: "o canal de WhatsApp recusou o envio do arquivo" };
+    return { ok: true };
   } catch (e) {
-    logger.warn("[sales.cobranca] não consegui enviar o PDF ao cliente", { conversation_id: conversationId, erro: e instanceof Error ? e.message : String(e) });
-    return false;
+    const detalhe = (e instanceof Error ? e.message : String(e)).replace(/\s+/g, " ").slice(0, 160);
+    logger.warn("[sales.cobranca] não consegui enviar o PDF ao cliente", { conversation_id: conversationId, etapa, erro: detalhe });
+    return { ok: false, motivo: `falhou ao ${etapa}: ${detalhe}` };
   }
+}
+
+/** Manda um PDF ao cliente (guarda no mesmo armazenamento de mídia da conversa e envia como documento). `false` quando não saiu. */
+export async function enviarPdf(orgId: string, conversationId: string, nomeDoArquivo: string, conteudo: Buffer, legenda?: string): Promise<boolean> {
+  return (await enviarPdfDetalhado(orgId, conversationId, nomeDoArquivo, conteudo, legenda)).ok;
 }
 
 export interface ConferenciaDoContrato { pendentes: number; assinados: number; novos: number }
