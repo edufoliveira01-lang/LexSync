@@ -407,7 +407,7 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
     "Gera e ENVIA ao cliente, no WhatsApp, o boleto e o PIX de uma parcela em aberto dele (link de pagamento, linha digitável, PIX copia e cola e o PDF do boleto). Use quando o cliente pedir o boleto, o PIX ou o link para pagar uma parcela. " +
     "QUAL PARCELA: se o cliente tem UMA parcela em aberto, não precisa informar nada. Se tem MAIS DE UMA, pergunte de qual ele precisa e passe `valor_reais` (e `vencimento` se houver duas do mesmo valor). NUNCA escolha a parcela por ele: boleto de outra parcela leva o cliente a pagar o valor errado. " +
     "O cliente é sempre o da conversa (achado pelo telefone). O sistema JÁ envia as mensagens (`enviado_ao_cliente`): NÃO reenvie nem copie o PIX ou o link. " +
-    "Parcela vencida sem cobrança não gera sozinha: a equipe precisa definir nova data (nesse caso, diga que vai pedir à equipe e use crm_notificar_equipe ou crm_passar_para_agente conforme o roteiro).",
+    "MESMO COM PARCELA VENCIDA, chame a ferramenta: se a parcela já tem cobrança no Asaas, ela é reenviada. Quem decide se dá ou não é o resultado da ferramenta: SÓ quando ele disser que não foi possível (por exemplo, vencida e sem cobrança, que precisa de nova data da equipe) é que você explica ao cliente e avisa a equipe com crm_notificar_equipe ou crm_passar_para_agente, conforme o roteiro. Nunca conclua por conta própria que uma parcela vencida não pode ser enviada.",
   inputSchema: cobrancaShape,
   category: "write",
   requiresRole: "ai_operator",
