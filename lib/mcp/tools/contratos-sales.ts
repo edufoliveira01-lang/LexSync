@@ -15,7 +15,7 @@ import { enviarPdfDetalhado, enviarTexto } from "@/lib/sales/acompanhar-contrato
 import { contratoPendenteDaConversa, criarContratoNaConversa, slugDaOrg } from "@/lib/sales/contrato-na-conversa";
 import { cpfMascarado, faltaParaOContrato, gravarDadosDoCliente, lerDadosGravados, type CampoDoCliente } from "@/lib/sales/dados-do-cliente";
 import { anotarNoSales, buscarClienteParaAnotar, cobrancaDoClienteNoSales, ErroContratoSales, type DadosDoContrato } from "@/lib/sales/contratos";
-import { completarCobrancaEmSegundoPlano, textoDoPix } from "@/lib/sales/cobranca-em-segundo-plano";
+import { completarCobrancaEmSegundoPlano, enviarPixInteiro } from "@/lib/sales/cobranca-em-segundo-plano";
 import { anotarNaConversaDoContato } from "@/lib/inbox/acao-do-agente";
 import { passarParaAgente } from "@/lib/ai/passagem/passar-para-agente";
 import { propagarCadastroParaOSales, type ResultadoNoSales } from "@/lib/sales/propagar-cadastro-no-sales";
@@ -433,7 +433,7 @@ export const crmEnviarCobranca: McpToolDefinition<typeof cobrancaShape> = {
       if (c.linha_digitavel) partes.push(`Linha digitável do boleto:\n${c.linha_digitavel}`);
       const texto = partes.join("\n\n");
       const enviouTexto = await enviarTexto(ctx.organizationId, conversationId, texto);
-      const enviouPix = !c.pix ? false : await enviarTexto(ctx.organizationId, conversationId, textoDoPix(c.pix));
+      const enviouPix = !c.pix ? false : await enviarPixInteiro(ctx.organizationId, conversationId, c.pix, enviarTexto);
       let enviouPdf = false;
       let motivoDoEnvioDoPdf: string | null = null;
       if (c.boleto_pdf_base64) {

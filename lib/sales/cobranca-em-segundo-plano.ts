@@ -35,7 +35,14 @@ export interface DepsDoComplemento {
   capsula?: typeof anotarNaConversaDoContato;
 }
 
-export const textoDoPix = (pix: string) => `PIX copia e cola (copie a mensagem abaixo e cole no app do banco):\n\n${pix}`;
+/** A explicação vai SOZINHA, em mensagem à parte: quem toca e segura a mensagem do código copia só o código (com a frase junto o banco recusa). */
+export const AVISO_DO_PIX = "PIX copia e cola: copie a próxima mensagem (é só o código) e cole no app do banco, na opção PIX copia e cola.";
+
+/** Manda o aviso e, em seguida, o código sozinho. `true` quando a mensagem do CÓDIGO saiu (o aviso é só apoio). */
+export async function enviarPixInteiro(orgId: string, conversationId: string, pix: string, texto: typeof enviarTexto = enviarTexto): Promise<boolean> {
+  await texto(orgId, conversationId, AVISO_DO_PIX);
+  return texto(orgId, conversationId, pix);
+}
 
 /** Dispara a rodada em segundo plano (não bloqueia quem chama). `false` quando já há uma rodada igual em andamento. */
 export function completarCobrancaEmSegundoPlano(e: EntradaDoComplemento, deps: DepsDoComplemento = {}): boolean {
@@ -63,7 +70,7 @@ export async function rodar(e: EntradaDoComplemento, deps: DepsDoComplemento = {
     try { c = await pedir(e.slug, { telefone: e.telefone, lancamento_id: e.lancamentoId }); }
     catch (err) { motivos.pix = motivos.pdf = err instanceof Error ? err.message : "o Sales não respondeu"; continue; }
     if (!estado.pix) {
-      if (c.pix) { if (await texto(e.orgId, e.conversationId, textoDoPix(c.pix))) { estado.pix = true; motivos.pix = null; } }
+      if (c.pix) { if (await enviarPixInteiro(e.orgId, e.conversationId, c.pix, texto)) { estado.pix = true; motivos.pix = null; } }
       else motivos.pix = c.pix_motivo ?? motivos.pix;
     }
     if (!estado.pdf) {

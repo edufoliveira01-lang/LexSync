@@ -45,10 +45,12 @@ describe("crm_enviar_cobranca — o agente manda o boleto e o PIX da parcela do 
     const r = (await crmEnviarCobranca.handler({}, ctx("c1"))) as { ok: boolean; enviado_ao_cliente?: boolean; pdf_enviado?: boolean; proximo_passo: string };
     expect(pedir).toHaveBeenCalledWith("alfa", { telefone: "5513974045973" });
     expect(r).toMatchObject({ ok: true, enviado_ao_cliente: true, pdf_enviado: true });
-    expect(texto).toHaveBeenCalledTimes(2);
+    // link e linha numa mensagem; o aviso do PIX sozinho; e o CÓDIGO sozinho (só ele é copiado)
+    expect(texto).toHaveBeenCalledTimes(3);
     expect(texto.mock.calls[0]![2]).toContain("https://asaas.com/i/1");
     expect(texto.mock.calls[0]![2]).toContain("R$");
-    expect(texto.mock.calls[1]![2]).toContain("000201PIX");
+    expect(texto.mock.calls[1]![2]).toContain("copie a próxima mensagem");
+    expect(texto.mock.calls[2]![2]).toBe("000201PIX");
     expect(pdf).toHaveBeenCalledWith("org-1", "conv-1", expect.stringContaining("Boleto"), expect.any(Buffer), "Boleto em PDF");
     expect(r.proximo_passo).toContain("NÃO repita");
   });
@@ -127,7 +129,7 @@ describe("crm_enviar_cobranca — o agente manda o boleto e o PIX da parcela do 
   it("só faltou o PDF: o PIX já saiu e o segundo plano cuida apenas do PDF", async () => {
     pedir.mockResolvedValue({ ...cobranca, boleto_pdf_base64: null, boleto_pdf_nome: null, boleto_pdf_motivo: "o Asaas respondeu HTTP 403 ao baixar o boleto (sandbox.asaas.com)" });
     await crmEnviarCobranca.handler({}, ctx("c1"));
-    expect(texto).toHaveBeenCalledTimes(2);
+    expect(texto).toHaveBeenCalledTimes(3);
     expect(segundoPlano).toHaveBeenCalledWith(expect.objectContaining({ jaEnviou: { pix: true, pdf: false } }));
   });
   it("PDF entregue pelo Sales mas o ENVIO ao cliente falhou: o motivo exato vai para o segundo plano (não um \"falhou\" genérico)", async () => {

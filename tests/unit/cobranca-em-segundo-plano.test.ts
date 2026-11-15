@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { rodar, textoDoPix } from "@/lib/sales/cobranca-em-segundo-plano";
+import { AVISO_DO_PIX, enviarPixInteiro, rodar } from "@/lib/sales/cobranca-em-segundo-plano";
 
 const base = { orgId: "org-1", contato: "c1", conversationId: "conv-1", slug: "alfa", telefone: "5513974045973", lancamentoId: 5 };
 const completa = { lancamento_id: 5, descricao: "H", valor_centavos: 5000, vencimento: "2026-11-14", link: "https://x", linha_digitavel: "1", pix: "000201PIX", boleto_pdf_base64: Buffer.from("%PDF-").toString("base64"), boleto_pdf_nome: "Boleto.pdf", boleto_pdf_motivo: null, pix_motivo: null, pendente: false, outras_em_aberto: 0 };
@@ -20,8 +20,10 @@ describe("cobrança em segundo plano — o PIX e o PDF que chegam depois", () =>
     const x = deps([semNada, { ...semNada, pix: "000201PIX", pix_motivo: null }, completa]);
     const r = await rodar({ ...base, jaEnviou: { pix: false, pdf: false } }, x.d);
     expect(r).toEqual({ pix: true, pdf: true, tentativas: 3 });
-    expect(x.texto).toHaveBeenCalledTimes(1);
-    expect(x.texto).toHaveBeenCalledWith("org-1", "conv-1", textoDoPix("000201PIX"));
+    // aviso + código SOZINHO, nessa ordem
+    expect(x.texto).toHaveBeenCalledTimes(2);
+    expect(x.texto).toHaveBeenNthCalledWith(1, "org-1", "conv-1", AVISO_DO_PIX);
+    expect(x.texto).toHaveBeenNthCalledWith(2, "org-1", "conv-1", "000201PIX");
     expect(x.pdf).toHaveBeenCalledTimes(1);
     expect(x.esperas).toEqual([10, 40, 90]);
     expect(x.capsula).toHaveBeenCalledWith("org-1", "c1", expect.stringContaining("que estavam pendentes"));
@@ -66,5 +68,12 @@ describe("cobrança em segundo plano — o PIX e o PDF que chegam depois", () =>
     const r = await rodar({ ...base, jaEnviou: { pix: true, pdf: false } }, x.d);
     expect(r.pdf).toBe(true);
     expect(x.pdf).toHaveBeenCalledTimes(2);
+  });
+  it("o código PIX vai em mensagem própria (só o código), e o resultado é o do CÓDIGO", async () => {
+    const enviadas: string[] = [];
+    const envia = (async (_o: string, _c: string, t: string) => { enviadas.push(t); return t === "000201PIX"; }) as never;
+    expect(await enviarPixInteiro("org-1", "conv-1", "000201PIX", envia)).toBe(true);
+    expect(enviadas).toEqual([AVISO_DO_PIX, "000201PIX"]);
+    expect(enviadas[1]).not.toContain("PIX copia e cola");
   });
 });
