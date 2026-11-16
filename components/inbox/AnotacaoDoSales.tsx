@@ -54,8 +54,7 @@ function Janela({ conversationId, onFechar }: { conversationId: string; onFechar
       .then((r) => {
         if (!ativo) return;
         setAchado(r.data);
-        const abertos = (r.data.processos ?? []).filter((p) => p.status === "ativo");
-        if (abertos.length === 1) setProcessoId(abertos[0]!.id);
+        // O padrão é SEMPRE o cadastro do cliente (processoId 0); anotar num processo é uma escolha de quem atende.
       })
       .catch((e) => { if (ativo) setErro(e instanceof Error ? e.message : t("Não foi possível falar com o Sales.")); });
     return () => { ativo = false; };
