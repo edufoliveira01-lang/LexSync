@@ -710,6 +710,11 @@ export function TriggerConfigControl({ flowId, triggerConfig }: Props) {
               onCheckedChange={(checked) => setForm((f) => ({ ...f, cancelOnReply: checked }))}
             />
           </div>
+          <p className="text-xs text-muted-foreground" data-testid="trigger-cancel-on-reply-ajuda">
+            {form.kind === "appointment_no_show" || form.cancelOnReply
+              ? t("Quando o lead responde, o fluxo é encerrado e nada mais é enviado.")
+              : t("Desligado: cada resposta do lead pula a espera do passo atual e o fluxo avança para a próxima mensagem — uma conversa ativa pode chegar ao fim do fluxo em poucos minutos. Ligue para encerrar o fluxo assim que o lead responder.")}
+          </p>
 
           <Button
             type="button"
