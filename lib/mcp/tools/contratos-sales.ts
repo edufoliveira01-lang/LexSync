@@ -5,6 +5,7 @@
  * conversa. O alvo é SEMPRE o contato do turno (`ctx.contatoDoTurno`, nunca um argumento do modelo), a conversa é a mais recente dele, e um segundo
  * contrato não é gerado enquanto houver um aguardando assinatura. O link volta no resultado, para o agente mandá-lo na resposta.
  */
+import { gravarFichaNaNotaSupabase } from "@/lib/agent-engine/agent/notas-fixas";
 import { fecharConversaAoFimDoFluxo } from "@/lib/followup/fechar-conversa-ao-fim";
 import { z } from "zod";
 
@@ -166,11 +167,13 @@ export const crmConsultarBaseJuridica: McpToolDefinition<typeof baseShape> = {
   category: "read",
   requiresRole: "agent",
   requiresScope: "mcp:read",
-  handler: async (input) => {
+  handler: async (input, ctx) => {
     const base = await carregarBase();
     const r = acharFicha(input.tema, new Date(), base.fichas);
     if (!r) return { ok: true, cobertura: false, temas_disponiveis: temasDaBase(base.fichas), proximo_passo: "A base não cobre este tema: responda só com o que for geral e seguro e diga que o advogado confirma." };
     const { ficha, vencida } = r;
+    // A ficha também vira nota do contato: nas próximas respostas ela já está no contexto (requisitos, quando cabe, quando não cabe), sem depender de nova consulta.
+    if (ctx.contatoDoTurno) await gravarFichaNaNotaSupabase(ctx.supabase, { tenantId: ctx.organizationId, contactId: ctx.contatoDoTurno }, ficha);
     return {
       ok: true, cobertura: true, ficha,
       aviso: [vencida ? "A ficha passou da validade de revisão: responda com ressalva e diga que o advogado confirma." : null, ficha.status === "pendente_revisao" ? "Ficha ainda sem a conferência de um advogado: use, e diga que o advogado confirma pelo caso." : null].filter(Boolean),

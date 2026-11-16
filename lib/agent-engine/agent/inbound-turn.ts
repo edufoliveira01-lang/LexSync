@@ -138,6 +138,7 @@ import { buildOpeningMessage, ritualBlocks, type FormatoDoHistorico } from "./ab
 import { snapshotDoCaso } from "./conversa-do-caso/contexto";
 import { lerRemetenteDeGrupo, type RemetenteDeGrupo } from "@/lib/messaging/remetente-de-grupo";
 import { applySaveLeadNote, buildNotesIndexBlock, getLeadNoteBody } from './lead-notes';
+import { blocoDasNotasFixas, registrarPerguntasERespostas } from './notas-fixas';
 import { buildCompromissosBlock } from './compromissos-do-contato';
 import { buildOrigemBlock } from './abertura/origem-do-contato';
 import { agendaNoFechamento } from './abertura/agenda-no-fechamento';
@@ -3723,7 +3724,14 @@ async function executarTurnoDoAgente(
   const [notesIndexBlock, compromissosBlock, origemBlock, noteIdRows] = await Promise.all([
     notasDaPrevia
       ? notasDaPrevia.bloco
-      : buildNotesIndexBlock(pool, tenantId, leadId, deps.knobs.notesIndexMaxTokens),
+      : buildNotesIndexBlock(pool, tenantId, leadId, deps.knobs.notesIndexMaxTokens).then(async (indice) => {
+          // Notas fixas (ficha do benefício e registro das perguntas e respostas): o corpo entra sempre, não só o título.
+          try {
+            return indice + (await blocoDasNotasFixas(pool, tenantId, leadId));
+          } catch {
+            return indice;
+          }
+        }),
     preview?.kind === 'sandbox' ? '' : buildCompromissosBlock(pool, tenantId, leadId, new Date()),
     preview ? '' : buildOrigemBlock(pool, tenantId, leadId, new Date()),
     preview
@@ -6927,6 +6935,15 @@ async function executarTurnoDoAgente(
     // Fim do turno: o que ainda esperava a mensagem do marco é resolvido aqui (roda se não houve envio; descarta etapa/etiqueta se
     // houve tentativa e nada saiu). Antes da divergência abaixo, que lê o estágio que o modelo confirmou.
     await marcosDoTurno.encerrar({ houveTentativaDeEnvio: tentativasDeEnvio > 0 });
+
+    // Anota a pergunta da IA e a resposta do cliente (memória que não sai do contexto com as mensagens antigas). Melhor esforço.
+    if (!preview) {
+      try {
+        await registrarPerguntasERespostas(pool, { tenantId, contactId: leadId });
+      } catch (err) {
+        runLog.warn('registro das perguntas e respostas falhou (segue)', { error: err instanceof Error ? err.name : 'unknown' });
+      }
+    }
 
     // F3-11: divergência classificador×modelo. O classificador sugeriu um estágio; se o
     // modelo confirmou (via update_lead_state — a máquina F2-10) um estágio DIFERENTE, o
