@@ -40,6 +40,12 @@ const CODIGOS = new Set<string>([
    */
   "job_settled",
   "JobSettledError",
+  /**
+   * `open_human_case` recusado porque a conversa JÁ TEM um caso humano aberto: não é erro interno,
+   * é a regra de um caso por conversa. Sem este literal o recibo mostrava `internal_error` e parecia
+   * falha do sistema.
+   */
+  "case_already_open",
 ]);
 const MOTIVOS_DE_ABORTO = new Set([
   "handoff_tool",
