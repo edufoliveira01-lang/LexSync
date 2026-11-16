@@ -207,7 +207,7 @@ export const FRASE_AO_CLIENTE_EM_PEDIDO_SOBRE_CASO_ABERTO =
  * tool `open_human_case` (o caminho `if (!res.ok) return res`), e é ele que o
  * teste de `aviso-de-pedido-novo-no-caso.test.ts` prende.
  */
-export function recusaDeCasoAberto(): OpenCaseResult {
+export function recusaDeCasoAberto(casoAbertoId?: string | null): OpenCaseResult {
   return {
     ok: false,
     error: {
@@ -220,7 +220,8 @@ export function recusaDeCasoAberto(): OpenCaseResult {
         'tempo que quem continuar o caso vai ler). NÃO use provide_case_update para isso: ela é só para a ' +
         'informação que o caso pediu ao cliente. Só diga ao cliente que o pedido ficou registrado no caso se ' +
         'você registrou de fato. Responda ao cliente apenas neste espírito: ' +
-        `"${FRASE_AO_CLIENTE_EM_PEDIDO_SOBRE_CASO_ABERTO}" Aguarde a resposta do atendente antes de abrir outro caso.`,
+        `"${FRASE_AO_CLIENTE_EM_PEDIDO_SOBRE_CASO_ABERTO}" Aguarde a resposta do atendente antes de abrir outro caso.` +
+        (casoAbertoId ? ` O caso aberto desta conversa tem o case_id ${casoAbertoId}: é ele que vai em crm_add_case_note.` : ''),
     },
   };
 }
@@ -289,7 +290,15 @@ export async function openCase(
     // A recusa é uma INSTRUÇÃO (não só um erro): é o texto que o modelo lê no
     // resultado da tool, e é ele que impede a promessa de que a equipe foi
     // acionada quando ninguém foi avisado (#3097).
-    return recusaDeCasoAberto();
+    // O id do caso que já está aberto: sem ele o agente tem a ferramenta de nota mas não tem a que caso
+    // anotar, e o pedido novo se perdia.
+    const aberto = await db.query<{ id: string }>(
+      `select id from agent_cases
+        where organization_id = $1 and conversation_id = $2 and status = any($3::text[])
+        order by opened_at desc limit 1`,
+      [ids.tenantId, ids.conversationId, OPEN_STATUSES],
+    );
+    return recusaDeCasoAberto(aberto.rows[0]?.id ?? null);
   }
   return { ok: true, caseId };
 }
