@@ -5535,6 +5535,15 @@ async function executarTurnoDoAgente(
           };
         } catch (err) {
           noteRunError(err instanceof Error ? err : new Error(String(err)));
+          // Diagnóstico: sem isto o `internal_error` chega ao modelo mas a causa real (coluna/tabela
+          // ausente, erro de SQL) não aparece em nenhum log.
+          console.error('[open_human_case] falhou ao abrir o caso', {
+            tenantId,
+            conversationId: input.conversationId,
+            message: err instanceof Error ? err.message : String(err),
+            code: (err as { code?: string } | null)?.code,
+            detail: (err as { detail?: string } | null)?.detail,
+          });
           return {
             ok: false,
             error: {
