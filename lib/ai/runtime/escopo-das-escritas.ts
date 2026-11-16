@@ -113,6 +113,8 @@ export const ESCOPO_DAS_ESCRITAS: Readonly<Record<string, Readonly<Record<string
   crm_salvar_documento_do_cliente: {},
   // Fork Sales: avisa a equipe por WhatsApp pela central de notificações; o alvo é a conversa do contato do turno, sem id nenhum.
   crm_notificar_equipe: {},
+  // Fork Sales: encerra a conversa do contato do turno; nenhum id vem do modelo.
+  crm_encerrar_atendimento: {},
   // Fork Sales: anota no Sales (cadastro ou processo) do cliente do telefone da conversa do turno; nenhum id vem do modelo.
   crm_anotar_no_sales: {},
   // Fork Sales: manda o boleto/PIX da parcela do cliente do telefone da conversa do turno; a parcela é validada no Sales contra esse cliente.

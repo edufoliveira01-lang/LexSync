@@ -46,6 +46,16 @@ export const TOOLS_CONTRATOS_SALES = declararTools([
     pacotes: ["vender"],
   },
   {
+    name: "crm_encerrar_atendimento",
+    category: "write",
+    rotulo: "Encerrar o atendimento",
+    explicacao:
+      "Quando não há mais nada a fazer (spam, oferta de fornecedor, assunto fora do escritório, número errado, desistência ou assunto resolvido), o agente se despede e encerra a conversa. Ela sai da fila e reabre sozinha se a pessoa escrever de novo. Nunca encerra cliente em atendimento nem conversa assumida pela equipe.",
+    oQueToca: "Situação da conversa (aberta → encerrada)",
+    risco: "atencao",
+    pacotes: ["vender", "atender"],
+  },
+  {
     name: "crm_notificar_equipe",
     category: "write",
     rotulo: "Avisar a equipe por WhatsApp",

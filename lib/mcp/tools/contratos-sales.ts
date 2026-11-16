@@ -5,6 +5,7 @@
  * conversa. O alvo é SEMPRE o contato do turno (`ctx.contatoDoTurno`, nunca um argumento do modelo), a conversa é a mais recente dele, e um segundo
  * contrato não é gerado enquanto houver um aguardando assinatura. O link volta no resultado, para o agente mandá-lo na resposta.
  */
+import { fecharConversaAoFimDoFluxo } from "@/lib/followup/fechar-conversa-ao-fim";
 import { z } from "zod";
 
 import { carregarBase } from "@/lib/sales/base-juridica/armazem";
@@ -292,6 +293,40 @@ export const crmNotificarEquipe: McpToolDefinition<typeof notificarShape> = {
     if (r.motivo === "nenhuma_notificacao") return { ok: false, erro: "Não há notificação ativa com esse nome (ou ela não tem destinatários).", proximo_passo: "Registre uma nota para a equipe e siga a conversa." };
     if (r.enviadas === 0) return { ok: false, erro: "Não consegui enviar o aviso agora.", proximo_passo: "Registre uma nota para a equipe e siga a conversa." };
     return { ok: true, enviadas: r.enviadas, falhas: r.falhas, proximo_passo: "A equipe foi avisada. Não conte isso ao cliente além do que o Roteiro mandar." };
+  },
+};
+
+
+const encerrarShape = {
+  motivo: z.enum(["spam", "fora_do_escritorio", "numero_errado", "sem_interesse", "assunto_resolvido"]).describe("Por que o atendimento acabou."),
+};
+const ROTULO_DO_ENCERRAMENTO: Record<string, string> = {
+  spam: "spam ou oferta de terceiros",
+  fora_do_escritorio: "assunto fora do escritório",
+  numero_errado: "número errado",
+  sem_interesse: "o contato não tem interesse",
+  assunto_resolvido: "assunto resolvido",
+};
+
+/** O agente encerra a conversa quando NÃO HÁ MAIS NADA a fazer (spam, fornecedor, número errado, desistência, assunto resolvido). Se a pessoa escrever de novo, a conversa reabre. */
+export const crmEncerrarAtendimento: McpToolDefinition<typeof encerrarShape> = {
+  name: "crm_encerrar_atendimento",
+  description:
+    "Encerra a conversa (ela sai da fila e reabre sozinha se a pessoa escrever de novo). Use SÓ depois de se despedir, quando não há mais nada a fazer: spam ou oferta de fornecedor, assunto que não é do escritório, número errado, a pessoa desistiu, ou o assunto foi resolvido e ela não pediu mais nada. " +
+    "NUNCA use com cliente em atendimento, caso aberto, contrato pendente, documento a receber ou dúvida sem resposta; na dúvida, não encerre.",
+  inputSchema: encerrarShape,
+  category: "write",
+  requiresRole: "ai_operator",
+  requiresScope: "mcp:write",
+  handler: async (input, ctx) => {
+    const contato = ctx.contatoDoTurno;
+    if (!contato) return { ok: false, erro: "Não há contato nesta conversa.", proximo_passo: "Siga a conversa normalmente." };
+    const { data: conv } = await ctx.supabase.from("conversations").select("id").eq("organization_id", ctx.organizationId).eq("contact_id", contato).order("last_inbound_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
+    const conversationId = (conv as { id: string } | null)?.id;
+    if (!conversationId) return { ok: false, erro: "Conversa do contato não encontrada.", proximo_passo: "Siga a conversa normalmente." };
+    const fechou = await fecharConversaAoFimDoFluxo({ organizationId: ctx.organizationId, contactId: contato, conversationId, detalhe: `atendimento encerrado pelo agente: ${ROTULO_DO_ENCERRAMENTO[input.motivo]}` });
+    if (!fechou) return { ok: false, erro: "A conversa não pôde ser encerrada (já está encerrada ou a equipe assumiu).", proximo_passo: "Siga a conversa normalmente; não tente de novo." };
+    return { ok: true, proximo_passo: "Conversa encerrada. Não escreva mais nada neste turno." };
   },
 };
 

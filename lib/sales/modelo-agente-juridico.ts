@@ -26,6 +26,8 @@ export const FERRAMENTAS_DO_AGENTE_JURIDICO: readonly string[] = [
   // aviso à equipe por WhatsApp (central de notificações)
   "crm_notificar_equipe",
   "crm_passar_para_agente",
+  // encerra a conversa quando não há mais nada a fazer (spam, fornecedor, número errado, desistência)
+  "crm_encerrar_atendimento",
   // base jurídica e cálculo (BPC): responder com a ficha e a conta certa, não de memória
   "crm_consultar_base_juridica", "crm_calcular_renda_per_capita",
   // agenda: o agente consulta, confirma, remarca e desmarca; quem MARCA atendimento novo é só a equipe (por isso sem crm_book_appointment)

@@ -10,7 +10,7 @@ import { registrarEventoNaConversa } from "@/lib/inbox/evento-na-conversa";
 
 const ENCERRADAS = ["closed", "resolved", "archived"];
 
-export async function fecharConversaAoFimDoFluxo(p: { organizationId: string; contactId: string; conversationId: string | null }): Promise<boolean> {
+export async function fecharConversaAoFimDoFluxo(p: { organizationId: string; contactId: string; conversationId: string | null; detalhe?: string }): Promise<boolean> {
   try {
     const admin = createAdminClient();
     let q = admin.from("conversations").select("id, status, service_revision").eq("organization_id", p.organizationId);
@@ -20,7 +20,7 @@ export async function fecharConversaAoFimDoFluxo(p: { organizationId: string; co
     if (!c || ENCERRADAS.includes(c.status) || c.status === "claimed") return false;
     const { error } = await admin.rpc("fn_service_status", { p_org: p.organizationId, p_conversation: c.id, p_status: "closed", p_expected: c.service_revision });
     if (error) return false;
-    await registrarEventoNaConversa({ organizationId: p.organizationId, conversationId: c.id, userId: null, acao: "fechou", detalhe: "follow-up concluído" });
+    await registrarEventoNaConversa({ organizationId: p.organizationId, conversationId: c.id, userId: null, acao: "fechou", detalhe: p.detalhe ?? "follow-up concluído" });
     return true;
   } catch (err) {
     logger.warn("followup: não consegui fechar a conversa ao fim do fluxo", { erro: err instanceof Error ? err.message : String(err) });

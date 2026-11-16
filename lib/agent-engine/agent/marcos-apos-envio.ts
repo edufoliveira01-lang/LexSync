@@ -35,10 +35,11 @@ export const FERRAMENTAS_DE_MARCO: ReadonlySet<string> = new Set([
   'save_lead_note',
   'crm_add_case_note',
   'crm_notificar_equipe',
+  'crm_encerrar_atendimento',
 ]);
 
 /** Das de marco, as que mudam ESTADO: sem mensagem enviada, o fato que afirmam não aconteceu. */
-const MUDAM_ESTADO: ReadonlySet<string> = new Set(['update_lead_state', 'crm_move_lead_stage', 'crm_manage_tags']);
+const MUDAM_ESTADO: ReadonlySet<string> = new Set(['update_lead_state', 'crm_move_lead_stage', 'crm_manage_tags', 'crm_encerrar_atendimento']);
 
 export interface ResultadoAdiado {
   ok: true;

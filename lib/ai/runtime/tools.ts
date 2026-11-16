@@ -704,6 +704,10 @@ export function pickToolsFromMcp(input: PickToolsInput): Record<string, Tool> {
     const passar = allTools.find((t) => t.name === "crm_passar_para_agente");
     if (passar) result["crm_passar_para_agente"] = wrapMcpTool(passar, input, executarEscrita);
   }
+  if (result["crm_registrar_dados_do_cliente"] && !result["crm_encerrar_atendimento"]) {
+    const encerrar = allTools.find((t) => t.name === "crm_encerrar_atendimento");
+    if (encerrar) result["crm_encerrar_atendimento"] = wrapMcpTool(encerrar, input, executarEscrita);
+  }
   if (result["crm_registrar_dados_do_cliente"] && !result["crm_notificar_equipe"]) {
     const aviso = allTools.find((t) => t.name === "crm_notificar_equipe");
     if (aviso) result["crm_notificar_equipe"] = wrapMcpTool(aviso, input, executarEscrita);
