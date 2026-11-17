@@ -3,10 +3,12 @@ import { useCallback, useEffect, useMemo, useRef, useState, startTransition } fr
 import { useT } from "@/hooks/i18n/useT";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth, usePermission } from "@/hooks/auth/AuthProvider";
+import { useSectors } from "@/hooks/team/useSectors";
 import { roleAtLeast } from "@/lib/auth/types";
 import { useBulkConversations, type AcaoEmLote } from "@/hooks/inbox/useBulkConversations";
 import { useSelecaoEmLote } from "@/hooks/inbox/useSelecaoEmLote";
 import { estadoDaJanela } from "@/lib/channels/janela";
+import { recusaNotaDeVoz } from "@/lib/channels/capabilities";
 import { motivoDaJanelaFechada, motivoDoContato } from "@/lib/inbox/motivo-do-envio-bloqueado";
 import { composerBloqueadoAteAssumir } from "@/lib/inbox/bloqueio-ate-assumir";
 import { JanelaFechadaAviso } from "@/components/inbox/JanelaFechadaAviso";
@@ -234,6 +236,13 @@ export function tabToFilter(
     case "docs":
       // Fork Sales: quem JÁ ASSINOU e está enviando documentos (etiqueta posta pelo sistema ao detectar a assinatura). Abertas, de qualquer atendente ou da IA.
       return { exclude_finished: true, tag: ETIQUETA_DE_CONTRATO_ASSINADO };
+    case "pessoal":
+      // A ABA PESSOAL (#4434) INVERTE a exclusão da spec 21: a lista devolve SÓ
+      // o pessoal de quem está olhando. Sem `status` de propósito — marcar um
+      // contato FECHA as conversas dele (rota de marcar, efeito 6), então
+      // filtrar por status deixaria a aba vazia justamente para quem acabou de
+      // marcar alguém.
+      return { pessoais: true };
     case "all":
       // Fork Sales: "Todas" = abertas e ativas, de qualquer atendente ou agente de IA.
       // Fechadas e arquivadas têm a sua própria visão (menu de filtros).
@@ -243,7 +252,16 @@ export function tabToFilter(
   }
 }
 
-const FILTER_TABS: InboxTab[] = ["unassigned", "mine", "all", "closed", "archived", "ai", "docs"];
+const FILTER_TABS: InboxTab[] = [
+  "unassigned",
+  "mine",
+  "all",
+  "closed",
+  "archived",
+  "ai",
+  "docs",
+  "pessoal",
+];
 
 /**
  * Lê ?filter= (G4-02, deep-link). ?filter=all é HONRADO mesmo para agent — a
@@ -312,6 +330,16 @@ export function InboxLayout({
 }: InboxLayoutProps = {}) {
   const t = useT();
   const { activeOrg, user } = useAuth();
+  /**
+   * AS FILAS DA ORGANIZAÇÃO (#3876) — buscadas AQUI, e não na barra de filtros.
+   *
+   * Setores é módulo opcional (doc 213): desligado, a rota responderia 404 e o
+   * pedido nem sai (`enabled`). A página já tem o `activeOrg` e vive dentro do
+   * `QueryClientProvider`; a barra de filtros recebe a lista pronta e continua
+   * sem consultar o servidor, como sempre foi.
+   */
+  const setoresLigados = (activeOrg?.modulos_ligados ?? []).includes("setores");
+  const { data: filasDaOrganizacao } = useSectors(setoresLigados);
   useParticipacoesRealtime(user.id, activeOrg?.orgId ?? null);
   const supportReadonly = user.support?.access_mode === "support_readonly";
   const orgId = activeOrg?.orgId ?? null;
@@ -488,6 +516,9 @@ export function InboxLayout({
         ? filterValue.search
         : undefined,
       channel_session_id: filterValue.channel_session_id,
+      // A FILA (#3876): o seletor da barra vira o mesmo `sector_id` que a rota
+      // lê. Sem esta linha o controle existiria e a lista não mudaria.
+      sector_id: filterValue.sector_id,
       // a aba "Aguardando docs" já traz a sua etiqueta; nas demais vale a escolhida no filtro
       tag: tabToFilter(filterValue.tab, automaticoDaOrg).tag ?? filterValue.tag,
       tagMode: filterValue.tagMode,
@@ -500,6 +531,7 @@ export function InboxLayout({
       filterValue.assigned_to,
       filterValue.search,
       filterValue.channel_session_id,
+      filterValue.sector_id,
       filterValue.tag,
       filterValue.tagMode,
       filterValue.onlyUnread,
@@ -990,7 +1022,11 @@ export function InboxLayout({
           <h2 className="text-base font-semibold tracking-tight">{t("Conversas")}</h2>
           <BotaoIniciarConversa compacto />
         </div>
-        <InboxFilters value={filterValue} onChange={setFilterValue} />
+        <InboxFilters
+          value={filterValue}
+          onChange={setFilterValue}
+          filas={filasDaOrganizacao?.data ?? []}
+        />
         {podeAgirEmLote && (
           <BarraDeAcoesEmLote
             quantidade={selecao.quantidade}
@@ -1145,6 +1181,7 @@ export function InboxLayout({
                   nome: selectedConversation.assigned_to_user_name ?? null,
                 }}
                 contatoId={selectedConversation.contacts?.id ?? null}
+                contatoRecusaEnvio={Boolean(selectedConversation.contacts?.is_blocked || selectedConversation.contacts?.is_personal)}
               />
             </div>
             <RetentionNotice conversationId={selectedConversation.id} />
@@ -1175,6 +1212,9 @@ export function InboxLayout({
               contactId={selectedConversation.contact_id ?? null}
               followupSomenteLeitura={Boolean(user.support)}
               podePararFollowup={(user.is_platform_admin && !user.support) || roleAtLeast(activeOrg?.role, "manager")}
+              agendamentoLigado={
+                Boolean(selectedConversation.contacts?.id && selectedConversation.channel_session_id) && !supportReadonly
+              }
               blockedReason={supportReadonly ? "Acompanhamento somente leitura" : blockedReason}
               janelaFechada={motivoDaJanela}
               disabled={selectedConversation.status === "closed"}
@@ -1204,6 +1244,9 @@ export function InboxLayout({
               // e o botão da faixa abre essa conversa. É a mesma seleção que a
               // faixa do número fora do ar e o cabeçalho já usam.
               onAbrirConversa={handleSelect}
+              // O microfone some no canal que recusa a nota de voz que ele grava
+              // (Instagram/Facebook): a pergunta é à capability, nunca ao provider.
+              recusaNotaDeVoz={recusaNotaDeVoz(selectedConversation.channel_sessions?.provider)}
               // O aviso é DA conversa da URL: trocar de conversa dentro da inbox
               // não pode deixar um texto sugerido no campo de outra pessoa.
               rascunho={rascunhoVivo}

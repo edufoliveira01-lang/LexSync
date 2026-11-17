@@ -52,6 +52,7 @@ import {
   Phone,
   Play,
   Plus,
+  QrCode,
   Trash,
   Warning,
 } from "@/lib/ui/icons";
@@ -60,6 +61,7 @@ import { lerEstadoDoCanal } from "@/lib/channels/estado";
 import { fonteDeTemplates } from "@/lib/channels/templates-fonte";
 import { useT } from "@/hooks/i18n/useT";
 import { AgendaDePausa } from "@/components/connections/AgendaDePausa";
+import { DefeitoDoNumero, numeroComDefeito } from "./DefeitoDoNumero";
 
 type Variant = "success" | "warning" | "error" | "neutral";
 
@@ -218,7 +220,25 @@ export function frasesDoLoteDePausa(
   return { sucesso: `${cabeca} ${mudou}.`, erro: null };
 }
 
-export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean }) {
+export function ConnectionsClient({
+  wahaConfigured,
+  qrInicial,
+  aoFecharQrInicial,
+}: {
+  wahaConfigured: boolean;
+  /**
+   * Sessão que chega pedindo QR pela URL (`/app/connections?qr=<id>`), vinda da
+   * faixa de conexão caída. Abre o diálogo de pareamento direto, sem passar
+   * pela lista: a faixa diz "Escanear o QR" e o clique tem que escanear —
+   * navegar para a tela em que o selo não é clicável era um beco sem saída.
+   * O título serve para qualquer estado: o diálogo em si lê o status do
+   * transporte a cada 3s e mostra QR, pareado ou "Gerar novo QR" conforme o
+   * que a sessão está vivendo.
+   */
+  qrInicial?: string;
+  /** Tira o `?qr=` da URL quando o diálogo fecha, para o próximo clique na faixa abrir de novo. */
+  aoFecharQrInicial?: () => void;
+}) {
   const t = useT();
   const qc = useQueryClient();
   const {
@@ -233,7 +253,21 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
   const routing = useQuery({ queryKey: ["channel-routing-settings"], queryFn: () => apiClient.get<{ data: ChannelRoutingSettings }>("/api/v1/settings/routing/channels") });
   const [creating, setCreating] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [qr, setQr] = useState<{ sessionId: string; title: string } | null>(null);
+  const [qr, setQr] = useState<{ sessionId: string; title: string } | null>(
+    qrInicial ? { sessionId: qrInicial, title: t("Escaneie o QR") } : null,
+  );
+  // Com a Central já aberta, o clique na faixa é navegação suave: o componente
+  // continua montado e o inicializador acima não roda de novo. O `?qr=` novo
+  // tem de abrir o diálogo do mesmo jeito (ajuste de estado no render, sem efeito).
+  const [qrInicialVisto, setQrInicialVisto] = useState(qrInicial);
+  if (qrInicial !== qrInicialVisto) {
+    setQrInicialVisto(qrInicial);
+    if (qrInicial) setQr({ sessionId: qrInicial, title: t("Escaneie o QR") });
+  }
+  const fecharQr = useCallback(() => {
+    setQr(null);
+    if (qrInicial) aoFecharQrInicial?.();
+  }, [qrInicial, aoFecharQrInicial]);
   const [antiBanId, setAntiBanId] = useState<string | null>(null);
   const [gruposId, setGruposId] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<ChannelSession | null>(null);
@@ -348,6 +382,38 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
     [invalidate],
   );
 
+  // Gera um QR NOVO para um número que NUNCA foi pareado. O caminho suave
+  // (stop + start) é o padrão de propósito — preserva a credencial —, mas para
+  // quem nunca pareou não há credencial a preservar, e o start comum pode
+  // voltar direto para FAILED sem nunca passar por SCAN_QR_CODE. Aí o `force`
+  // (stop + LOGOUT + start) é o único que devolve um QR.
+  //
+  // ⚠️ O `force` DESCARTA a credencial de forma irreversível. A guarda de
+  // `phone_number` é o que impede isto de alcançar um número já pareado: um
+  // canal com telefone tem credencial, e descartá-la obrigaria o operador a
+  // reescanear um número que estava funcionando. Perguntar nos DOIS lugares —
+  // no render do botão e aqui — é de propósito: a UI pode mudar, a guarda não.
+  const handleGerarQrNovo = useCallback(
+    async (c: ChannelSession) => {
+      if (c.phone_number != null) {
+        toast.error(
+          t("Este número já foi pareado — gerar um novo QR descartaria a credencial guardada."),
+        );
+        return;
+      }
+      setBusyId(c.id);
+      try {
+        await forcePair(c.id);
+        setQr({ sessionId: c.id, title: t("Gerar novo QR") });
+      } catch (err) {
+        toast.error(errMsg(err, "Não foi possível gerar um novo QR.", t));
+      } finally {
+        setBusyId(null);
+      }
+    },
+    [forcePair, t],
+  );
+
   // Pausar = canal desativado pelo operador: a entrega é gravada mas não entra
   // na inbox, não dispara IA e não gera follow-up. Reativar volta tudo sem
   // reimportar nada. Diferente de excluir: o canal continua listado.
@@ -410,9 +476,9 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
 
   const handleConnected = useCallback(() => {
     toast.success(t("WhatsApp conectado!"));
-    setQr(null);
+    fecharQr();
     invalidate();
-  }, [invalidate, t]);
+  }, [fecharQr, invalidate, t]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -572,7 +638,10 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
               </h2>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {g.itens.map((c) => {
-                  const info = statusInfo(c.status, t);
+                  // De pé com defeito (não recebe, envio restrito): o selo deixa de dizer "Conectado"; a causa aparece no painel da conexão.
+                  const info = numeroComDefeito(c.status, c.status_reason)
+                    ? { label: t("Atenção"), variant: "warning" as const }
+                    : statusInfo(c.status, t);
                   const pausado = canalDesativado(c.metadata);
                   return (
                     <button
@@ -650,7 +719,13 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
       <DetalheDaConexaoSheet
         canal={detalhe}
         tipo={detalhe && ehCanalOficial(detalhe) ? t("API oficial") : t("WhatsApp por QR Code")}
-        estado={detalhe ? statusInfo(detalhe.status, t) : { label: "", variant: "neutral" }}
+        estado={
+          detalhe
+            ? numeroComDefeito(detalhe.status, detalhe.status_reason)
+              ? { label: t("Atenção"), variant: "warning" }
+              : statusInfo(detalhe.status, t)
+            : { label: "", variant: "neutral" }
+        }
         pausado={detalhe ? canalDesativado(detalhe.metadata) : false}
         responsaveis={textoDosResponsaveis(detalhe ? routing.data?.data?.channels?.find((ch) => ch.id === detalhe.id) : undefined, t)}
         ocupado={detalhe ? busyId === detalhe.id : false}
@@ -661,6 +736,8 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
         onFechar={() => setDetalheId(null)}
         onRenomeado={() => qc.invalidateQueries({ queryKey: ["channel-sessions"] })}
         onReconectar={() => detalhe && void handleReconnect(detalhe)}
+        onMostrarQr={() => detalhe && setQr({ sessionId: detalhe.id, title: t("Escaneie o QR") })}
+        onGerarQrNovo={() => detalhe && void handleGerarQrNovo(detalhe)}
         onProtecao={() => detalhe && setAntiBanId(detalhe.id)}
         onAlternarPausa={() => detalhe && void handleToggleDisabled(detalhe)}
         onGrupos={() => detalhe && setGruposId(detalhe.id)}
@@ -672,7 +749,7 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
           sessionId={qr.sessionId}
           title={qr.title}
           wahaConfigured={wahaConfigured}
-          onClose={() => setQr(null)}
+          onClose={fecharQr}
           onConnected={handleConnected}
           onForcePair={forcePair}
         />

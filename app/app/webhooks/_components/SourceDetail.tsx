@@ -50,6 +50,7 @@ import {
 } from "@/lib/webhooks/formulario";
 import { useT } from "@/hooks/i18n/useT";
 import { WebhookFormFieldsEditor } from "./WebhookFormFieldsEditor";
+import { LeadAdsDaMeta } from "./LeadAdsDaMeta";
 
 interface Props {
   source: WebhookSourceRow;
@@ -386,9 +387,10 @@ export function SourceDetail({ source, open, onOpenChange }: Props) {
                   type="button"
                   variant="secondary"
                   size="icon"
+                  aria-label={t("Copiar endereço")}
                   onClick={() => copy(url, t("Endereço copiado."), t)}
                 >
-                  <Copy />
+                  <Copy aria-hidden />
                 </Button>
               </div>
             </section>
@@ -494,6 +496,8 @@ export function SourceDetail({ source, open, onOpenChange }: Props) {
                 <code>{curlSnippet(url, temAssinatura, t)}</code>
               </pre>
             </details>
+
+            <LeadAdsDaMeta source={source} />
 
           </TabsContent>
           <TabsContent value="formulario" className="mt-5 space-y-6">
@@ -634,9 +638,10 @@ export function SourceDetail({ source, open, onOpenChange }: Props) {
                       type="button"
                       variant="secondary"
                       size="icon"
+                      aria-label={t("Copiar segredo")}
                       onClick={() => copy(secretRevelado, t("Segredo copiado."), t)}
                     >
-                      <Copy />
+                      <Copy aria-hidden />
                     </Button>
                   </div>
                   <p className="text-xs text-error">

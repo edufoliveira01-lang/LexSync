@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { ConversationHeader } from "@/components/inbox/ConversationHeader";
@@ -84,51 +84,75 @@ function renderHeader(conv = conversation) {
   );
 }
 
-// Fork Sales: o cabeçalho deixou de ser uma fileira de dez botões. Ficam à vista só as ações do dia a dia (buscar, assumir/liberar,
-// fechar/reabrir) e o resto mora no menu "Mais ações". O contrato abaixo substitui o do original, que recusava esse menu.
+// A barra é quem segura os botões, não um índice fixo: desde o #1625 o
+// `children[1]` do header é a coluna que empilha a barra e o selo do automático.
+//
+// Desde o #3003 a âncora é o gatilho do menu ⋯, e não o rótulo "Transferir":
+// ela precisa existir em TODO estado do cabeçalho (é o que garante que nenhuma
+// ação secundária fique sem casa), enquanto os rótulos entram e saem com o
+// estado da conversa.
 function barraDeAcoes() {
-  const barra = screen.getByText("Fechar").closest("button")?.parentElement;
+  const barra = screen.getByTestId("menu-de-acoes").parentElement;
   expect(barra, "a barra de ações não renderizou").toBeTruthy();
   return barra as HTMLElement;
 }
 
-describe("header do inbox — não trava a largura da tela (fork Sales)", () => {
-  it("nem a barra de ações nem a identidade impõem largura mínima — era isso que travava o header em 707px", () => {
+/** Abre o ⋯ (Radix abre no `pointerdown`) e devolve o conteúdo portalizado. */
+function abrirOMenu(): HTMLElement {
+  fireEvent.pointerDown(screen.getByTestId("menu-de-acoes"), {
+    button: 0,
+    ctrlKey: false,
+    pointerId: 1,
+  });
+  const conteudo = screen.getByTestId("menu-de-acoes-conteudo");
+  expect(conteudo, "o menu ⋯ não abriu").toBeTruthy();
+  return conteudo;
+}
+
+describe("header do inbox — não trava a largura da tela", () => {
+  it("a barra de ações NÃO é shrink-0 — era isso que impunha o piso de 707px", () => {
     const { container } = renderHeader();
     const header = container.firstElementChild as HTMLElement;
+    // Guarda de vacuidade: sem header renderizado, todas as asserções abaixo
+    // passariam por não haver o que verificar.
     expect(header, "o header não renderizou").toBeTruthy();
-    expect(header.className).toContain("cabecalho-conversa");
 
-    const identidade = screen.getByRole("heading", { name: "Fulana" }).closest("div.min-w-0") as HTMLElement;
-    expect(identidade, "a identidade não renderizou").toBeTruthy();
-    for (const el of [identidade, barraDeAcoes()]) {
-      expect(el.className.split(/\s+/), "`shrink-0` de volta: o header volta a travar a largura da tela").not.toContain("shrink-0");
+    const coluna = header.children[1] as HTMLElement;
+    expect(coluna, "a coluna de ações não renderizou").toBeTruthy();
+    for (const el of [coluna, barraDeAcoes()]) {
+      expect(
+        el.className.split(/\s+/),
+        "`shrink-0` de volta na barra de ações: o header volta a travar em 707px e o painel de CRM sai da tela em 1280px",
+      ).not.toContain("shrink-0");
       expect(el.className).toContain("min-w-0");
     }
   });
 
-  it("à vista ficam as ações do dia a dia; o resto está no menu Mais ações", () => {
+  it("o header pode reorganizar em vez de esconder ação", () => {
+    const { container } = renderHeader();
+    const header = container.firstElementChild as HTMLElement;
+    const acoes = barraDeAcoes();
+    // As duas pontas: o container quebra E a barra quebra internamente. Só uma
+    // das duas não basta — sem a de dentro, a barra desce inteira e continua
+    // pedindo a largura toda.
+    expect(header.className).toContain("flex-wrap");
+    expect(acoes.className).toContain("flex-wrap");
+    expect(acoes.className).toContain("min-w-0");
+  });
+
+  it("as ações continuam TODAS no header — reorganizar não é esconder", () => {
     renderHeader();
-    const barra = barraDeAcoes();
-    expect(barra.className).toContain("acoes-da-conversa");
-    for (const rotulo of ["Buscar nesta conversa"]) {
-      // a busca só existe com `onBuscar`; sem ele o botão nem entra
-      expect(screen.queryByRole("button", { name: rotulo })).toBeNull();
-    }
-    for (const rotulo of ["Gerar contrato", "Fechar"]) {
-      expect(barra.contains(screen.getByRole("button", { name: rotulo })), `"${rotulo}" tem de estar na barra`).toBe(true);
-    }
-    const gatilho = screen.getByRole("button", { name: "Mais ações" });
-    expect(barra.contains(gatilho), "o gatilho do menu fica na barra").toBe(true);
-    // As ações menos frequentes continuam montadas (diálogos e estados vivos), só dentro do menu.
-    for (const rotulo of ["Assumir", "Transferir", "Arquivar"]) {
-      const botao = screen.getByRole("button", { name: rotulo });
-      expect(barra.contains(botao), `"${rotulo}" não pode ficar na fileira à vista`).toBe(false);
-      expect(botao.closest(".mais-acoes"), `"${rotulo}" tem de estar no menu Mais ações`).toBeTruthy();
+    // Se um dia alguém "resolver" o aperto colapsando ações num menu, este caso
+    // reprova. Esconder ação de quem atende é pior que uma segunda linha.
+    for (const rotulo of ["Assumir", "Transferir", "Fechar"]) {
+      expect(screen.getByText(rotulo), `a ação "${rotulo}" sumiu do header`).toBeTruthy();
     }
   });
 
-  it("com o selo do automático: nenhuma ação some, e o selo mora na linha de apoio sob o nome (#1625)", () => {
+  it("com o selo do automático, nenhuma ação some e o selo não divide linha com nome nem ações (#1625)", () => {
+    // O defeito do #1625: o selo morava na linha do nome, alargava a identidade
+    // e jogava a barra inteira para baixo. O conserto recusado escondia ações
+    // num menu "Mais ações"; o aceito tira o selo das duas linhas.
     renderHeader({
       ...conversation,
       assigned_to_user_id: "u-1",
@@ -144,33 +168,64 @@ describe("header do inbox — não trava a largura da tela (fork Sales)", () => 
     expect(barra.contains(selo), "o selo voltou para a linha das ações").toBe(false);
     const linhaDoNome = screen.getByRole("heading", { name: "Fulana" }).parentElement as HTMLElement;
     expect(linhaDoNome.contains(selo), "o selo voltou para a linha do nome").toBe(false);
-    expect(selo.closest(".linha-de-apoio"), "o selo mora na linha de apoio").toBeTruthy();
 
+    // ─── A RÉGUA MUDOU DE LUGAR, NÃO DE TAMANHO (#3003) ────────────────────
+    //
+    // Este caso dizia "as seis ações estão DENTRO da barra" e proibia um menu.
+    // Desde o #3003 a regra é a do doc de decisão 251 (03/11, opção A):
+    // "nenhuma ação some da conversa: as do dia a dia ficam à vista e o resto
+    // fica no ⋯". É o que o caso sempre quis proteger — NENHUMA AÇÃO SOME. Cada
+    // um dos seis rótulos continua alcançável no cabeçalho, e as que saíram da
+    // barra têm de estar no menu (não basta não estarem em lugar nenhum).
+    const menu = abrirOMenu();
     for (const rotulo of ["Liberar", "Devolver ao automático", "Transferir", "Lembrar", "Fechar", "Arquivar"]) {
-      expect(screen.getByRole("button", { name: rotulo }), `a ação "${rotulo}" sumiu`).toBeTruthy();
+      expect(
+        screen.queryAllByText(rotulo).length,
+        `a ação "${rotulo}" sumiu do cabeçalho — nem na barra, nem no menu`,
+      ).toBeGreaterThan(0);
+    }
+    // As do dia a dia seguem à vista...
+    for (const rotulo of ["Liberar", "Devolver ao automático", "Transferir", "Fechar"]) {
+      expect(
+        within(barra).queryAllByText(rotulo).length,
+        `a ação "${rotulo}" saiu da barra sem ser do dia a dia`,
+      ).toBeGreaterThan(0);
+    }
+    // ...e as secundárias estão no menu, com nome.
+    for (const rotulo of ["Lembrar", "Arquivar"]) {
+      expect(
+        within(menu).queryAllByText(rotulo).length,
+        `"${rotulo}" saiu da barra e não está no menu: ação de quem atende escondida`,
+      ).toBeGreaterThan(0);
     }
   });
 
-  it("clicar no nome abre a ficha do contato (e sem o atalho o nome é só texto)", () => {
-    const aoAbrir = vi.fn();
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const { unmount } = render(
-      <QueryClientProvider client={client}>
-        <ConversationHeader conversation={conversation} onAbrirFicha={aoAbrir} />
-      </QueryClientProvider>,
-    );
-    screen.getByTestId("abrir-ficha-do-contato").click();
-    expect(aoAbrir).toHaveBeenCalledTimes(1);
-    unmount();
+  it("no celular a barra é UMA fileira que rola, não três ou quatro que comem a conversa", () => {
+    // Relato de quem atende pelo telefone: com ~390px a barra quebrava em várias
+    // fileiras e sobrava pouca altura para as mensagens. Abaixo do `md` ela não
+    // quebra — rola na horizontal — e nenhum botão encolhe até virar ilegível.
     renderHeader();
-    expect(screen.queryByTestId("abrir-ficha-do-contato")).toBeNull();
+    const classes = barraDeAcoes().className.split(/\s+/);
+    for (const c of ["max-md:flex-nowrap", "max-md:overflow-x-auto", "max-md:[&>*]:shrink-0"]) {
+      expect(classes, `sem \`${c}\` a barra volta a empilhar fileiras no celular`).toContain(c);
+    }
   });
 
-  it("no celular Assumir continua alcançável e a barra some com o teclado aberto (F2)", () => {
+  it("no celular Assumir vem primeiro, a fileira mostra que rola e some com o teclado (F2)", () => {
+    // Só CSS: a ordem do DOM (a do computador e a do teclado) não muda.
     renderHeader();
+    const assumir = screen.getByRole("button", { name: "Assumir" });
+    expect(assumir.className.split(/\s+/)).toContain("max-md:order-first");
+
     const barra = barraDeAcoes();
-    expect(barra.className).toContain("max-md:group-data-[teclado-aberto]/conversa:hidden");
-    expect(barra.className).not.toMatch(/(?:^|\s)group-data-\[teclado-aberto\]/);
+    expect(barra.className, "sem a máscara nada indica que há botões à direita").toMatch(
+      /max-md:\[mask-image:linear-gradient\(/,
+    );
+    // Com o teclado aberto a coluna das ações sai, e o fio fica com a altura.
+    // `max-md:` é obrigatório: no computador encolher a janela não é teclado.
+    const coluna = barra.parentElement as HTMLElement;
+    expect(coluna.className.split(/\s+/)).toContain("max-md:group-data-[teclado-aberto]/conversa:hidden");
+    expect(coluna.className).not.toMatch(/(?:^|\s)group-data-\[teclado-aberto\]/);
   });
 
   it("no celular o telefone sai do cabeçalho (continua na Ficha)", () => {
@@ -179,11 +234,21 @@ describe("header do inbox — não trava a largura da tela (fork Sales)", () => 
     expect(telefone.className.split(/\s+/)).toContain("max-md:hidden");
   });
 
-  it('"Ver contato" existe no DOM e só se cala onde há outra porta', () => {
+  it('"Ver contato" existe no DOM — agora no menu ⋯, em qualquer largura', () => {
     renderHeader();
-    const link = screen.getByText("Ver contato").closest("a, button") as HTMLElement;
+    // Ele NÃO sai do markup, e a razão original continua valendo: abaixo de
+    // 1280px o painel lateral não existe, e esta é a única porta para o contato.
+    //
+    // O que mudou (#3003) é ONDE ele mora. Era um botão `xl:hidden` na barra,
+    // escondido por CSS a partir de 1280px para não duplicar o "Ver contato" do
+    // painel. No menu a duplicata não custa fileira nenhuma, então o item
+    // aparece em qualquer largura — e deixou de precisar de `xl:hidden`. O que
+    // este caso vigia agora é o que de fato importa: a porta existe, abre a
+    // ficha certa, e tem guia.
+    const menu = abrirOMenu();
+    const link = within(menu).getByText("Ver contato").closest("a") as HTMLElement;
     expect(link, "o link para o contato sumiu do markup").toBeTruthy();
-    const classes = `${link.className} ${link.parentElement?.className ?? ""}`;
-    expect(classes, "sem `xl:hidden`, a duplicata volta").toContain("xl:hidden");
+    expect(link.getAttribute("href")).toBe("/app/contacts/ct-1");
+    expect(link.getAttribute("title")?.trim(), "a porta para o contato está sem guia").toBeTruthy();
   });
 });

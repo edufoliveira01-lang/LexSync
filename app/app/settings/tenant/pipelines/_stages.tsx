@@ -413,7 +413,13 @@ export function StagesSection({
       { stageId: etapaId, patch },
       {
         onSuccess: () => toast.success(t("Etapa atualizada.")),
-        onError: (e) => setErro({ etapaId, texto: mensagemDeErro(e, t), sobrePapel }),
+        onError: (e) => {
+          const texto = mensagemDeErro(e, t);
+          setErro({ etapaId, texto, sobrePapel });
+          // O blur que grava pode vir do clique que recolhe o funil (#4083): aí o
+          // aviso da linha nasce num corpo `hidden`, e o toast é o que fica à vista.
+          toast.error(texto);
+        },
       },
     );
   }
@@ -481,8 +487,8 @@ export function StagesSection({
   }
 
   return (
-    <div className="space-y-4" id={ancoraDasEtapas(pipelineId)} data-testid={`etapas-${pipelineId}`}>
-      <div className="space-y-0.5">
+    <div className="scroll-mt-20 space-y-4" id={ancoraDasEtapas(pipelineId)} data-testid={`etapas-${pipelineId}`}>
+      <div className="space-y-1">
         <h3 className="text-sm font-semibold">{t("Etapas deste funil")}</h3>
         <p className="max-w-3xl text-xs leading-relaxed text-text-muted">
           {t("As colunas do seu quadro, na ordem em que o cliente avança. Renomeie, reordene, crie ou arquive. Cada funil precisa de uma coluna de")} <strong>{t("fechamento")}</strong> {t("(vira venda) e uma de")} <strong>{t("perda")}</strong>.

@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/auth/AuthProvider";
 import { useT } from "@/hooks/i18n/useT";
 import { blocosVisiveis } from "@/lib/ajuda/hub";
 import { destinosDaInterface } from "@/lib/navigation/interface";
+import { BlocoDoPapel } from "./_papel";
 
 export function AjudaConteudo() {
   const t = useT();
@@ -59,6 +60,9 @@ export function AjudaConteudo() {
           className="rounded-full pl-9"
         />
       </div>
+
+      {/* O alcance do papel vem ANTES do índice: "posso" antes de "onde". */}
+      <BlocoDoPapel papel={activeOrg?.role ?? null} destinos={destinos} />
 
       <div className="grid gap-5 md:grid-cols-2">
         {filtrados.map((bloco) => (

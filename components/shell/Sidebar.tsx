@@ -19,6 +19,7 @@ import { marcaEhADoProduto } from "@/lib/branding";
 import { useMarcaDaInstalacao } from "@/lib/branding/contexto";
 import { GRUPO_NO_RODAPE, sidebarGroups } from "@/lib/navigation/registry";
 import { ehTelaDeConfiguracoes } from "@/lib/navigation/configuracoes";
+import { classeDoGrupo, classeDoItem } from "@/lib/navigation/classes-estaveis";
 import { usePrefetchPorIntencao } from "@/hooks/navigation/prefetchPorIntencao";
 
 /** Item do menu no desenho do Sales: ícone de 18px, texto de 13px, ativo com tinta suave e barra de 3px. */
@@ -195,7 +196,9 @@ export function SidebarContent({
         {grupos.map(({ group, items }) => {
           const tituloId = `nav-grupo-${group.id}`;
           return (
-            <div key={group.id} className="mb-3">
+            // `nav-grupo` (comum a todo grupo) e `nav-grupo-<id>` são contrato público: é por elas que o CSS personalizado de /admin/marca dá cor ao menu
+            // inteiro ou a uma seção dele (#4463). Renomear quebra a folha de quem já instalou.
+            <div key={group.id} className={cn("mb-3 nav-grupo", classeDoGrupo(group.id))}>
               <p id={tituloId} className="dz-group-head">
                 {t(group.label)}
               </p>
@@ -206,7 +209,7 @@ export function SidebarContent({
                     (pathname === item.href || pathname.startsWith(item.href + "/"));
                   const Icon = item.icon;
                   return (
-                    <li key={item.href}>
+                    <li key={item.href} className={classeDoItem(item.href)}>
                       <Item
                         intencao={intencao}
                         onNavigate={onNavigate}
@@ -240,11 +243,11 @@ export function SidebarContent({
           );
         })}
         {(rodape || ajuda) && (
-          <div className="mb-2">
+          <div className={cn("mb-2 nav-grupo", classeDoGrupo(GRUPO_NO_RODAPE))}>
             <p className="dz-group-head">{t("Configurações")}</p>
             <ul className="mt-0.5 space-y-0.5">
               {rodape && (
-                <li>
+                <li className={classeDoItem(rodape.href)}>
                   <Item
                         intencao={intencao}
                         onNavigate={onNavigate}
@@ -256,7 +259,7 @@ export function SidebarContent({
                 </li>
               )}
               {ajuda && (
-                <li>
+                <li className={classeDoItem(ajuda.href)}>
                   <Item
                         intencao={intencao}
                         onNavigate={onNavigate}
@@ -301,8 +304,15 @@ export function SidebarContent({
 
 export function Sidebar({ collapsed }: { collapsed: boolean }) {
   return (
-    <aside className={cn("dz-sidebar", collapsed && "is-collapsed")}>
-      <SidebarContent collapsed={collapsed} />
+    <aside
+      // Ganchos da tela Aparência (`app/app/aparencia.css`): sem template escolhido nenhuma regra os usa.
+      data-casca="menu"
+      data-casca-lugar="lateral"
+      className={cn("dz-sidebar", collapsed && "is-collapsed")}
+    >
+      <div data-casca="menu-painel" className="flex h-full min-h-0 flex-col">
+        <SidebarContent collapsed={collapsed} />
+      </div>
     </aside>
   );
 }

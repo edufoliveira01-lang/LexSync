@@ -86,6 +86,22 @@ import { entraPorPacote, type ToolBundle, type ToolRisk } from "./pacotes";
  * do cliente, contrato, agenda, CRM). Subiu-se para 40: cabe o `vender` inteiro (24) mais um segundo pacote médio, e o mesmo número
  * vale na tela e no servidor. O risco do bloco ⚠️ acima continua de pé: se o agente começar a escolher a ferramenta errada, o
  * caminho é voltar a este número ou dividir em dois agentes.
+ * ═══ Continua 27: o documento do negócio foi para o `reter`, não para o default ═
+ *
+ * As duas capacidades de leitura do anexo do card (`crm_list_lead_attachments` e
+ * `crm_get_lead_attachment`, #4544 item 2) nasceram com `pacotes: ["vender"]`,
+ * que é o default do onboarding, e a medição a partir do agente que nasce
+ * mostrou o que este comentário já previa: o `evoluir` — o menor segundo pacote
+ * — subia de 27 para 29 e NENHUM segundo pacote cabia no teto 27. Era o beco do
+ * D3 de novo, e o passo "natural" seria 29.
+ *
+ * Não se subiu o teto. O `vender` é o default que TODO agente novo paga, e o
+ * mesmo número está sendo movido pelo #4534 (aberto, nosso, leva a 31): duas
+ * mudanças do mesmo teto em PRs diferentes são conflito e disputa de produto.
+ * A saída foi de PACOTE, não de constante: as duas foram para o `reter`, ao lado
+ * do `crm_propose_lead_fields_from_document`, que consome o id que a listagem
+ * devolve. Medido depois da mudança: onboarding 22 (era 24), evoluir 27 (voltou
+ * ao valor que 27 atende), reter 34.
  */
 export const TETO_TOOLS_POR_AGENTE = 40;
 

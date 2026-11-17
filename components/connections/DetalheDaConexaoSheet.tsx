@@ -7,11 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTagDeIdioma } from "@/hooks/i18n/useLocaleDeData";
 import { useT } from "@/hooks/i18n/useT";
 import { channelLabel, type ChannelSession } from "@/hooks/channels/useChannelSessions";
-import { ArrowsClockwise, CircleNotch, Pause, Play, ShieldCheck, Trash, UsersThree } from "@/lib/ui/icons";
+import { ArrowsClockwise, CircleNotch, Pause, Play, QrCode, ShieldCheck, Trash, UsersThree } from "@/lib/ui/icons";
 
 import { ChannelAcervo } from "./ChannelAcervo";
 import { ChannelAiAccess } from "./ChannelAiAccess";
 import { ChannelHistorico } from "./ChannelHistorico";
+import { DefeitoDoNumero } from "./DefeitoDoNumero";
 import { RenomearConexao } from "./RenomearConexao";
 
 /**
@@ -33,6 +34,8 @@ export function DetalheDaConexaoSheet({
   onFechar,
   onRenomeado,
   onReconectar,
+  onMostrarQr,
+  onGerarQrNovo,
   onProtecao,
   onAlternarPausa,
   onGrupos,
@@ -52,6 +55,10 @@ export function DetalheDaConexaoSheet({
   onFechar: () => void;
   onRenomeado: () => void;
   onReconectar: () => void;
+  /** Abre o diálogo do QR (a conexão está esperando o pareamento). */
+  onMostrarQr: () => void;
+  /** Número que nunca foi pareado: gera um QR novo (descarta a credencial, que não existe). */
+  onGerarQrNovo: () => void;
   onProtecao: () => void;
   onAlternarPausa: () => void;
   onGrupos: () => void;
@@ -88,6 +95,7 @@ export function DetalheDaConexaoSheet({
               </div>
 
               <TabsContent value="info" className="mt-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
+                <DefeitoDoNumero status={canal.status} motivo={canal.status_reason} />
                 <section className="space-y-1.5">
                   <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{t("Nome da conexão")}</h3>
                   <RenomearConexao channelId={canal.id} currentName={canal.display_name} onSaved={onRenomeado} />
@@ -115,6 +123,23 @@ export function DetalheDaConexaoSheet({
                 <section className="space-y-1.5">
                   <h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{t("Sessão")}</h3>
                   <div className="divide-y divide-border rounded-md border border-border bg-surface">
+                    {vivaNoTransporte && canal.status === "SCAN_QR_CODE" && (
+                      <Acao titulo={t("Escanear o QR Code")} texto={t("A conexão está esperando o pareamento com o celular.")}>
+                        <Button variant="outline" size="sm" disabled={ocupado} onClick={onMostrarQr}>
+                          <QrCode size={14} aria-hidden />
+                          {t("Mostrar o QR")}
+                        </Button>
+                      </Acao>
+                    )}
+                    {/* Nunca pareou (sem phone_number) e está em FAILED/STOPPED: o start suave costuma voltar direto a FAILED sem passar por SCAN_QR_CODE. O `force` descarta a credencial — por isso só vale para número que nunca foi pareado. */}
+                    {vivaNoTransporte && canal.phone_number == null && (canal.status === "FAILED" || canal.status === "STOPPED") && (
+                      <Acao titulo={t("Gerar novo QR")} texto={t("Esta conexão nunca foi pareada: gera um QR Code novo para escanear.")}>
+                        <Button variant="outline" size="sm" disabled={ocupado || !servicoAtivo} onClick={onGerarQrNovo}>
+                          {ocupado ? <CircleNotch size={14} className="animate-spin" aria-hidden /> : <QrCode size={14} aria-hidden />}
+                          {t("Gerar novo QR")}
+                        </Button>
+                      </Acao>
+                    )}
                     {vivaNoTransporte && (
                       <Acao
                         titulo={t("Corrigir problemas no número")}

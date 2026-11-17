@@ -15,7 +15,11 @@ import { Label } from "@/components/ui/label";
 import { useLoseLead } from "@/hooks/kanban/useUpdateLead";
 import { useMotivosDePerdaDoFunil } from "@/hooks/kanban/useMotivosDePerdaDoFunil";
 import { rotuloDoMotivoDePerda } from "@/lib/schemas/leads";
-import { OUTRO, motivoDePerdaAceito, opcoesDeMotivoDePerda } from "@/lib/leads/motivos-de-perda-do-funil";
+import {
+  OUTRO,
+  motivoDePerdaAceito,
+  opcoesDeMotivoDePerda,
+} from "@/lib/leads/motivos-de-perda-do-funil";
 
 interface LoseLeadDialogProps {
   open: boolean;
@@ -44,6 +48,8 @@ interface LoseLeadDialogProps {
   onPerdido?: () => void;
   /** Motivos do funil quando o quadro não está em cache (painel da conversa); sem isto, lê do cache do quadro. */
   motivos?: string[];
+  /** Identifica o negócio na confirmação individual; omitido no lote. */
+  leadLabel?: string;
 }
 
 const MAX_LEN = 500;
@@ -57,6 +63,7 @@ export function LoseLeadDialog({
   submitting = false,
   onPerdido,
   motivos,
+  leadLabel,
 }: LoseLeadDialogProps) {
   const t = useT();
   const [reasonCode, setReasonCode] = useState<string>("");
@@ -140,6 +147,7 @@ export function LoseLeadDialog({
         <DialogHeader>
           <DialogTitle>{t("Marcar como perdido")}</DialogTitle>
           <DialogDescription>
+            {leadLabel && <span className="mb-1 block font-medium">{leadLabel}</span>}
             {t("Informe o motivo. Essa informação ajuda a melhorar o funil.")}
           </DialogDescription>
         </DialogHeader>
@@ -165,9 +173,7 @@ export function LoseLeadDialog({
           </div>
           {reasonCode === OUTRO && (
             <div className="grid gap-1.5">
-              <Label htmlFor="lost-reason-other">
-                {t("Detalhe (opcional)")}
-              </Label>
+              <Label htmlFor="lost-reason-other">{t("Detalhe (opcional)")}</Label>
               <Textarea
                 id="lost-reason-other"
                 value={otherText}
@@ -184,11 +190,7 @@ export function LoseLeadDialog({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={emVoo}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={emVoo}>
             {t("Cancelar")}
           </Button>
           <Button onClick={handleSubmit} disabled={disabled}>

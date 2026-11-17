@@ -1,5 +1,9 @@
 /**
- * CATRACA — as 6 abas da Inbox não podem voltar a ser cortadas na coluna (#2745).
+ * CATRACA — as abas da Inbox não podem voltar a ser cortadas na coluna (#2745).
+ *
+ * São SETE desde a #4434: a aba "Pessoal" fecha a faixa. Ela nasce DEPOIS das
+ * seis medidas em #2745, e é a sétima que a coluna de 272px precisa acomodar —
+ * a `flex-wrap` abaixo é o que impede a ponta direita de ficar atrás da seta.
  *
  * ## O defeito, medido
  *
@@ -63,7 +67,7 @@ vi.mock("@/hooks/contacts/useContactTagVocabulary", () => ({
 // com elas que o corte foi medido.
 vi.mock("@/hooks/inbox/useConversationCounts", () => ({
   useConversationCounts: () => ({
-    data: { fila: 47, automatico: 12, mine: 8, all: 130, closed: 25, archived: 9 },
+    data: { fila: 47, automatico: 12, mine: 8, all: 130, closed: 25, archived: 9, pessoal: 3 },
   }),
 }));
 

@@ -91,7 +91,7 @@ export async function GET(_req: NextRequest): Promise<Response> {
   const nomes = new Map<string, string>();
   try {
     const { nomesDosAtendentes } = await import("@/lib/users/nome-do-atendente");
-    const mapa = await nomesDosAtendentes([...new Set(linhas.map((l) => l.created_by_user_id).filter((v): v is string => Boolean(v)))]);
+    const mapa = await nomesDosAtendentes(org.orgId, [...new Set(linhas.map((l) => l.created_by_user_id).filter((v): v is string => Boolean(v)))]);
     for (const [id, nome] of mapa) if (nome) nomes.set(id, nome);
   } catch {
     /* sem nomes */
