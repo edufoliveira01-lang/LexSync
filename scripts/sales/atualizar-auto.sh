@@ -14,7 +14,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 REPO=ghcr.io/edufoliveira01-lang
-BASE=1.101.0-sales          # versão do original em que nos baseamos (a mesma do atualizar.sh)
+BASE=1.116.0-sales          # versão do original em que nos baseamos (a mesma do atualizar.sh)
 ALCANCE=12                  # quantos números à frente procurar
 MINIMO_GB=8                 # abaixo disso, limpa antes de procurar build novo (o atualizar.sh exige 5 GB para baixar)
 SO_VER=0; [[ "${1:-}" == "--so-ver" ]] && SO_VER=1
