@@ -2,7 +2,7 @@
  * Fork Sales — os números do ATENDIMENTO que aparecem na tela Início do Sales: quantos leads chegaram em cada mês, quantos foram qualificados,
  * quantos desqualificados, quantos perderam o interesse e onde estão os que seguem em atendimento.
  *
- * O Deskcomm calcula e EMPURRA um retrato para o escritório (mesmo canal assinado dos contratos) a cada 30 minutos. O Sales só guarda e mostra.
+ * O Deskcomm calcula e EMPURRA um retrato para o escritório (mesmo canal assinado dos contratos) por eventos (negócio criado, mudou de etapa, ganho ou perdido: em poucos segundos) e, como rede de segurança, a cada 10 minutos. O Sales só guarda e mostra.
  * A conta é por COORTE: «neste mês» são os leads que NASCERAM neste mês e como estão agora (as etapas se leem pelo NOME, que é o que o dono vê).
  */
 import { logger } from "@/lib/logger";
@@ -111,11 +111,40 @@ export async function enviarRetratos(): Promise<void> {
   }
 }
 
+/** Manda o retrato de UMA organização (quando algo muda no funil). Melhor esforço: nunca lança. */
+export async function enviarRetratoDaOrganizacao(orgId: string): Promise<void> {
+  try {
+    if (!configDosContratos()) return;
+    const admin = createAdminClient();
+    const { data } = await admin.from("organizations").select("slug").eq("id", orgId).maybeSingle();
+    const slug = (data as { slug: string | null } | null)?.slug;
+    if (!slug) return;
+    await enviarIndicadoresDoAtendimento(slug, await calcularRetratoDaOrganizacao(orgId));
+  } catch (e) {
+    logger.warn("[indicadores-do-atendimento] não consegui enviar o retrato da organização", { org: orgId, erro: e instanceof Error ? e.message.slice(0, 160) : String(e).slice(0, 160) });
+  }
+}
+
+/**
+ * Tempo real, na prática: quando um negócio nasce, muda de etapa, é ganho ou perdido, o retrato daquela organização segue em poucos
+ * segundos. Vários eventos seguidos (um turno do agente mexe em etapa e etiqueta) viram UM envio: espera `atrasoMs` depois do último.
+ */
+const agendados = new Map<string, ReturnType<typeof setTimeout>>();
+export function agendarRetratoDaOrganizacao(orgId: string, atrasoMs = 8_000): void {
+  if (!configDosContratos()) return;
+  const anterior = agendados.get(orgId);
+  if (anterior) clearTimeout(anterior);
+  const t = setTimeout(() => { agendados.delete(orgId); void enviarRetratoDaOrganizacao(orgId); }, atrasoMs);
+  t.unref?.();
+  agendados.set(orgId, t);
+}
+
 let iniciado = false;
 export function iniciarEnvioDosIndicadores(): void {
   if (iniciado || !configDosContratos()) return;
   iniciado = true;
   const rodar = () => { void enviarRetratos().catch(() => undefined); };
   setTimeout(rodar, 3 * 60_000).unref?.();
-  setInterval(rodar, 30 * 60_000).unref?.();
+  // Rede de segurança: o envio por evento (acima) é o caminho normal; este corrige qualquer evento perdido.
+  setInterval(rodar, 10 * 60_000).unref?.();
 }

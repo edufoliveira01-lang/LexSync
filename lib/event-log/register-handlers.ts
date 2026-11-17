@@ -38,6 +38,7 @@ import { avisoDeHandoffHandler } from "@/lib/escalacao/aviso-de-handoff.handler"
 import { avisoDePropostaNoWhatsAppHandler } from "@/lib/propostas/aviso-no-whatsapp.handler";
 import { avisoDeAgendamentoNoWhatsAppHandler } from "@/lib/agenda/aviso-de-agendamento.handler";
 import { cobrancaSinalHandler } from "@/lib/cobranca/sinal.handler";
+import { indicadoresDoAtendimentoHandler } from "@/lib/sales/indicadores-do-atendimento.handler";
 import { registerHandler } from "@/lib/event-log/dispatcher";
 
 let _registered = false;
@@ -56,6 +57,7 @@ export function ensureHandlersRegistered(): void {
   // fluxos já vivos ler a mensagem primeiro.
   registerHandler(followupGatilhoRetornoHandler);
   registerHandler(aiResponseHandler);
+  registerHandler(indicadoresDoAtendimentoHandler);
   registerHandler(aiSentimentHandler);
   registerHandler(aiHandoffFromSentimentHandler);
   registerHandler(ragIndexerHandler);

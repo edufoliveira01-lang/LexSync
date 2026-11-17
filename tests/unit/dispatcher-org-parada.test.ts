@@ -44,6 +44,7 @@ import { followupGatilhoPresencaHandler } from "@/lib/followup/gatilho-presenca.
 import { followupGatilhoRetornoHandler } from "@/lib/followup/gatilho-retorno.handler";
 import { followupReactivityHandler } from "@/lib/followup/reactivity.handler";
 import { followupSaidaDaEtapaHandler } from "@/lib/followup/saida-da-etapa.handler";
+import { indicadoresDoAtendimentoHandler } from "@/lib/sales/indicadores-do-atendimento.handler";
 import { avisoDeEtapaHandler } from "@/lib/leads/aviso-de-etapa.handler";
 import { avisoAoDonoDaCarteira } from "@/lib/carteira/aviso-ao-dono";
 import { comandaDoGanhoHandler } from "@/lib/financeiro/comanda-do-ganho.handler";
@@ -79,6 +80,8 @@ const RODA: EventHandler[] = [
 
 const PULA: EventHandler[] = [
   aiResponseHandler,
+  // Sai para o Sales (rede): organização parada não empurra números.
+  indicadoresDoAtendimentoHandler,
   aiSentimentHandler,
   aiHandoffFromSentimentHandler,
   ragIndexerHandler,
