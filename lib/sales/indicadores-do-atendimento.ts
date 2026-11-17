@@ -12,7 +12,7 @@ import { configDosContratos, enviarIndicadoresDoAtendimento } from "./contratos"
 
 export type Situacao = "desqualificado" | "sem_interesse" | "qualificado" | "em_andamento";
 export interface EtapaLida { id: string; name: string; is_lost: boolean; is_won: boolean; position: number | null }
-export interface LeadLido { created_at: string; status: string; stage_id: string; source?: string | null; tags?: string[] | null; contacts?: { tags?: string[] | null } | Array<{ tags?: string[] | null }> | null }
+export interface LeadLido { created_at: string; status: string; stage_id: string; pipeline_id?: string | null; contact_id?: string | null; source?: string | null; tags?: string[] | null; contacts?: { tags?: string[] | null } | Array<{ tags?: string[] | null }> | null }
 
 /** A etiqueta que o agente (ou a equipe) põe quando a pessoa é um contato NOVO — só estes contam como «lead que entrou». */
 export const ETIQUETA_DE_LEAD = "lead";
@@ -52,26 +52,63 @@ export function ultimosMesesDoRetrato(ate: string, n = 12): string[] {
   return Array.from({ length: n }, (_, i) => { const d = new Date(Date.UTC(a, m - 1 - (n - 1 - i), 1)); return d.toISOString().slice(0, 7); });
 }
 
-export function montarRetrato(leads: readonly LeadLido[], abertos: readonly { stage_id: string }[], etapas: readonly EtapaLida[], agora = new Date()) {
+/**
+ * QUEM ENTRA NA CONTA. A tela Início separa dois públicos:
+ *  - LEAD / primeira vez: cartões dos funis comuns. É o que o funil «Chegaram → Passaram da triagem → …» mede.
+ *  - CLIENTE: cartões de funis marcados como «funil de clientes» (`crm_pipelines.is_client_pipeline`, ex.: «Andamento Jurídico»). Quem já é
+ *    cliente NÃO é captação: não entra no funil acima e aparece à parte (`clientes`).
+ * Dentro dos leads, uma PESSOA conta UMA vez por mês (a pessoa que perdeu o interesse e voltou abre outro cartão: é o mesmo lead).
+ * A situação da pessoa é a do cartão mais recente do mês.
+ */
+export function montarRetrato(
+  leads: readonly LeadLido[],
+  abertos: readonly { stage_id: string; pipeline_id?: string | null }[],
+  etapas: readonly EtapaLida[],
+  agora = new Date(),
+  funisDeCliente: ReadonlySet<string> = new Set(),
+) {
   const porId = new Map(etapas.map((e) => [e.id, e]));
   const meses = ultimosMesesDoRetrato(mesDeBrasilia(agora.toISOString()));
   const base = new Map<string, MesDoRetrato>(meses.map((m) => [m, { mes: m, novos: 0, qualificados: 0, desqualificados: 0, sem_interesse: 0, em_andamento: 0, fontes: {} }]));
-  for (const l of leadsQueContam(leads)) {
-    const linha = base.get(mesDeBrasilia(l.created_at));
+  const ehCliente = (l: { pipeline_id?: string | null }) => Boolean(l.pipeline_id && funisDeCliente.has(l.pipeline_id));
+  const deLead = leadsQueContam(leads.filter((l) => !ehCliente(l)));
+
+  // uma pessoa por mês: o cartão mais recente decide a situação; a fonte é a do primeiro cartão
+  const porPessoa = new Map<string, LeadLido[]>();
+  deLead.forEach((l, i) => {
+    const chave = l.contact_id ? `${mesDeBrasilia(l.created_at)}|${l.contact_id}` : `sem-contato|${i}`;
+    porPessoa.set(chave, [...(porPessoa.get(chave) ?? []), l]);
+  });
+  for (const cartoes of porPessoa.values()) {
+    const ordenados = [...cartoes].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+    const primeiro = ordenados[0]!;
+    const ultimo = ordenados[ordenados.length - 1]!;
+    const linha = base.get(mesDeBrasilia(primeiro.created_at));
     if (!linha) continue;
     linha.novos++;
-    const fonte = String(l.source ?? "").trim().slice(0, 60);
+    const fonte = String(primeiro.source ?? "").trim().slice(0, 60);
     if (fonte) linha.fontes[fonte] = (linha.fontes[fonte] ?? 0) + 1;
-    const s = situacaoDoLead(l, porId.get(l.stage_id));
+    const s = situacaoDoLead(ultimo, porId.get(ultimo.stage_id));
     if (s === "qualificado") linha.qualificados++; else if (s === "desqualificado") linha.desqualificados++; else if (s === "sem_interesse") linha.sem_interesse++; else linha.em_andamento++;
   }
-  const contagem = new Map<string, number>();
-  for (const a of abertos) contagem.set(a.stage_id, (contagem.get(a.stage_id) ?? 0) + 1);
-  const por_etapa = [...contagem].flatMap(([id, total]) => {
-    const e = porId.get(id);
-    return e && !e.is_lost && !e.is_won ? [{ nome: e.name, total, posicao: Number(e.position ?? 0) }] : [];
-  }).sort((a, b) => a.posicao - b.posicao);
-  return { meses: [...base.values()], por_etapa, abertos: abertos.length };
+
+  const contar = (itens: readonly { stage_id: string }[]) => {
+    const contagem = new Map<string, number>();
+    for (const a of itens) contagem.set(a.stage_id, (contagem.get(a.stage_id) ?? 0) + 1);
+    return [...contagem].flatMap(([id, total]) => {
+      const e = porId.get(id);
+      return e && !e.is_lost && !e.is_won ? [{ nome: e.name, total, posicao: Number(e.position ?? 0) }] : [];
+    }).sort((a, b) => a.posicao - b.posicao);
+  };
+  const abertosDeLead = abertos.filter((a) => !ehCliente(a));
+  const abertosDeCliente = abertos.filter((a) => ehCliente(a));
+  return {
+    meses: [...base.values()],
+    por_etapa: contar(abertosDeLead),
+    abertos: abertosDeLead.length,
+    // Quem já é cliente: acompanhado à parte, fora da conta de captação.
+    clientes: { abertos: abertosDeCliente.length, por_etapa: contar(abertosDeCliente) },
+  };
 }
 
 const TAMANHO_DA_PAGINA = 1000;
@@ -92,9 +129,11 @@ export async function calcularRetratoDaOrganizacao(orgId: string, agora = new Da
   const meses = ultimosMesesDoRetrato(mesDeBrasilia(agora.toISOString()));
   const desde = new Date(Date.parse(`${meses[0]}-01T03:00:00Z`)).toISOString();
   const etapas = await lerTudo<EtapaLida>((de, ate) => admin.from("crm_stages").select("id, name, is_lost, is_won, position").eq("organization_id", orgId).range(de, ate));
-  const leads = await lerTudo<LeadLido>((de, ate) => admin.from("crm_leads").select("created_at, status, stage_id, source, tags, contacts(tags)").eq("organization_id", orgId).gte("created_at", desde).order("created_at").range(de, ate));
-  const abertos = await lerTudo<{ stage_id: string }>((de, ate) => admin.from("crm_leads").select("stage_id").eq("organization_id", orgId).eq("status", "open").range(de, ate), 5);
-  return montarRetrato(leads, abertos, etapas, agora);
+  const leads = await lerTudo<LeadLido>((de, ate) => admin.from("crm_leads").select("created_at, status, stage_id, pipeline_id, contact_id, source, tags, contacts(tags)").eq("organization_id", orgId).gte("created_at", desde).order("created_at").range(de, ate));
+  const abertos = await lerTudo<{ stage_id: string; pipeline_id: string | null }>((de, ate) => admin.from("crm_leads").select("stage_id, pipeline_id").eq("organization_id", orgId).eq("status", "open").range(de, ate), 5);
+  const { data: funis } = await admin.from("crm_pipelines").select("id").eq("organization_id", orgId).eq("is_client_pipeline", true);
+  const funisDeCliente = new Set(((funis ?? []) as Array<{ id: string }>).map((f) => f.id));
+  return montarRetrato(leads, abertos, etapas, agora, funisDeCliente);
 }
 
 export async function enviarRetratos(): Promise<void> {
