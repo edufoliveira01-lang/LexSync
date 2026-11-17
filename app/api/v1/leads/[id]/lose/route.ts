@@ -49,7 +49,15 @@ export async function POST(
         requestId,
         idioma: authz.user.idioma,
       },
-      { leadId, desfecho: "lost", motivo: input.lost_reason },
+      {
+        leadId,
+        desfecho: "lost",
+        motivo: input.lost_reason,
+        // «Outro» com detalhe: a linha do tempo diz o que a pessoa escreveu (o motivo gravado continua o canônico).
+        ...(input.lost_detail?.trim()
+          ? { razaoNaTimeline: `Perdido — Outro: ${input.lost_detail.trim()}`.slice(0, 500), payloadNaTimeline: { detalhe: input.lost_detail.trim() } }
+          : {}),
+      },
     );
     return ok(lead, { requestId });
   } catch (err) {

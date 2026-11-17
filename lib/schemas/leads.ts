@@ -176,6 +176,11 @@ export function categoriaPadraoDoMotivo(valor: string): CategoriaDePerda | undef
  */
 export const loseLeadSchema = z.object({
   lost_reason: z.string().min(1, "lost_reason é obrigatório").max(500),
+  /**
+   * O DETALHE de quem escolheu «Outro»: texto livre que vai para a linha do tempo, nunca para `lost_reason`
+   * (a coluna só aceita motivo canônico ou cadastrado no funil — texto livre ali era recusado pelo banco).
+   */
+  lost_detail: z.string().max(500).optional(),
 });
 export type LoseLeadInput = z.infer<typeof loseLeadSchema>;
 

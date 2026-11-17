@@ -32,7 +32,7 @@ interface LoseLeadDialogProps {
    * diálogo é o MESMO do card: uma segunda janela de motivo seria a mesma
    * pergunta com duas respostas possíveis, e o funil passaria a ter duas listas.
    */
-  onConfirm?: (lostReason: string) => void | Promise<void>;
+  onConfirm?: (lostReason: string, detalhe?: string) => void | Promise<void>;
   /**
    * Modo LOTE: quem chamou informa se a escrita em lote está em voo. Este
    * diálogo não conhece a mutação de lote (`useBulkAction`) — então não pode
@@ -102,17 +102,13 @@ export function LoseLeadDialog({
   // motivos cadastrados (o caso comum, inclusive toda instalação nova), o
   // texto do "Detalhe" NUNCA era aceito pelo servidor, e a pessoa só descobria
   // depois de já ter clicado "Confirmar".
-  const outroRecusado =
-    reasonCode === OUTRO &&
-    textoOutro.length > 0 &&
-    !motivoDePerdaAceito(textoOutro, cadastrados);
-
-  const finalReason = reasonCode === OUTRO ? textoOutro || OUTRO : reasonCode;
+  // «Outro» + detalhe: o motivo gravado é SEMPRE o canônico `other`; o texto livre vai à linha do tempo (`lost_detail`).
+  // Antes o texto digitado virava `lost_reason` e o banco o recusava (22023) — a tela oferecia o campo e depois não o aceitava.
+  const finalReason = reasonCode;
   const disabled =
     !reasonCode ||
     finalReason.length === 0 ||
     finalReason.length > MAX_LEN ||
-    outroRecusado ||
     emVoo;
 
   const handleSubmit = async () => {
@@ -123,9 +119,9 @@ export function LoseLeadDialog({
       // não há escrita nenhuma a fazer — o `disabled` já cobre o caso de uso,
       // e este guarda evita um clique pendurado em arranjo inválido.
       if (onConfirm) {
-        await onConfirm(finalReason);
+        await onConfirm(finalReason, reasonCode === OUTRO ? textoOutro || undefined : undefined);
       } else if (leadId) {
-        await mutation.mutateAsync({ leadId, lostReason: finalReason });
+        await mutation.mutateAsync({ leadId, lostReason: finalReason, ...(reasonCode === OUTRO && textoOutro ? { lostDetail: textoOutro } : {}) });
       } else {
         return;
       }
@@ -183,35 +179,6 @@ export function LoseLeadDialog({
               <div className="text-right text-[11px] text-muted-foreground tabular-nums">
                 {otherText.length}/{MAX_LEN}
               </div>
-              {outroRecusado && (
-                <p role="alert" className="text-xs text-destructive">
-                  {/*
-                    A MESMA frase do servidor, e não uma irmã: `lib/leads/motivo-da-perda.ts`
-                    (#935) já devolve este texto quando o motivo chega fora da lista pela
-                    API. Duas frases quase idênticas para a MESMA recusa fazem o operador
-                    achar que são dois problemas.
-                  */}
-                  {t(
-                    "Esse motivo de perda não está na lista deste funil — escolha um dos motivos configurados.",
-                  )}
-                </p>
-              )}
-              {/*
-                Com funil configurado é dica permanente (mostra assim que
-                "Outro" é escolhido, mesmo sem ter digitado nada) — é lá que o
-                texto livre é recusado, e quem quiser o motivo COM AS PRÓPRIAS
-                PALAVRAS precisa cadastrá-lo. Deixar o detalhe em branco continua
-                valendo — grava "Outro". SEM funil configurado o texto livre
-                também é recusado (`outroRecusado` acima, sem gate de
-                `funilConfigurado` — o servidor não abre exceção para funil
-                vazio), então a dica aparece assim que há o que corrigir, em vez
-                de ficar plantada antes de a pessoa digitar qualquer coisa.
-              */}
-              {(funilConfigurado || outroRecusado) && (
-                <p className="text-xs text-muted-foreground">
-                  {t("Para usar um motivo que não está aqui, cadastre em CRM › Ver tudo em CRM › Etapas do funil.")}
-                </p>
-              )}
             </div>
           )}
         </div>

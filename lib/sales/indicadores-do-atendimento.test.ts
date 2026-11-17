@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { montarRetrato, type EtapaLida, type LeadLido } from "./indicadores-do-atendimento";
+import { ehNaoLead, montarRetrato, type EtapaLida, type LeadLido } from "./indicadores-do-atendimento";
 
 const etapas: EtapaLida[] = [
   { id: "novo", name: "Novo contato", is_lost: false, is_won: false, position: 1 },
@@ -45,5 +45,36 @@ describe("montarRetrato — lead x cliente", () => {
     const r = montarRetrato([lead({ stage_id: "novo" }), lead({ stage_id: "triagem", contact_id: "z" })], [], etapas, agora);
     expect(mesAtual(r).novos).toBe(2);
     expect(r.clientes.abertos).toBe(0);
+  });
+});
+
+describe("quem nunca foi lead (spam, vendedor, número errado)", () => {
+  it("reconhece pelo texto, sem acento nem caixa", () => {
+    expect(ehNaoLead("Vendedor/Spam/Marketing")).toBe(true);
+    expect(ehNaoLead("Número errado")).toBe(true);
+    expect(ehNaoLead("Fora do escritório")).toBe(true);
+    expect(ehNaoLead("Sem interesse")).toBe(false);
+    expect(ehNaoLead(null)).toBe(false);
+  });
+
+  it("perdido como spam não entra em «Chegaram» nem em «Sem interesse»", () => {
+    const r = montarRetrato(
+      [
+        lead({ stage_id: "sem", status: "lost", contact_id: "g", lost_reason: "Vendedor/Spam/Marketing" }),
+        lead({ stage_id: "sem", status: "lost", contact_id: "s", lost_reason: "price" }),
+      ],
+      [], etapas, agora,
+    );
+    expect(mesAtual(r).novos).toBe(1);
+    expect(mesAtual(r).sem_interesse).toBe(1);
+  });
+
+  it("o detalhe escrito ao perder (linha do tempo) também tira o cartão da conta", () => {
+    const r = montarRetrato(
+      [lead({ id: "L1", stage_id: "sem", status: "lost", contact_id: "g", lost_reason: "other" }), lead({ id: "L2", stage_id: "novo", contact_id: "h" })],
+      [], etapas, agora, new Set(), new Set(["L1"]),
+    );
+    expect(mesAtual(r).novos).toBe(1);
+    expect(mesAtual(r).sem_interesse).toBe(0);
   });
 });

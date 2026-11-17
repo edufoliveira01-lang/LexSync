@@ -12,7 +12,7 @@ import { configDosContratos, enviarIndicadoresDoAtendimento } from "./contratos"
 
 export type Situacao = "desqualificado" | "sem_interesse" | "qualificado" | "em_andamento";
 export interface EtapaLida { id: string; name: string; is_lost: boolean; is_won: boolean; position: number | null }
-export interface LeadLido { created_at: string; status: string; stage_id: string; pipeline_id?: string | null; contact_id?: string | null; source?: string | null; tags?: string[] | null; contacts?: { tags?: string[] | null } | Array<{ tags?: string[] | null }> | null }
+export interface LeadLido { id?: string; lost_reason?: string | null; created_at: string; status: string; stage_id: string; pipeline_id?: string | null; contact_id?: string | null; source?: string | null; tags?: string[] | null; contacts?: { tags?: string[] | null } | Array<{ tags?: string[] | null }> | null }
 
 /** A etiqueta que o agente (ou a equipe) põe quando a pessoa é um contato NOVO — só estes contam como «lead que entrou». */
 export const ETIQUETA_DE_LEAD = "lead";
@@ -31,6 +31,15 @@ export function leadsQueContam<T extends LeadLido>(leads: readonly T[]): T[] {
   const corte = etiquetados.reduce((m, l) => (l.created_at < m ? l.created_at : m), etiquetados[0]!.created_at);
   return leads.filter((l) => l.created_at < corte || temEtiquetaDeLead(l));
 }
+
+/**
+ * Quem NUNCA foi lead: vendedor, spam, propaganda, número errado, assunto que não é do escritório. Entra no funil como cartão (o agente
+ * atende e se despede), mas contar como «Chegaram» e «Sem interesse» infla a captação. Reconhecido pelo motivo da perda ou pelo detalhe
+ * que a equipe escreveu ao perder («Outro: Vendedor/Spam/Marketing»).
+ */
+const NAO_E_LEAD = /(\bspam\b|vendedor|marketing|propaganda|nao e lead|nao eh lead|numero errado|fora do escritorio|oferta de (servico|produto))/;
+export const ehNaoLead = (texto: string | null | undefined): boolean => NAO_E_LEAD.test(semAcento(String(texto ?? "")));
+
 export interface MesDoRetrato { mes: string; novos: number; qualificados: number; desqualificados: number; sem_interesse: number; em_andamento: number; fontes: Record<string, number> }
 
 const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -66,12 +75,14 @@ export function montarRetrato(
   etapas: readonly EtapaLida[],
   agora = new Date(),
   funisDeCliente: ReadonlySet<string> = new Set(),
+  naoLeads: ReadonlySet<string> = new Set(),
 ) {
   const porId = new Map(etapas.map((e) => [e.id, e]));
   const meses = ultimosMesesDoRetrato(mesDeBrasilia(agora.toISOString()));
   const base = new Map<string, MesDoRetrato>(meses.map((m) => [m, { mes: m, novos: 0, qualificados: 0, desqualificados: 0, sem_interesse: 0, em_andamento: 0, fontes: {} }]));
   const ehCliente = (l: { pipeline_id?: string | null }) => Boolean(l.pipeline_id && funisDeCliente.has(l.pipeline_id));
-  const deLead = leadsQueContam(leads.filter((l) => !ehCliente(l)));
+  const naoELead = (l: LeadLido) => (l.id !== undefined && naoLeads.has(l.id)) || (l.status === "lost" && ehNaoLead(l.lost_reason));
+  const deLead = leadsQueContam(leads.filter((l) => !ehCliente(l) && !naoELead(l)));
 
   // uma pessoa por mês: o cartão mais recente decide a situação; a fonte é a do primeiro cartão
   const porPessoa = new Map<string, LeadLido[]>();
@@ -129,11 +140,20 @@ export async function calcularRetratoDaOrganizacao(orgId: string, agora = new Da
   const meses = ultimosMesesDoRetrato(mesDeBrasilia(agora.toISOString()));
   const desde = new Date(Date.parse(`${meses[0]}-01T03:00:00Z`)).toISOString();
   const etapas = await lerTudo<EtapaLida>((de, ate) => admin.from("crm_stages").select("id, name, is_lost, is_won, position").eq("organization_id", orgId).range(de, ate));
-  const leads = await lerTudo<LeadLido>((de, ate) => admin.from("crm_leads").select("created_at, status, stage_id, pipeline_id, contact_id, source, tags, contacts(tags)").eq("organization_id", orgId).gte("created_at", desde).order("created_at").range(de, ate));
+  const leads = await lerTudo<LeadLido>((de, ate) => admin.from("crm_leads").select("id, lost_reason, created_at, status, stage_id, pipeline_id, contact_id, source, tags, contacts(tags)").eq("organization_id", orgId).gte("created_at", desde).order("created_at").range(de, ate));
   const abertos = await lerTudo<{ stage_id: string; pipeline_id: string | null }>((de, ate) => admin.from("crm_leads").select("stage_id, pipeline_id").eq("organization_id", orgId).eq("status", "open").range(de, ate), 5);
   const { data: funis } = await admin.from("crm_pipelines").select("id").eq("organization_id", orgId).eq("is_client_pipeline", true);
   const funisDeCliente = new Set(((funis ?? []) as Array<{ id: string }>).map((f) => f.id));
-  return montarRetrato(leads, abertos, etapas, agora, funisDeCliente);
+  // O detalhe que a equipe escreveu ao perder («Outro: Vendedor/Spam/Marketing») fica na linha do tempo, não no motivo gravado.
+  const naoLeads = new Set<string>();
+  const perdidos = leads.filter((l) => l.status === "lost" && l.id).map((l) => l.id as string);
+  for (let i = 0; i < perdidos.length; i += 200) {
+    const { data: ativ } = await admin.from("crm_lead_activities").select("lead_id, reason, payload").eq("organization_id", orgId).eq("type", "demand_closed").in("lead_id", perdidos.slice(i, i + 200));
+    for (const a of (ativ ?? []) as Array<{ lead_id: string; reason: string | null; payload: { detalhe?: unknown } | null }>) {
+      if (ehNaoLead(a.reason) || ehNaoLead(typeof a.payload?.detalhe === "string" ? a.payload.detalhe : "")) naoLeads.add(a.lead_id);
+    }
+  }
+  return montarRetrato(leads, abertos, etapas, agora, funisDeCliente, naoLeads);
 }
 
 export async function enviarRetratos(): Promise<void> {
