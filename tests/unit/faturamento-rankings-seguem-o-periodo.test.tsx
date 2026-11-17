@@ -16,6 +16,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * URL pedida, que é o que de fato chega ao servidor.
  */
 
+// Fork Sales: o campo de data do sistema é um seletor em calendário (popover); aqui o que se mede é o PERÍODO que vai para as rotas, então um <input> basta.
+vi.mock("@/components/ui/campo-de-data", () => ({
+  CampoDeData: ({ value, onChange, type, ...resto }: { value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; type?: string; className?: string; "data-testid"?: string }) => (
+    <input type={type ?? "date"} value={value} onChange={onChange} data-testid={resto["data-testid"]} />
+  ),
+}));
 vi.mock("@/lib/api/client", () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }));

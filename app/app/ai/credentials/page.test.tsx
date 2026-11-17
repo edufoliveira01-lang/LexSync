@@ -42,7 +42,7 @@ vi.mock("@/lib/auth/server", () => ({
   resolveActiveOrg: resolveActiveOrgMock,
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: createClientMock }));
-vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({}) }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }) }) }) }));
 vi.mock("@/lib/instalacao/modulos", () => ({ moduloLigado: moduloLigadoMock }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("@/lib/ai/gateway-binding", () => ({ resolverModeloDoPonto: async () => null }));

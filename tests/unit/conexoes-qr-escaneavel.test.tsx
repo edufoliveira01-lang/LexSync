@@ -102,6 +102,12 @@ function wrap(ui: React.ReactNode) {
   return <QueryClientProvider client={qc}>{ui}</QueryClientProvider>;
 }
 
+/** Fork Sales: as ações da conexão moram no painel lateral (aba Gerenciar); o cartão da lista só abre o painel. */
+function abrirGerenciar() {
+  fireEvent.click(screen.getByRole("button", { name: /^Abrir/ }));
+  fireEvent.mouseDown(screen.getByRole("tab", { name: "Gerenciar" }), { button: 0 });
+}
+
 beforeEach(() => {
   getMock.mockReset();
   postMock.mockReset();
@@ -120,6 +126,7 @@ describe("o selo SCAN_QR_CODE é um botão, não um rótulo", () => {
     listagem.data = [canal({ status: "SCAN_QR_CODE" })];
 
     render(wrap(<ConnectionsClient wahaConfigured />));
+    abrirGerenciar();
 
     const botao = screen.getByRole("button", { name: "Mostrar o QR" });
     fireEvent.click(botao);
@@ -134,6 +141,7 @@ describe("o selo SCAN_QR_CODE é um botão, não um rótulo", () => {
 
   it("canal conectado continua com selo de leitura, sem botão de QR", () => {
     render(wrap(<ConnectionsClient wahaConfigured />));
+    abrirGerenciar();
 
     expect(screen.queryByRole("button", { name: "Mostrar o QR" })).toBeNull();
   });
@@ -144,6 +152,7 @@ describe("nunca pareado em FAILED/STOPPED tem o caminho de volta", () => {
     listagem.data = [canal({ phone_number: null, display_name: null, status: "FAILED" })];
 
     render(wrap(<ConnectionsClient wahaConfigured />));
+    abrirGerenciar();
 
     postMock.mockResolvedValue({});
     fireEvent.click(screen.getByRole("button", { name: "Gerar novo QR" }));
@@ -160,6 +169,7 @@ describe("nunca pareado em FAILED/STOPPED tem o caminho de volta", () => {
     listagem.data = [canal({ phone_number: null, display_name: null, status: "STOPPED" })];
 
     render(wrap(<ConnectionsClient wahaConfigured />));
+    abrirGerenciar();
 
     expect(screen.getByRole("button", { name: "Gerar novo QR" })).toBeVisible();
   });
@@ -168,6 +178,7 @@ describe("nunca pareado em FAILED/STOPPED tem o caminho de volta", () => {
     listagem.data = [canal({ status })];
 
     render(wrap(<ConnectionsClient wahaConfigured />));
+    abrirGerenciar();
 
     expect(screen.queryByRole("button", { name: "Gerar novo QR" })).toBeNull();
     // O caminho para um pareado é o suave, que preserva a credencial.
@@ -178,6 +189,7 @@ describe("nunca pareado em FAILED/STOPPED tem o caminho de volta", () => {
     listagem.data = [canal({ waha_session_name: null, phone_number: null, status: "FAILED" })];
 
     render(wrap(<ConnectionsClient wahaConfigured />));
+    abrirGerenciar();
 
     expect(screen.queryByRole("button", { name: "Gerar novo QR" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Reconectar" })).toBeNull();

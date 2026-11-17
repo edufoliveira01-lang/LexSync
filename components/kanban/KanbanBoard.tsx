@@ -210,6 +210,11 @@ export function KanbanBoard({
     dataAtual.current = data;
     selecaoAtual.current = selectedLeadIds;
   }, [data, selectedLeadIds]);
+
+  // Os campos que o funil marcou "Mostrar no card" (fork Sales): do negócio, no máximo 3. Memoizado: um array novo a cada render
+  // furaria o memo da lista de cards (#4788) e redesenharia a coluna inteira.
+  const settingsDoFunil = data?.pipeline.settings ?? null;
+  const camposNoCard = useMemo(() => camposDoCard(camposDoFunil(settingsDoFunil)), [settingsDoFunil]);
   // O último card solto pelo arraste fica visível mesmo além do corte de
   // ganho/perda (`lib/kanban/limite-da-coluna.ts`).
   const [soltoId, setSoltoId] = useState<string | null>(null);
@@ -398,9 +403,6 @@ export function KanbanBoard({
       </Card>
     );
   }
-
-  // Os campos que o funil marcou "Mostrar no card" (fork Sales): do negócio, no máximo 3.
-  const camposNoCard = camposDoCard(camposDoFunil(data.pipeline.settings ?? null));
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>

@@ -120,7 +120,7 @@ describe("faixa da Inbox — quebra em vez de esconder aba (#2745)", () => {
 
   it("a ordem e os valores das abas de trabalho", () => {
     render(<InboxFilters value={VALUE} onChange={() => {}} />);
-    expect(visibleInboxTabs("manager", "all")).toHaveLength(7);
+    expect(visibleInboxTabs("manager", "all")).toHaveLength(8);
     expect(screen.getAllByRole("tab").map((a) => a.textContent?.replace(/\s+/g, ""))).toEqual([
       "Minhas8",
       "Fila47",

@@ -27,6 +27,8 @@ import { ProvedorDaOcupacaoDoRodape } from "@/lib/ui/rodape-ocupado";
 /** A rota que a casca "vê" agora — trocada no caso (b), sem remontar a árvore. */
 const rota = vi.hoisted(() => ({ caminho: "/app/inbox" }));
 
+// Fork Sales: o rodapé do menu consulta a versão do sistema (react-query) — fora do que este teste cobra.
+vi.mock("@/hooks/system/useSystemVersion", () => ({ useSystemVersion: () => ({ data: undefined }) }));
 vi.mock("next/navigation", () => ({
   usePathname: () => rota.caminho,
   useRouter: () => ({ prefetch: vi.fn(), push: vi.fn(), replace: vi.fn() }),
@@ -49,14 +51,16 @@ vi.mock("@/lib/notifications/service_worker", () => ({
 }));
 
 // O menu é renderizado de verdade no caso (d): o controle só vale no DOM dele.
-const authRef: { user: Pick<AuthUser, "is_platform_admin">; activeOrg: ActiveOrg | null } = {
-  user: { is_platform_admin: false },
+const authRef: { user: Pick<AuthUser, "is_platform_admin" | "email">; activeOrg: ActiveOrg | null } = {
+  user: { is_platform_admin: false, email: "teste@exemplo.com" },
   activeOrg: null,
 };
 vi.mock("@/hooks/auth/AuthProvider", () => ({
   useAuth: () => authRef,
   usePermission: () => false,
 }));
+vi.mock("@/components/shell/TenantSwitcher", () => ({ TenantSwitcher: () => null }));
+vi.mock("@/components/shell/AlternadorDeSistema", () => ({ AlternadorDeSistema: () => null }));
 vi.mock("@/components/connections/ConnectionHealthDot", () => ({
   ConnectionHealthDot: () => null,
 }));
@@ -83,7 +87,7 @@ function main(container: HTMLElement): HTMLElement {
 }
 
 function comoAdmin() {
-  authRef.user = { is_platform_admin: false };
+  authRef.user = { is_platform_admin: false, email: "teste@exemplo.com" };
   authRef.activeOrg = { orgId: "org-1", name: "Org", role: "admin" };
 }
 
@@ -192,7 +196,7 @@ describe("o conteúdo diz em que seção a pessoa está", () => {
       expect(nav.querySelector(`.${classeDoGrupo(grupo.id)}`), grupo.id).not.toBeNull();
     }
     expect(nav.querySelector(".nav-grupo-crm")).not.toBeNull();
-    const funis = screen.getByRole("link", { name: "Funis" });
+    const funis = screen.getByRole("link", { name: /Funis/ });
     expect(funis.className).toContain(classeDoItem("/app/kanban"));
     expect(funis.className).not.toContain("tela-secao");
     // A classe nova é do CONTEÚDO: ela não vaza para dentro do menu.

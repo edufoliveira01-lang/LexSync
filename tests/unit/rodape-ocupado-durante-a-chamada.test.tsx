@@ -346,6 +346,7 @@ describe("sem chamada nenhuma", () => {
     // casca continua sendo o rodapé inteiro (é o que o mantenedor pediu: faixa
     // permanente em todas as telas seria cobrar por um painel que aparece em
     // algumas).
-    expect(rodape.getAttribute("style")).toBeNull();
+    // Fork Sales: o <main> carrega `--area` (rótulo da área da página); o que não pode existir é reserva de rodapé.
+    expect(rodape.getAttribute("style") ?? "").not.toMatch(/padding|safe-area|rodape/);
   });
 });

@@ -30,8 +30,10 @@ function Item({
   icone,
   intencao,
   onNavigate,
+  classe,
   children,
 }: {
+  classe?: string;
   href: string;
   label: string;
   ativo: boolean;
@@ -47,7 +49,7 @@ function Item({
       title={label}
       aria-current={ativo ? "page" : undefined}
       onClick={onNavigate}
-      className={cn("dz-link", ativo && "is-active")}
+      className={cn("dz-link", ativo && "is-active", classe)}
     >
       {icone}
       <span className="dz-copy min-w-0 flex-1 truncate">{label}</span>
@@ -199,9 +201,9 @@ export function SidebarContent({
             // `nav-grupo` (comum a todo grupo) e `nav-grupo-<id>` são contrato público: é por elas que o CSS personalizado de /admin/marca dá cor ao menu
             // inteiro ou a uma seção dele (#4463). Renomear quebra a folha de quem já instalou.
             <div key={group.id} className={cn("mb-3 nav-grupo", classeDoGrupo(group.id))}>
-              <p id={tituloId} className="dz-group-head">
+              <h2 id={tituloId} className="dz-group-head">
                 {t(group.label)}
-              </p>
+              </h2>
               <ul aria-labelledby={tituloId} className="mt-0.5 space-y-0.5">
                 {items.map((item) => {
                   const ativo =
@@ -209,8 +211,9 @@ export function SidebarContent({
                     (pathname === item.href || pathname.startsWith(item.href + "/"));
                   const Icon = item.icon;
                   return (
-                    <li key={item.href} className={classeDoItem(item.href)}>
+                    <li key={item.href}>
                       <Item
+                        classe={classeDoItem(item.href)}
                         intencao={intencao}
                         onNavigate={onNavigate}
                         href={item.href}
@@ -247,8 +250,9 @@ export function SidebarContent({
             <p className="dz-group-head">{t("Configurações")}</p>
             <ul className="mt-0.5 space-y-0.5">
               {rodape && (
-                <li className={classeDoItem(rodape.href)}>
+                <li>
                   <Item
+                    classe={classeDoItem(rodape.href)}
                         intencao={intencao}
                         onNavigate={onNavigate}
                     href={rodape.href}
@@ -259,8 +263,9 @@ export function SidebarContent({
                 </li>
               )}
               {ajuda && (
-                <li className={classeDoItem(ajuda.href)}>
+                <li>
                   <Item
+                    classe={classeDoItem(ajuda.href)}
                         intencao={intencao}
                         onNavigate={onNavigate}
                     href={ajuda.href}

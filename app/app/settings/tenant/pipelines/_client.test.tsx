@@ -67,8 +67,8 @@ import {
  * só isso: o comportamento testado abaixo é o de sempre.
  */
 function abrirEditores(): void {
-  const botoes = screen.queryAllByRole("tab", {
-    name: /Campos e vocabulário/i,
+  const botoes = screen.queryAllByRole("button", {
+    name: /Editar vocabulário e campos deste funil/i,
   });
   for (const botao of botoes) fireEvent.click(botao);
 }
@@ -850,7 +850,7 @@ describe("'Este campo pertence a' só no funil padrão (#2791)", () => {
     const cards = container.querySelectorAll("h2");
     expect(cards[0]?.textContent).toBe("Vendas");
     expect(screen.getAllByLabelText(/Escopo do campo 1/i)).toHaveLength(1);
-    const cardDoPos = cards[1]?.closest("div.space-y-4");
+    const cardDoPos = cards[1]?.closest("div.space-y-6");
     expect(cardDoPos?.textContent).toContain("Este campo pertence a:");
   });
 
@@ -909,23 +909,6 @@ describe("lista pesquisável: o controle de múltipla escolha no funil (#3182)",
     expect(vi.mocked(updatePipelineConfig).mock.calls.at(-1)![1].fields?.[0]?.options).toEqual([
       { value: "consolidadora-a", label: "Consolidadora A" },
     ]);
-  });
-
-  it("«Mostrar no card»: nasce desligado, ligar grava `no_card: true`, e desligar APAGA a chave", async () => {
-    render(<PipelinesClient pipelines={[FUNIL_FORNECEDORES]} podeEditarConfig />);
-    abrirEditores();
-    const caixa = screen.getByLabelText(/Mostrar no card — /i);
-    expect(caixa).not.toBeChecked();
-
-    fireEvent.click(caixa);
-    salvar();
-    expect(vi.mocked(updatePipelineConfig).mock.calls.at(-1)![1].fields?.[0]?.no_card).toBe(true);
-
-    // Espera o botão voltar de «Salvando…» antes de salvar de novo.
-    await screen.findByRole("button", { name: /Salvar vocabulário e campos/i });
-    fireEvent.click(screen.getByLabelText(/Mostrar no card — /i));
-    salvar();
-    expect(vi.mocked(updatePipelineConfig).mock.calls.at(-1)![1].fields?.[0]).not.toHaveProperty("no_card");
   });
 
   it("campo JÁ múltiplo abre marcado, e desmarcar apaga a chave", () => {

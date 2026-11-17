@@ -214,7 +214,7 @@ const TETO: Readonly<Record<string, { tokens: number; motivo: string }>> = {
 // +672 com os documentos do negócio (#4544): 259 de `crm_list_lead_attachments`
 // e 413 de `crm_get_lead_attachment`. MEDIDO no merge com a main: 40209 = 39537 + 672
 // (2026-11-17, main de `0652fa6866`).
-const TETO_TOTAL = 40209;
+const TETO_TOTAL = 43233; // fork Sales: soma medida no merge com o original v1.116.0 (inclui as ferramentas do escritório)
 
 const VARIANTE = "schedule_followup (com negócio)";
 
