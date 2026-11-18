@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useState, type MouseEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "@/hooks/i18n/useT";
 import Link from "next/link";
@@ -483,7 +483,16 @@ export function ConversationHeader({
     // fileira que rola na horizontal — a mesma régua de não esconder ação, sem
     // pagar em altura. `py-2` pelo mesmo motivo: cada pixel de altura ali é
     // tirado da conversa.
-    <div className="cabecalho-conversa flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 md:gap-3 md:px-4 md:py-3">
+    <div
+      className="cabecalho-conversa flex flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-3 py-2 md:gap-3 md:px-4 md:py-3"
+      // Clicar no cabeçalho (fora de botão, link ou diálogo) abre os detalhes do contato.
+      onClick={(e: MouseEvent<HTMLDivElement>) => {
+        if (!onAbrirFicha) return;
+        const alvo = e.target as HTMLElement;
+        if (alvo.closest("button, a, input, textarea, select, [role='dialog'], [role='alertdialog'], [role='menu'], [data-radix-popper-content-wrapper]")) return;
+        onAbrirFicha();
+      }}
+    >
       {/* FAIXA DA CARTEIRA (#2591, regra 2): "este cliente pertence à carteira de
           A". `w-full` a põe numa linha própria acima da identidade, sem disputar
           espaço com a barra de ações — a faixa só existe quando o dono é OUTRA
@@ -491,8 +500,8 @@ export function ConversationHeader({
       {c?.id && (
         <FaixaDaCarteira contactId={c.id} quemAtendeId={conversation.assigned_to_user_id} />
       )}
-      <div className="min-w-0">
-        <div className="flex min-w-0 items-center gap-1.5">
+      <div className="contents">
+        <div className="titulo-da-conversa flex min-w-0 items-center gap-1.5">
           <ChannelLogo channel={conversation.channel_sessions} size={20} />
           <h2 className="min-w-0 truncate text-sm font-semibold" title={displayName}>
             {onAbrirFicha ? (
@@ -557,7 +566,7 @@ export function ConversationHeader({
             cabeçalho ocupava um terço da conversa. Quebra só quando falta
             largura. O selo "Automático pausado" mora AQUI, ao lado de quem
             assumiu, e não pendurado sob os botões. */}
-        <div className="linha-de-apoio mt-1 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="comando-da-conversa">
+        <div className="linha-de-apoio flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="comando-da-conversa">
           {comando.quem === "humano" ? (
             <OwnerBadge ownerKind="user" ownerName={comando.nome ?? t("Atendente")} />
           ) : comando.quem === "automatico" ? (
@@ -594,7 +603,7 @@ export function ConversationHeader({
           // inteiro: o `title` é onde ele continua legível quando o corte
           // acontece.
           <p
-            className="mt-0.5 min-w-0 truncate text-xs text-muted-foreground max-md:hidden"
+            className="order-3 min-w-0 basis-full truncate text-xs text-muted-foreground max-md:hidden"
             data-testid="resposta-sai-por"
             title={`${t("A resposta sai por:")} ${phoneForDisplay(endereco.phone_number)}`}
           >

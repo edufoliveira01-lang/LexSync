@@ -1204,7 +1204,7 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
             )}
           </div>
         )}
-        <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <div className="mb-1.5 flex items-center gap-x-2 gap-y-1 max-lg:flex-wrap">
         <div className="flex shrink-0 gap-1">
           <button
             type="button"
@@ -1231,8 +1231,8 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
             {t("Nota interna")}
           </button>
         </div>
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-1 [&_button]:whitespace-nowrap">
-            <div id="slot-acoes-da-conversa" className="flex flex-wrap items-center justify-end gap-1" />
+          <div className="barra-acoes-composer ml-auto flex min-w-0 items-center justify-end gap-1 [scrollbar-width:none] max-lg:flex-wrap lg:overflow-x-auto [&_button]:whitespace-nowrap">
+            <div id="slot-acoes-da-conversa" className="flex items-center justify-end gap-1 max-lg:flex-wrap" />
             {mode === "reply" ? <AgendarAtendimento conversationId={conversationId} contactId={contactId} contactName={contactName ?? null} somenteLeitura={followupSomenteLeitura} /> : null}
             {mode === "reply" ? <AtivarFollowup conversationId={conversationId} contactId={contactId} somenteLeitura={followupSomenteLeitura} podeParar={podePararFollowup} /> : null}
             {/* O "Lembrar" (adiar a conversa) que o cabeçalho põe aqui, entre o Follow-up e o Programar. */}
