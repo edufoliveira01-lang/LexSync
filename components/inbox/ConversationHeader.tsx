@@ -438,24 +438,37 @@ export function ConversationHeader({
             funil e do dossiê: um terceiro jeito de dizer "quem manda", por cor ou
             por texto, faria a mesma pergunta ter três respostas diferentes na
             mesma tela. Cor não sobrevive ao daltonismo nem ao teste do metro. */}
-        <div className="mt-1 flex items-center gap-2" data-testid="comando-da-conversa">
+        {/* UMA linha para quem manda, o aviso do automático e o telefone: eram
+            três linhas empilhadas e a barra de ações descia para a quarta — o
+            cabeçalho ocupava um terço da conversa. Quebra só quando falta
+            largura. O selo "Automático pausado" mora AQUI, ao lado de quem
+            assumiu, e não pendurado sob os botões. */}
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1" data-testid="comando-da-conversa">
           {comando.quem === "humano" ? (
             <OwnerBadge ownerKind="user" ownerName={comando.nome ?? t("Atendente")} />
           ) : comando.quem === "automatico" ? (
             <OwnerBadge ownerKind="ai" ownerName={t("Automático")} />
           ) : (
-            // `ninguem`, `aguardando` e `encerrada` sem dono caem aqui: o disco
-            // TRACEJADO do OwnerBadge, que é como o funil já desenha "ninguém".
             <OwnerBadge ownerKind={null} ownerName={null} />
           )}
+          {motivo !== null && (
+            <Badge variant="outline" className="h-4 w-fit max-w-full truncate px-1.5 text-[10px]"
+              title={t(ROTULO_DO_MOTIVO[motivo])} data-testid="badge-atendimento-humano">
+              {t(ROTULO_DO_MOTIVO[motivo])}
+            </Badge>
+          )}
+          {podeModoIaComDono && modoLigado && motivo === null && (
+            <Badge variant="outline" className="h-4 w-fit max-w-full truncate px-1.5 text-[10px]"
+              data-testid="badge-ia-com-o-dono">
+              {t("IA com o dono")}
+            </Badge>
+          )}
+          {phone && (
+            <span className="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground max-md:hidden">
+              <Phone size={11} weight="regular" aria-hidden /> {phone}
+            </span>
+          )}
         </div>
-        {phone && (
-          // No celular o telefone sai: cada linha do cabeçalho é altura tirada
-          // do fio, e o número continua na Ficha.
-          <p className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground max-md:hidden">
-            <Phone size={11} weight="regular" aria-hidden /> {phone}
-          </p>
-        )}
         {/* Contato com telefone extra: diz por qual número a resposta sai. Sem
             extra, nada muda na tela. No canal que responde pela última mensagem
             recebida, a resposta vai para o número por onde ela chegou; nos outros
@@ -894,27 +907,6 @@ export function ConversationHeader({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-        {/* O aviso pertence à operação automática. Abaixo da barra ele não
-            alarga a ficha do contato nem muda a posição dos botões.
-            Sem esta marca, a conversa em que o robô está calado tem exatamente
-            a mesma cara de uma conversa normal. O testid é contrato:
-            `escalacao-ciclo.spec.ts` o clica. */}
-        {motivo !== null && (
-          <Badge variant="outline" className="h-4 w-fit max-w-full truncate px-1.5 text-[10px]"
-            title={t(ROTULO_DO_MOTIVO[motivo])} data-testid="badge-atendimento-humano">
-            {t(ROTULO_DO_MOTIVO[motivo])}
-          </Badge>
-        )}
-        {/* O modo ligado é informação, e informação dentro de um menu deixa de ser
-            lida: sem este selo a conversa em que a IA responde ao lado do dono
-            tem a cara de qualquer outra. Com o automático calado por outro
-            motivo, quem fala é o selo de cima. */}
-        {podeModoIaComDono && modoLigado && motivo === null && (
-          <Badge variant="outline" className="h-4 w-fit max-w-full truncate px-1.5 text-[10px]"
-            data-testid="badge-ia-com-o-dono">
-            {t("IA com o dono")}
-          </Badge>
-        )}
       </div>
       <ReassignDialog
         conversationId={conversation.id}
