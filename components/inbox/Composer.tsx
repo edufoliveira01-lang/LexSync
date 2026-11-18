@@ -1235,6 +1235,8 @@ export const Composer = forwardRef<ComposerHandle, Props>(function Composer(
             <div id="slot-acoes-da-conversa" className="flex flex-wrap items-center justify-end gap-1" />
             {mode === "reply" ? <AgendarAtendimento conversationId={conversationId} contactId={contactId} contactName={contactName ?? null} somenteLeitura={followupSomenteLeitura} /> : null}
             {mode === "reply" ? <AtivarFollowup conversationId={conversationId} contactId={contactId} somenteLeitura={followupSomenteLeitura} podeParar={podePararFollowup} /> : null}
+            {/* O "Lembrar" (adiar a conversa) que o cabeçalho põe aqui, entre o Follow-up e o Programar. */}
+            {mode === "reply" ? <div id="slot-lembrar-da-conversa" className="flex items-center" /> : null}
             {mode === "reply" ? <ProgramarMensagem conversationId={conversationId} /> : null}
           </div>
         </div>
