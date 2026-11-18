@@ -1707,6 +1707,13 @@ export async function runModelCall(db: pg.Pool, cfg: LlmEdgeConfig, input: RunMo
       model,
       origem_da_escolha: origemDaFalha,
       ...normalizarErro(err),
+      // Erro sem classe conhecida (`erro_desconhecido`) chega ao log só com a
+      // mensagem — e "ReadableStream is locked" não diz ONDE o corpo foi lido
+      // duas vezes. As primeiras linhas da pilha dizem; só neste caso, para o
+      // log dos erros comuns (401, 429, timeout) não crescer.
+      ...(err instanceof Error && err.stack && normalizarErro(err).error_code === 'erro_desconhecido'
+        ? { stack: err.stack.split('\n').slice(0, 14).join('\n') }
+        : {}),
       // Os dois lados no log da falha final: o erro da assinatura vai em campo
       // próprio (nome legível), sem depender de ler o texto do outro lado.
       ...camposDaAssinaturaQueCaiu(),
