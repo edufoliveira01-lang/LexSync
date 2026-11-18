@@ -3,7 +3,7 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { resolveSentryDsn, isCommunityDsn } from "./lib/sentry/dsn";
-import { opcoesDePrivacidade } from "./lib/sentry/privacidade";
+import { opcoesDePrivacidade, integracoesDoServidor } from "./lib/sentry/privacidade";
 
 const sentryDsn = resolveSentryDsn(process.env.SENTRY_DSN);
 
@@ -15,4 +15,5 @@ Sentry.init({
 
   // Coleta restrita + scrub, num ponto só (Sentry 11 coleta amplo por default).
   ...opcoesDePrivacidade,
+  ...integracoesDoServidor,
 });

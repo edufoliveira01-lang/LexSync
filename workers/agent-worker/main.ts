@@ -40,7 +40,7 @@ import { StaleServiceBoundaryError } from "@/lib/atendimento/fronteira";
 // sem `instrumentation.ts` porque o worker não é um processo Next.
 import * as Sentry from "@sentry/nextjs";
 import { resolveSentryDsn, isCommunityDsn, DEFAULT_SENTRY_DSN } from "@/lib/sentry/dsn";
-import { opcoesDePrivacidade } from "@/lib/sentry/privacidade";
+import { opcoesDePrivacidade, integracoesDoServidor } from "@/lib/sentry/privacidade";
 
 const sentryDsn = resolveSentryDsn(process.env.SENTRY_DSN);
 const sentryCommunity = isCommunityDsn(sentryDsn);
@@ -53,6 +53,7 @@ Sentry.init({
 
   // Coleta restrita + scrub, num ponto só (Sentry 11 coleta amplo por default).
   ...opcoesDePrivacidade,
+  ...integracoesDoServidor,
 });
 
 // Transparência de telemetria (mesma mensagem de sentry.server.config.ts,

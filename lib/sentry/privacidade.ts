@@ -22,6 +22,16 @@
  */
 import { sentryScrubHooks } from "./scrub";
 
+/**
+ * `VercelAI` fica DESLIGADA: com o `ai` 7.0.170 ela embrulha o stream que o
+ * provedor devolve e o deixa travado, e o turno do agente morre em
+ * `Invalid state: The ReadableStream is locked` (medido em 18/11 com o Sentry
+ * 11.10 + ai 7.0.170 + @ai-sdk/openai 4.0.115: sem a integração o mesmo
+ * código responde; com ela, falha). O custo é só o span de IA no trace — o erro
+ * em si, o scrub e a coleta de `genAI` (já desligada acima) não dependem dela.
+ */
+const INTEGRACOES_DESLIGADAS = new Set(["VercelAI"]);
+
 // Lista do próprio guia para o "default do v10": casa por trecho do nome.
 const CABECALHOS_DE_ENDERECO = ["forwarded", "-ip", "remote-", "via", "-user"];
 
@@ -48,4 +58,12 @@ const COLETA_RESTRITA = {
 export const opcoesDePrivacidade = {
   dataCollection: COLETA_RESTRITA,
   ...sentryScrubHooks,
+};
+
+/**
+ * Só para os runtimes que rodam o motor de IA (servidor, edge e worker): o
+ * navegador tem a própria lista de integrações e não carrega o `ai`.
+ */
+export const integracoesDoServidor = {
+  integrations: <T extends { name: string }>(padrao: T[]): T[] => padrao.filter((i) => !INTEGRACOES_DESLIGADAS.has(i.name)),
 };
